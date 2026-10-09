@@ -1,6 +1,10 @@
 import Phaser from 'phaser';
-import { MenuScene } from './scenes/MenuScene';
-import { GearGalleryScene } from './scenes/GearGalleryScene';
+import { pm } from './debug';
+import { BootScene } from './scenes/BootScene';
+import { ALL_SCENES } from './scenes/index';
+
+window.addEventListener('error', (e) => pm.errors.push(String(e.message)));
+window.addEventListener('unhandledrejection', (e) => pm.errors.push(String(e.reason)));
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -14,12 +18,11 @@ const game = new Phaser.Game({
     fullscreenTarget: document.documentElement,
   },
   render: { antialias: true, roundPixels: false },
-  input: { activePointers: 3 }, // room for two-player "Outside Hands" later
-  scene: [MenuScene, GearGalleryScene],
+  input: { activePointers: 3 }, // Kip, Tess / Outside Hands, and one spare finger
+  scene: [BootScene, ...ALL_SCENES],
 });
 
-// Handy in the browser console while prototyping: window.pm.scene.getScene('gear-gallery')
-(window as unknown as { pm: Phaser.Game }).pm = game;
+pm.game = game;
 
 // Offline support / "Install app" on Android. Only in the built site, so the
 // dev server never serves stale cached files.

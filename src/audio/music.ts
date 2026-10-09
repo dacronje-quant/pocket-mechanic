@@ -1,0 +1,214 @@
+/**
+ * Music that is the machine (GDD §23.2). Each object has a theme made of
+ * layers: a broken machine plays a sparse version and every fixed room adds
+ * an instrument, so players hear their progress. Themes are synthesised here
+ * as a fallback; a generated loop (Lyria) under public/audio/music replaces a
+ * theme when the manifest lists one.
+ */
+import type { ThemeId } from '../content/types';
+import { ac, audioFile, bus, loadBuffer, whenUnlocked } from './engine';
+
+type Scale = number[];
+const MAJOR: Scale = [0, 2, 4, 5, 7, 9, 11];
+const MINOR: Scale = [0, 2, 3, 5, 7, 8, 10];
+const PENTA: Scale = [0, 2, 4, 7, 9];
+
+export interface MusicTheme {
+  bpm: number;
+  root: number; // MIDI note
+  scale: Scale;
+  /** Chord roots as scale degrees, one per bar. */
+  chords: number[];
+  /** 16 steps per bar of melody (scale degrees, -1 rest), spanning the chord bars. */
+  melody: number[];
+  beatsPerBar: 3 | 4;
+  bass: OscillatorType;
+  lead: OscillatorType;
+  /** Percussion flavour for the ticking layer. */
+  perc: 'tick' | 'chug' | 'snap' | 'brush' | 'bell';
+}
+
+const T = (t: MusicTheme) => t;
+
+export const THEMES: Record<ThemeId | 'festival' | 'title', MusicTheme> = {
+  title: T({ bpm: 84, root: 60, scale: MAJOR, chords: [0, 5, 3, 4], melody: [4, -1, 2, -1, 4, 5, 4, -1, 2, -1, 0, 1, 2, -1, -1, -1], beatsPerBar: 4, bass: 'sine', lead: 'triangle', perc: 'tick' }),
+  shop: T({ bpm: 80, root: 62, scale: MAJOR, chords: [0, 3, 4, 0], melody: [0, 2, 4, -1, 5, 4, 2, -1, 3, 2, 1, -1, 2, -1, -1, -1], beatsPerBar: 4, bass: 'sine', lead: 'triangle', perc: 'tick' }),
+  clock: T({ bpm: 96, root: 60, scale: MAJOR, chords: [0, 4, 0, 4], melody: [7, 4, -1, 7, 4, -1, 5, 4, 3, 2, -1, 2, 4, 2, 0, -1], beatsPerBar: 3, bass: 'triangle', lead: 'triangle', perc: 'tick' }),
+  musicbox: T({ bpm: 76, root: 72, scale: MAJOR, chords: [0, 4, 0, 4], melody: [2, 2, 4, -1, 2, 2, 4, -1, 2, 4, 7, 6, 5, 5, 4, -1], beatsPerBar: 3, bass: 'sine', lead: 'sine', perc: 'bell' }),
+  train: T({ bpm: 120, root: 62, scale: MAJOR, chords: [0, 3, 4, 0], melody: [0, 2, 4, 4, 5, 4, 2, -1, 1, 3, 4, 3, 2, 1, 0, -1], beatsPerBar: 4, bass: 'square', lead: 'triangle', perc: 'chug' }),
+  radio: T({ bpm: 108, root: 58, scale: MAJOR, chords: [0, 5, 1, 4], melody: [4, -1, 4, 5, 4, 2, -1, 0, 2, -1, 2, 4, 2, 0, -1, -1], beatsPerBar: 4, bass: 'triangle', lead: 'sawtooth', perc: 'brush' }),
+  tea: T({ bpm: 126, root: 65, scale: MAJOR, chords: [0, 4, 0, 4], melody: [0, 2, 4, 2, 5, 4, 2, 0, 1, 3, 5, 3, 4, 2, 0, -1], beatsPerBar: 3, bass: 'sine', lead: 'triangle', perc: 'snap' }),
+  bertie: T({ bpm: 116, root: 57, scale: MAJOR, chords: [0, 0, 3, 4], melody: [0, -1, 2, 4, 5, 4, 2, -1, 0, -1, 2, 4, 5, 4, 2, 0], beatsPerBar: 4, bass: 'square', lead: 'square', perc: 'snap' }),
+  orrery: T({ bpm: 66, root: 64, scale: PENTA, chords: [0, 3, 1, 2], melody: [4, 7, 6, 5, 4, -1, 2, 4, 3, 2, 1, -1, 0, 2, 4, -1], beatsPerBar: 4, bass: 'sine', lead: 'sine', perc: 'bell' }),
+  tower: T({ bpm: 100, root: 55, scale: MAJOR, chords: [0, 3, 4, 0], melody: [0, 0, 4, 4, 5, 5, 4, -1, 7, 7, 6, 6, 5, 5, 4, -1], beatsPerBar: 4, bass: 'triangle', lead: 'triangle', perc: 'tick' }),
+  attic: T({ bpm: 72, root: 57, scale: MINOR, chords: [0, 5, 3, 4], melody: [0, -1, 2, 4, -1, 3, 2, -1, 0, -1, 4, 6, -1, 5, 4, -1], beatsPerBar: 4, bass: 'sine', lead: 'triangle', perc: 'tick' }),
+  bench: T({ bpm: 104, root: 60, scale: PENTA, chords: [0, 2, 3, 1], melody: [0, 1, 2, -1, 3, 2, 1, -1, 2, 3, 4, -1, 3, -1, -1, -1], beatsPerBar: 4, bass: 'triangle', lead: 'triangle', perc: 'snap' }),
+  home: T({ bpm: 92, root: 64, scale: MAJOR, chords: [0, 3, 4, 3], melody: [2, 4, 5, -1, 4, 2, 0, -1, 1, 2, 4, -1, 2, -1, -1, -1], beatsPerBar: 4, bass: 'sine', lead: 'triangle', perc: 'tick' }),
+  festival: T({ bpm: 112, root: 60, scale: MAJOR, chords: [0, 3, 4, 0], melody: [0, 0, 4, 4, 5, 5, 4, -1, 3, 3, 2, 2, 1, 1, 0, -1], beatsPerBar: 4, bass: 'triangle', lead: 'triangle', perc: 'snap' }),
+};
+
+const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
+const degree = (th: MusicTheme, d: number, octave = 0) => {
+  const s = th.scale;
+  const o = Math.floor(d / s.length);
+  const i = ((d % s.length) + s.length) % s.length;
+  return th.root + s[i] + 12 * (o + octave);
+};
+
+let current: { id: string; theme: MusicTheme } | null = null;
+let layers = 1;
+let timer: ReturnType<typeof setInterval> | null = null;
+let nextTime = 0;
+let step = 0;
+let tempoScale = 1;
+let fileBuffer: AudioBufferSourceNode | null = null;
+
+function note(c: AudioContext, dest: AudioNode, freq: number, t: number, len: number, type: OscillatorType, peak: number): void {
+  const o = c.createOscillator();
+  const g = c.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  o.connect(g).connect(dest);
+  o.start(t);
+  o.stop(t + len + 0.05);
+}
+
+function perc(c: AudioContext, dest: AudioNode, kind: MusicTheme['perc'], t: number, accent: boolean): void {
+  const len = kind === 'chug' ? 0.08 : kind === 'brush' ? 0.12 : 0.03;
+  const src = c.createBufferSource();
+  const buf = c.createBuffer(1, Math.ceil(c.sampleRate * (len + 0.02)), c.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  src.buffer = buf;
+  const f = c.createBiquadFilter();
+  f.type = kind === 'chug' ? 'lowpass' : 'bandpass';
+  f.frequency.value = kind === 'tick' ? 3200 : kind === 'chug' ? 700 : kind === 'snap' ? 2000 : kind === 'bell' ? 5000 : 3500;
+  f.Q.value = kind === 'tick' ? 6 : 1.5;
+  const g = c.createGain();
+  const peak = (accent ? 0.12 : 0.07) * (kind === 'bell' ? 0.6 : 1);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + 0.003);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  src.connect(f).connect(g).connect(dest);
+  src.start(t);
+  if (kind === 'bell' && accent) note(c, dest, 2093, t, 0.4, 'sine', 0.02);
+}
+
+function schedule(): void {
+  const c = ac();
+  const dest = bus('music');
+  if (!c || !dest || !current) return;
+  const th = current.theme;
+  const stepDur = 60 / (th.bpm * tempoScale) / 4; // sixteenth notes
+  const stepsPerBar = th.beatsPerBar * 4;
+  while (nextTime < c.currentTime + 0.15) {
+    const s = step;
+    const t = nextTime;
+    const inBar = s % stepsPerBar;
+    const bar = Math.floor(s / stepsPerBar) % th.chords.length;
+    const chord = th.chords[bar];
+    // layer 1: soft pad on the chord
+    if (inBar === 0) {
+      for (const d of [0, 2, 4]) note(c, dest, midi(degree(th, chord + d, -1)), t, stepDur * stepsPerBar * 0.95, 'sine', 0.025);
+    }
+    // layer 2: bass on the beats
+    if (layers >= 2 && inBar % 4 === 0) note(c, dest, midi(degree(th, chord, -2)), t, stepDur * 3, th.bass, inBar === 0 ? 0.09 : 0.06);
+    // layer 3: the machine ticks in time
+    if (layers >= 3 && inBar % 2 === 0) perc(c, dest, th.perc, t, inBar % 4 === 0);
+    // layer 4: the melody
+    if (layers >= 4) {
+      const m = th.melody[s % th.melody.length];
+      if (m >= 0 && s % 2 === 0) note(c, dest, midi(degree(th, m, 0)), t, stepDur * 3, th.lead, th.lead === 'sine' ? 0.06 : 0.04);
+    }
+    // layer 5: sparkly arpeggio
+    if (layers >= 5 && inBar % 2 === 1) note(c, dest, midi(degree(th, chord + [0, 2, 4, 7][(s >> 1) % 4], 1)), t, stepDur * 1.5, 'sine', 0.018);
+    nextTime += stepDur;
+    step++;
+  }
+}
+
+function stopFile(): void {
+  if (fileBuffer) {
+    try {
+      fileBuffer.stop();
+    } catch {
+      /* already stopped */
+    }
+    fileBuffer.disconnect();
+    fileBuffer = null;
+  }
+}
+
+/** Play a theme. `progress` (0..1) decides how many layers are back. */
+export function playMusic(id: keyof typeof THEMES, progress = 1, windDown = false): void {
+  tempoScale = windDown ? 0.85 : 1;
+  const want = Math.max(1, Math.min(5, 1 + Math.round(progress * 4)));
+  layers = windDown ? Math.min(want, 3) : want;
+  if (current?.id === id) return;
+  stopMusic();
+  current = { id, theme: THEMES[id] };
+  const c0 = ac();
+  if (!c0) {
+    whenUnlocked(() => {
+      if (current?.id !== id) return;
+      current = null;
+      playMusic(id, progress, windDown);
+    });
+    return;
+  }
+  const file = audioFile('music', id);
+  const c = ac();
+  if (file && c) {
+    const dest = bus('music');
+    void loadBuffer(file).then((buf) => {
+      if (!buf || current?.id !== id || !dest) return startSynth();
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      src.connect(dest);
+      src.start();
+      fileBuffer = src;
+    });
+    return;
+  }
+  startSynth();
+}
+
+function startSynth(): void {
+  const c = ac();
+  if (!c) return;
+  nextTime = c.currentTime + 0.05;
+  step = 0;
+  if (timer) clearInterval(timer);
+  timer = setInterval(schedule, 40);
+}
+
+export function setMusicProgress(progress: number): void {
+  layers = Math.max(1, Math.min(5, 1 + Math.round(progress * 4)));
+}
+
+export function stopMusic(): void {
+  if (timer) clearInterval(timer);
+  timer = null;
+  stopFile();
+  current = null;
+}
+
+/** Play a short melody once (music boxes, the Nook's mini music box, the Big Fix). */
+export function playMelody(notes: number[], tempo = 3, kind: OscillatorType = 'triangle'): number {
+  const c = ac();
+  const dest = bus('sfx');
+  if (!c || !dest) return 0;
+  const freqs = [261.63, 293.66, 329.63, 349.23, 392.0, 440.0, 493.88, 523.25, 587.33, 659.25];
+  const t0 = c.currentTime + 0.05;
+  notes.forEach((n, i) => {
+    if (n < 0) return;
+    const t = t0 + i / tempo;
+    note(c, dest, freqs[n] ?? 440, t, 0.6, kind, 0.12);
+    note(c, dest, (freqs[n] ?? 440) * 2, t, 0.3, 'sine', 0.03);
+  });
+  return notes.length / tempo;
+}

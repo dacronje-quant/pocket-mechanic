@@ -138,6 +138,60 @@ export function ensureBasics(scene: Phaser.Scene): void {
     g.generateTexture('mote', 6, 6);
     g.destroy();
   }
+  const make = (key: string, w: number, h: number, draw: (g: Phaser.GameObjects.Graphics) => void) => {
+    if (scene.textures.exists(key)) return;
+    const g = scene.make.graphics({ x: 0, y: 0 }, false);
+    draw(g);
+    g.generateTexture(key, w, h);
+    g.destroy();
+  };
+  make('note', 20, 24, (g) => {
+    g.fillStyle(0xffffff, 1);
+    g.fillEllipse(7, 18, 11, 8);
+    g.fillRect(11, 2, 3, 16);
+    g.fillTriangle(13, 2, 13, 8, 19, 7);
+  });
+  make('minigear', 20, 20, (g) => {
+    g.fillStyle(0xffd700, 1);
+    for (let i = 0; i < 8; i++) g.fillCircle(10 + Math.cos((i / 8) * 6.28) * 7, 10 + Math.sin((i / 8) * 6.28) * 7, 2.2);
+    g.fillCircle(10, 10, 6.5);
+    g.fillStyle(0x8a5f17, 1);
+    g.fillCircle(10, 10, 2.2);
+  });
+  make('puff', 32, 32, (g) => {
+    g.fillStyle(0xffffff, 0.8);
+    g.fillCircle(16, 16, 12);
+    g.fillStyle(0xffffff, 0.5);
+    g.fillCircle(10, 12, 8);
+    g.fillCircle(22, 12, 8);
+  });
+  make('drop', 12, 16, (g) => {
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(6, 10, 5);
+    g.fillTriangle(1.5, 8, 10.5, 8, 6, 0);
+  });
+  make('confetti', 10, 6, (g) => {
+    g.fillStyle(0xffffff, 1);
+    g.fillRect(0, 0, 10, 6);
+  });
+  make('bit', 16, 16, (g) => {
+    g.fillStyle(0xc9d1d9, 1);
+    g.fillCircle(8, 8, 7);
+    g.fillStyle(0x6c757d, 1);
+    g.fillCircle(8, 8, 3);
+    g.fillStyle(0xffffff, 0.7);
+    g.fillCircle(6, 5, 2);
+  });
+  make('ring', 64, 64, (g) => {
+    g.lineStyle(4, 0xffffff, 1);
+    g.strokeCircle(32, 32, 28);
+  });
+  make('beamdot', 12, 12, (g) => {
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(6, 6, 4);
+    g.fillStyle(0xffffff, 0.4);
+    g.fillCircle(6, 6, 6);
+  });
   if (!scene.textures.exists('glow')) {
     const g = scene.make.graphics({ x: 0, y: 0 }, false);
     for (let i = 20; i > 0; i--) {
