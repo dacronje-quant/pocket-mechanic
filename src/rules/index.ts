@@ -46,14 +46,14 @@ import type {
 import { gridToRows, lightToRows } from './grid';
 
 /** A room def with its Play Style overrides applied (and no `styles` left). */
-export type Effective<T> = Omit<T, 'styles'>;
+export type Effective<T> = T extends unknown ? Omit<T, 'styles'> : never;
 
 export function effective<T extends RoomDef>(def: T, style: PlayStyleId): Effective<T> {
   const over = (def.styles?.[style] ?? {}) as Partial<T>;
   const merged = { ...def, ...over } as T;
   delete (merged as { styles?: unknown }).styles;
-  if (style === 'tinker' && merged.simplify !== false) return simplify(merged) as Effective<T>;
-  return merged as Effective<T>;
+  if (style === 'tinker' && merged.simplify !== false) return simplify(merged) as unknown as Effective<T>;
+  return merged as unknown as Effective<T>;
 }
 
 // ───────────────────────────── gears ─────────────────────────────

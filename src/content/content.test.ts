@@ -153,3 +153,44 @@ describe('collectibles and layout', () => {
     }
   });
 });
+
+describe('story, Part-o-pedia, cosmetics', async () => {
+  const { STORIES, storyById, LINES } = await import('./story');
+  const { PEDIA, pediaById } = await import('./pedia');
+  const { COSMETICS, cosmeticById } = await import('./cosmetics');
+  const { VOICES } = await import('./voices');
+  const { STAMPS } = await import('./stamps');
+
+  it('every repair story id resolves', () => {
+    for (const r of REPAIRS) {
+      for (const id of [r.doorbell, r.ret, ...(r.after ?? [])]) expect(storyById(id), id).toBeDefined();
+    }
+    for (const id of ['prologue', 'bell-silent', 'magnus-nest', 'attic-open', 'box-open', 'closing-time']) expect(storyById(id), id).toBeDefined();
+  });
+
+  it('voice line ids are unique and every speaker has a voice', () => {
+    const ids = [...STORIES.flatMap((s) => s.lines.map((l) => l.id)), ...Object.keys(LINES)];
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const s of STORIES) for (const l of s.lines) expect(VOICES[l.who], l.who).toBeDefined();
+  });
+
+  it('every Part-o-pedia id used by a room has a page', () => {
+    expect(new Set(PEDIA.map((p) => p.id)).size).toBe(PEDIA.length);
+    for (const r of all()) for (const id of r.pedia) expect(pediaById(id), `${r.id}: ${id}`).toBeDefined();
+  });
+
+  it('every reward is a real cosmetic, and every cosmetic source is real', () => {
+    expect(new Set(COSMETICS.map((c) => c.id)).size).toBe(COSMETICS.length);
+    for (const r of REPAIRS) expect(cosmeticById(r.reward), r.reward).toBeDefined();
+    for (const q of QUICK_FIXES) expect(cosmeticById(q.reward), q.reward).toBeDefined();
+    for (const c of COSMETICS) {
+      if (c.source.kind === 'treasure') expect(TREASURES[c.source.treasure], c.id).toBeDefined();
+      if (c.source.kind === 'quick') expect(QUICK_FIXES.find((q) => q.id === (c.source as { quick: string }).quick), c.id).toBeDefined();
+    }
+    expect(STAMPS.length).toBeGreaterThanOrEqual(50);
+  });
+});
+
+function all(): RoomDef[] {
+  return [...STORY_ROOMS, ...QUICK_FIXES.map((q) => q.room)];
+}
