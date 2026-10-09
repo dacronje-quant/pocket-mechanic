@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Pocket Mechanic</title>
+    <meta name="description" content="Fix broken treasures from the inside out." />
+    <meta name="theme-color" content="#2b1d14" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #1a120c;
+        overflow: hidden;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #game {
+        position: fixed;
+        inset: 0;
+      }
+      /* Phones held upright: ask to turn sideways (the game is landscape). */
+      #rotate {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        background: #2b1d14;
+        color: #ffd76a;
+        font: bold 26px "Trebuchet MS", system-ui, sans-serif;
+        text-align: center;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+      }
+      #rotate .phone {
+        font-size: 72px;
+        animation: turn 1.8s ease-in-out infinite;
+      }
+      @keyframes turn {
+        0%, 30% { transform: rotate(0deg); }
+        60%, 100% { transform: rotate(-90deg); }
+      }
+      @media (orientation: portrait) and (pointer: coarse) {
+        #rotate { display: flex; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="rotate"><div class="phone">📱</div><div>Turn me sideways!</div></div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

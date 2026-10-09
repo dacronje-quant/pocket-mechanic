@@ -1,0 +1,23 @@
+{
+  "name": "pocket-mechanic",
+  "version": "0.1.0",
+  "description": "Pocket Mechanic: The Clockwork Repair Shop — touch-first web prototype",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  },
+  "private": true,
+  "type": "module"
+}
