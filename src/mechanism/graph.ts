@@ -20,6 +20,8 @@ export interface GearNode {
   y: number;
   /** Gears sharing a shaft id are fixed together (compound gears) and never collide. */
   shaft?: string;
+  /** Depth layer: gears only mesh or collide with gears on the same layer (compound gears stack two layers). */
+  layer?: number;
 }
 
 export interface Driver {
@@ -52,16 +54,20 @@ function sameShaft(a: GearNode, b: GearNode): boolean {
   return a.shaft !== undefined && a.shaft === b.shaft;
 }
 
+function sameLayer(a: GearNode, b: GearNode): boolean {
+  return (a.layer ?? 0) === (b.layer ?? 0);
+}
+
 /** Two gears mesh when their pitch circles just touch. */
 export function meshes(a: GearNode, b: GearNode, module = MODULE, tol = MESH_TOLERANCE): boolean {
-  if (sameShaft(a, b)) return false;
+  if (sameShaft(a, b) || !sameLayer(a, b)) return false;
   const gap = dist(a, b) - (pitchRadius(a.teeth, module) + pitchRadius(b.teeth, module));
   return Math.abs(gap) <= tol;
 }
 
 /** Two gears physically overlap (can't both sit there). */
 export function collides(a: GearNode, b: GearNode, module = MODULE, tol = MESH_TOLERANCE): boolean {
-  if (sameShaft(a, b)) return false;
+  if (sameShaft(a, b) || !sameLayer(a, b)) return false;
   const gap = dist(a, b) - (pitchRadius(a.teeth, module) + pitchRadius(b.teeth, module));
   return gap < -tol;
 }
