@@ -240,7 +240,8 @@ function simplifyLogic(def: LogicRoomDef): LogicRoomDef {
   if (slotIds.length <= 1) return { ...def, tray: slotIds.map((id) => def.solution.gates![id]) };
   const leave = slotIds[slotIds.length - 1];
   const nodes = def.nodes.map((n) => (n.slot && n.id !== leave ? { ...n, slot: false, gate: def.solution.gates![n.id] } : n));
-  return { ...def, nodes, tray: [def.solution.gates![leave]] };
+  const gate = def.solution.gates![leave];
+  return { ...def, nodes, tray: [gate], solution: { ...def.solution, gates: { [leave]: gate } } };
 }
 
 // ───────────────────────────── cards ─────────────────────────────

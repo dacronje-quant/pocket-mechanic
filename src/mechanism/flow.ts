@@ -370,6 +370,12 @@ function checkCircuit(g: Grid, comps: ComponentState[]): boolean {
   let ok = true;
   let any = false;
   g.cells.forEach((t, i) => {
+    // a required spot must hold a working component (a bare wire in the tube socket doesn't count)
+    if (t?.required && RESISTANCE[t.kind] === undefined) {
+      any = true;
+      ok = false;
+      return;
+    }
     if (!t || RESISTANCE[t.kind] === undefined || t.kind === 'F') return;
     const lvl = comps.find((c) => c.cell === i)?.level ?? 0;
     if (t.required) {
