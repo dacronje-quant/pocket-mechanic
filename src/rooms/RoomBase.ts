@@ -776,32 +776,54 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       g.lineBetween(0, 16, 2, 26);
       c.setAngle(25);
     } else {
+      // a soft halo behind the glint, so it reads on light and dark scenery
+      g.fillStyle(0xfff3b0, 0.35);
+      g.fillCircle(0, 0, 22);
+      g.fillStyle(0x342f29, 0.35);
+      for (let i = 0; i < 4; i++) {
+        const a = (i / 4) * Math.PI * 2;
+        g.fillTriangle(Math.cos(a) * 29, Math.sin(a) * 29, Math.cos(a + 1.3) * 8, Math.sin(a + 1.3) * 8, Math.cos(a - 1.3) * 8, Math.sin(a - 1.3) * 8);
+      }
       g.fillStyle(kind === 'treasure' ? 0xff8fab : kind === 'blueprint' ? 0x7fd3ff : 0xf1d391, 1);
       for (let i = 0; i < 4; i++) {
         const a = (i / 4) * Math.PI * 2;
-        g.fillTriangle(Math.cos(a) * 18, Math.sin(a) * 18, Math.cos(a + 1.3) * 4, Math.sin(a + 1.3) * 4, Math.cos(a - 1.3) * 4, Math.sin(a - 1.3) * 4);
+        g.fillTriangle(Math.cos(a) * 26, Math.sin(a) * 26, Math.cos(a + 1.3) * 6, Math.sin(a + 1.3) * 6, Math.cos(a - 1.3) * 6, Math.sin(a - 1.3) * 6);
       }
-      g.fillCircle(0, 0, 4);
+      g.fillCircle(0, 0, 6);
     }
     c.add(g);
     c.setSize(70, 70);
     c.setInteractive({ useHandCursor: true });
     c.on('pointerup', () => {
-      if (!c.active) return;
+      if (!c.active || c.getData('found')) return;
+      c.setData('found', true);
       this.tweens.add({ targets: c, scale: 2, alpha: 0, duration: 400, onComplete: () => c.destroy() });
       onFind();
     });
     this.spots.push({ obj: c, kind });
   }
 
+  /**
+   * Hidden finds rest as a faint glint and every few seconds twinkle brightly (a flash, a swell and
+   * a few sparks), each on its own beat, so a child playing the board notices them.
+   */
   private updateSpots(): void {
-    const tinker = this.style.id === 'tinker';
+    const style = this.style.id;
+    const calm = settings().calm;
+    const period = 2.2;
     for (const s of this.spots) {
-      if (!s.obj.active) continue;
-      const base = s.kind === 'mark' ? 0.75 : this.peeking ? 0.95 : tinker ? 0.35 : 0.06;
-      s.obj.setAlpha(base * (0.7 + Math.sin(this.elapsed * 4 + s.obj.x) * 0.3));
+      if (!s.obj.active || s.obj.getData('found')) continue;
+      const rest =s.kind === 'mark' ? 0.75 : this.peeking ? 0.95 : style === 'tinker' ? 0.6 : style === 'engineer' ? 0.28 : 0.42;
+      const t = (this.elapsed + (s.obj.x * 0.0037 + s.obj.y * 0.0021) * period) % period;
+      const flash = t < 0.7 ? Math.sin((t / 0.7) * Math.PI) : 0;
+      const shimmer = 0.85 + Math.sin(this.elapsed * 5 + s.obj.x) * 0.15;
+      s.obj.setAlpha(Math.min(1, rest * shimmer + flash * (1 - rest)));
+      s.obj.setScale(1 + flash * 0.8);
+      const was = s.obj.getData('flashing') as boolean | undefined;
+      if (flash > 0 && !was && !calm && !this.peeking) this.sparks.explode(4, s.obj.x, s.obj.y);
+      s.obj.setData('flashing', flash > 0);
       s.obj.setDepth(this.peeking ? D.blueprint + 2 : D.spots);
-      if (s.kind !== 'mark') s.obj.rotation += 0.01;
+      if (s.kind !== 'mark') s.obj.rotation += 0.01 + flash * 0.06;
     }
   }
 
