@@ -124,6 +124,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
   private soundBtn!: Phaser.GameObjects.Container;
   private beamG!: Phaser.GameObjects.Graphics;
   private hintG!: Phaser.GameObjects.Graphics;
+  private dropG!: Phaser.GameObjects.Graphics;
   private dark?: Phaser.GameObjects.RenderTexture;
   private hands?: Phaser.GameObjects.Graphics;
   private torch = { x: 640, y: 360 };
@@ -350,6 +351,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       .setDepth(D.banner + 2);
     this.beamG = this.add.graphics().setDepth(D.drag - 1).setBlendMode(Phaser.BlendModes.ADD);
     this.hintG = this.add.graphics().setDepth(D.drag - 2);
+    this.dropG = this.add.graphics().setDepth(D.drag - 3);
     this.ghostG = this.add.graphics().setDepth(D.parts - 1);
     this.peekOverlay = this.add.rectangle(0, 0, 1280, 720, PALETTES[this.def.theme].peek, 0.66).setOrigin(0).setDepth(D.peek).setVisible(false);
     this.blueprint = this.add.graphics().setDepth(D.blueprint).setVisible(false);
@@ -845,7 +847,12 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
         .setOrigin(0.5)
         .setDepth(D.hud);
     }
-    this.bubble = new SpeechBubble(this, 640, 150, 700).setDepth(D.bubble);
+    // Dock the bubble in the top bar, between the gear counter and the leftmost button on the
+    // right, so it never covers the top of the puzzle while the goal is being explained.
+    const left = 262;
+    const right = x - 44;
+    const width = Math.max(400, Math.min(700, right - left));
+    this.bubble = new SpeechBubble(this, left + width / 2, 58, width).setDepth(D.bubble);
   }
 
   private refreshGold(): void {
@@ -1057,11 +1064,38 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
 
   // ───────────────────────────── per frame ─────────────────────────────
 
+  /** While something is carried, every place it can go pulses, and the one it would snap to glows. */
+  private drawDropTargets(): void {
+    const g = this.dropG;
+    g.clear();
+    if (!this.dragging.size) return;
+    const pulse = 0.55 + Math.sin(this.elapsed * 6) * 0.25;
+    for (const d of this.dragging.values()) {
+      const o = d.spec.obj;
+      const near = this.nearestTarget(d.spec, o.x, o.y);
+      for (const t of d.spec.targets()) {
+        if (d.spec.accepts && !d.spec.accepts(t)) continue;
+        const hot = near?.id === t.id;
+        if (hot) {
+          g.fillStyle(0xfff3b0, 0.35);
+          g.fillCircle(t.x, t.y, 58);
+        }
+        // a dark edge under a bright ring, so it reads on light wood and dark boards alike
+        const r = hot ? 58 : 50 + pulse * 6;
+        g.lineStyle(hot ? 10 : 8, 0x342f29, hot ? 0.6 : 0.45);
+        g.strokeCircle(t.x, t.y, r);
+        g.lineStyle(hot ? 6 : 4, hot ? 0xfff3b0 : 0xf1d391, hot ? 1 : 0.6 + pulse * 0.4);
+        g.strokeCircle(t.x, t.y, r);
+      }
+    }
+  }
+
   update(_time: number, deltaMs: number): void {
     const dt = Math.min(deltaMs, 50) / 1000;
     this.elapsed += this.fixed ? 0 : dt;
     this.updateHints(dt);
     this.tick(dt);
+    this.drawDropTargets();
     this.drawBeams();
     this.drawPath(dt);
     this.updateSpots();
