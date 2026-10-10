@@ -213,3 +213,7 @@ Production audio uses scripts/generate-elevenlabs.mjs (npm run assets:audio), wi
 - [x] Engine/content/voice verification suite: 225 tests passing; all authored solutions checked in every age mode
 - [x] Final 61-room browser and visual/touch evidence: record the completed checks in `VISUAL_OVERHAUL_VERIFICATION.md`
 - [x] Release build, README
+
+## Integrated main release
+
+The release combines the preserved production audio bank, recovered/generated Copper & Moss pack and ten new puzzle kinds. Pages uses the committed `docs/play/` build from `main/docs`; `scripts/check-pages.mjs` compares its bundle and media to the source production build. See `RELEASE_VERIFICATION.md` for pre-merge checks.

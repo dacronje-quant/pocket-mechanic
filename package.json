@@ -1,7 +1,7 @@
 {
   "name": "pocket-mechanic",
   "version": "1.0.0",
-  "description": "Pocket Mechanic: The Clockwork Repair Shop — a touch-first repair-puzzle game for children aged 4–10",
+  "description": "Pocket Mechanic: The Clockwork Repair Shop \u2014 a touch-first repair-puzzle game for children aged 4\u201310",
   "scripts": {
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",
@@ -14,7 +14,11 @@
     "audition": "node scripts/elevenlabs-audition.mjs",
     "audition:serve": "node scripts/elevenlabs-audition.mjs --serve --lan",
     "playthrough": "node scripts/playthrough.mjs",
-    "playthrough:touch": "node scripts/touch-playthrough.mjs"
+    "playthrough:touch": "node scripts/touch-playthrough.mjs",
+    "check:pages": "node scripts/check-pages.mjs",
+    "check:audio": "node scripts/check-audio.mjs",
+    "check:offline": "node scripts/check-offline.mjs",
+    "audition:player": "node scripts/build-audition-player.mjs"
   },
   "license": "UNLICENSED",
   "dependencies": {

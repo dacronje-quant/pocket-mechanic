@@ -5,7 +5,7 @@ inside the broken treasures people bring to Nana Odette's repair shop and fixes 
 inside: gears, levers, springs, pendulums, music cylinders, tracks, circuits, pipes, logic gates
 and light. Nothing can fail or break for good; wrong parts wiggle back or do something funny.
 
-Built with **Phaser 3 + TypeScript + Vite**, deployed to **GitHub Pages**, installable on Android as
+Built with **Phaser 3 + TypeScript + Vite**, published from `main/docs` to **GitHub Pages**, installable on Android as
 an app (PWA) and playable offline. The design is [`docs/GDD.md`](docs/GDD.md); the working plan and
 status are in [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md).
 
@@ -55,7 +55,7 @@ device, every `localStorage` access is guarded, and the game still runs when sto
 
 ## Run it
 
-Needs [Node.js](https://nodejs.org) 20 or newer.
+Needs [Node.js](https://nodejs.org) 22.12 or newer.
 
 On Windows, double-click [`Launch-Copper-Moss.bat`](Launch-Copper-Moss.bat). It installs missing
 dependencies, checks and builds the game, then opens the local preview at `http://127.0.0.1:5188/`.
@@ -75,6 +75,9 @@ Wi-Fi, open the *Network* address `npm run dev` prints.
 | `npm test` | Engine tests, every room's authored solution in all three Play Styles, the Attic generators, story/journey/progress and the voice-line catalogue |
 | `npm run build` | Type-check and build to `dist/` |
 | `npm run build:pages` | Build into `docs/play/` for "Deploy from a branch → main → /docs" (commit the result) |
+| `npm run check:pages` | Verify the published game code, all art and all audio match the source build |
+| `npm run check:audio` | Decode the production recordings and verify recorded/device-speech catalogue coverage |
+| `npm run check:offline` | Check fresh first-visit offline startup and all ten new puzzle kinds (Playwright required) |
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run playthrough` | Headless Chromium plays the whole story from an empty save (see below) |
 | `npm run assets` | Generate optional painted art with Gemini |
@@ -206,3 +209,9 @@ src/
 scripts/             generate-elevenlabs.mjs (audio), generate-assets.mjs (art), playthrough.mjs
 public/              PWA manifest, service worker, icons, generated audio/art + manifests
 ```
+
+## Publishing the integrated game
+
+GitHub Pages is configured for **Deploy from a branch → main → /docs**. Run `npm run build`, `npm run build:pages` and `npm run check:pages`, then include `docs/play/` in the merge to main. The validation workflow runs tests and both builds and rejects stale published files. It does not start a competing deployment; GitHub publishes the committed `/docs` folder.
+
+The audio generator and separate audition tools remain available. Audition recordings and player files stay in the local ignored `auditions/` folder; production recordings are bundled in `public/audio/` and `docs/play/audio/`.

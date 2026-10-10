@@ -6,7 +6,7 @@ building, and tick items off in BUILD_PLAN §8 as they land.
 
 ## Stack
 - Vite + Phaser 3 + TypeScript (strict). Game canvas 1280×720, `Scale.FIT`, touch-first.
-- Deployed to GitHub Pages by `.github/workflows/deploy.yml` (tests → build → Pages).
+- GitHub Pages publishes `main/docs`; `.github/workflows/deploy.yml` validates tests, production builds and the committed `docs/play/` output.
 - Installable PWA on Android (`public/manifest.webmanifest`, `public/sw.js`).
 
 ## Commands
