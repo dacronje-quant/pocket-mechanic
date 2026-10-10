@@ -13,7 +13,9 @@ import { speak } from '../audio/voice';
 import { drawRoomBackdrop } from '../art/backgrounds';
 import { CM, drawPatina } from '../art/copperMoss';
 import { drawerFinish, etchedPlate } from '../art/finish';
+import { withArt } from '../art/generated';
 import { drawPart } from '../art/parts';
+import { atlasFrame } from '../art/sprites';
 import { ensureGearTexture } from '../art/textures';
 import {
   BENCH,
@@ -59,7 +61,14 @@ const GADGET_ART: Record<GadgetKind, string> = {
   lift: 'pulley',
 };
 
-const NAME_A = ['Whirly', 'Jolly', 'Clanky', 'Speedy', 'Sleepy', 'Shiny', 'Bouncy', 'Tiny', 'Mighty', 'Giggly'];
+/** Gadgets that have a painting: Clementine on her stand, Coo the cuckoo, the glass lamp. */
+const PAINTED_GADGETS: Partial<Record<GadgetKind, { sheet: string; index: number; cols: number; rows: number; size: number; dy: number }>> = {
+  dancer: { sheet: 'portrait-clementine', index: 2, cols: 4, rows: 3, size: 118, dy: -4 },
+  cuckoo: { sheet: 'portrait-clementine', index: 1, cols: 4, rows: 3, size: 108, dy: 0 },
+  lamp: { sheet: 'puzzle-props', index: 8, cols: 4, rows: 4, size: 104, dy: 0 },
+};
+
+const NAME_A =['Whirly', 'Jolly', 'Clanky', 'Speedy', 'Sleepy', 'Shiny', 'Bouncy', 'Tiny', 'Mighty', 'Giggly'];
 const NAME_B = ['Bell-o-matic', 'Fan Machine', 'Gizmo', 'Contraption', 'Whirligig', 'Doodad', 'Tick-Tocker', 'Spinner', 'Wonder-Box', 'Thingamajig'];
 
 interface Carry {
@@ -82,6 +91,8 @@ export class BenchScene extends MetaScene {
   private carry: Carry | null = null;
   private panel: Phaser.GameObjects.GameObject[] = [];
   private goalText?: Phaser.GameObjects.Text;
+  private goalRow?: Phaser.GameObjects.Container;
+  private goalTicks = new Map<string, Phaser.GameObjects.Container>();
   private runBtn!: Phaser.GameObjects.Container;
   private t = 0;
   private toy = false;
@@ -104,6 +115,9 @@ export class BenchScene extends MetaScene {
     this.gearImgs = new Map();
     this.gadgetObjs = new Map();
     this.solvedShown = false;
+    this.goalText = undefined;
+    this.goalRow = undefined;
+    this.goalTicks = new Map();
     drawRoomBackdrop(this, 'bench', 700).setDepth(0);
     this.bubble.setY(110);
     this.board();
@@ -187,24 +201,57 @@ export class BenchScene extends MetaScene {
     });
   }
 
+  /**
+   * A gadget badge: a coloured rim (moss for power sources, teal for gadgets) around a cream face
+   * with the gadget on it. `g` holds the moving part; painted gadgets swap in a sprite as `art`.
+   */
   private gadgetIcon(kind: GadgetKind, s: number): Phaser.GameObjects.Container {
     const c = this.add.container(0, 0);
+    if (kind === 'lamp') {
+      const halo = this.add.graphics().fillStyle(0xfff3b0, 1).fillCircle(0, 0, 100 * s).setAlpha(0);
+      c.add(halo);
+      c.setData('halo', halo);
+    }
+    const back = this.add.graphics();
+    back.fillStyle(isSource(kind) ? CM.mossDark : CM.tealDark, 1);
+    back.fillCircle(0, 0, 70 * s);
+    back.fillStyle(0xf4ebd5, 1);
+    back.fillCircle(0, 0, 60 * s);
+    back.lineStyle(1.3, CM.copperDark, 0.9);
+    back.strokeCircle(0, 0, 70 * s);
+    drawPatina(back, -38 * s, -38 * s, 76 * s, 76 * s, 982, 1.2);
     const g = this.add.graphics();
-    g.fillStyle(isSource(kind) ? CM.mossDark : CM.tealDark, 1);
-    g.fillCircle(0, 0, 70 * s);
-    g.fillStyle(0xf4ebd5, 1);
-    g.fillCircle(0, 0, 60 * s);
-    g.lineStyle(1.3, CM.copperDark, 0.9);
-    g.strokeCircle(0, 0, 70 * s);
-    drawPatina(g, -38 * s, -38 * s, 76 * s, 76 * s, 982, 1.2);
     if (kind === 'flag') {
       g.fillStyle(0x856c50, 1);
       g.fillRect(-16 * s, -40 * s, 6 * s, 80 * s);
       g.fillStyle(0xad6b51, 1);
       g.fillTriangle(-10 * s, -40 * s, 40 * s, -24 * s, -10 * s, -8 * s);
+    } else if (kind === 'drum') {
+      // a little drum with two sticks
+      g.fillStyle(0xad6b51, 1);
+      g.fillRect(-34 * s, -10 * s, 68 * s, 36 * s);
+      g.fillStyle(0xf4ebd5, 1);
+      g.fillEllipse(0, -10 * s, 68 * s, 22 * s);
+      g.lineStyle(3 * s + 1, 0xbca16a, 1);
+      g.strokeEllipse(0, -10 * s, 68 * s, 22 * s);
+      for (let k = -2; k <= 2; k++) g.lineBetween(k * 14 * s, 0, k * 14 * s + 7 * s, 26 * s);
+      g.lineStyle(4 * s + 1, 0x79503d, 1);
+      g.lineBetween(-30 * s, -44 * s, -6 * s, -16 * s);
+      g.lineBetween(30 * s, -44 * s, 6 * s, -16 * s);
     } else drawPart(g, GADGET_ART[kind], 0, 0, s * 0.9);
-    c.add(g);
+    c.add([back, g]);
     c.setData('g', g);
+    const painted = PAINTED_GADGETS[kind];
+    if (painted) {
+      withArt(this, painted.sheet, (key) => {
+        if (!c.active || !c.scene) return;
+        const img = this.add.image(0, painted.dy * s, key, atlasFrame(this, key, painted.index, painted.cols, painted.rows, true));
+        img.setScale((painted.size * s) / Math.max(img.width, img.height));
+        g.setVisible(false);
+        c.add(img);
+        c.setData('art', img);
+      });
+    }
     return c;
   }
 
@@ -362,9 +409,9 @@ export class BenchScene extends MetaScene {
     const fixed = new Set(this.cardDef?.gadgets.map((g) => g.id) ?? []);
     for (const gd of this.state.gadgets) {
       const { x, y } = pegPos(gd.peg);
-      const c = this.gadgetIcon(gd.kind, 0.38).setPosition(x, y);
+      const c = this.gadgetIcon(gd.kind, 0.56).setPosition(x, y);
       if (!fixed.has(gd.id)) {
-        c.setSize(46, 46).setInteractive({ useHandCursor: true });
+        c.setSize(72, 72).setInteractive({ useHandCursor: true });
         c.on('pointerdown', (ptr: Phaser.Input.Pointer) => this.lift('gadget', gd.id, ptr));
       }
       this.layer.add(c);
@@ -441,8 +488,13 @@ export class BenchScene extends MetaScene {
       const c = this.gadgetObjs.get(gd.id);
       if (!c) continue;
       const r = on ? this.run.ratio[gd.id] ?? 0 : 0;
-      const g = c.getData('g') as Phaser.GameObjects.Graphics;
+      // the moving part: the painting if there is one, otherwise the drawing
+      const g = ((c.getData('art') as Phaser.GameObjects.Image | undefined) ?? c.getData('g')) as Phaser.GameObjects.Image | Phaser.GameObjects.Graphics;
+      const base = g.getData('base') as { sx: number; sy: number; y: number } | undefined ?? { sx: g.scaleX, sy: g.scaleY, y: g.y };
+      if (!g.getData('base')) g.setData('base', base);
       const phase = this.t * Math.PI * 0.5 * r;
+      g.setScale(base.sx, base.sy);
+      g.y = base.y;
       switch (gd.kind) {
         case 'crank':
         case 'motor':
@@ -456,35 +508,44 @@ export class BenchScene extends MetaScene {
           g.rotation = phase;
           break;
         case 'bell':
-          g.rotation = r ? Math.sin(this.t * 14) * 0.3 : 0;
+          g.rotation = r ? Math.sin(this.t * 14) * 0.5 : 0;
           if (r && Math.floor(phase / Math.PI) !== Math.floor((phase - Math.PI * 0.5 * r * dt) / Math.PI)) sfx.ding(1320 + (gd.peg % 5) * 110);
           break;
         case 'flag':
-          g.scaleX = r ? 0.8 + Math.sin(phase * 2) * 0.2 : 1;
+          g.scaleX = base.sx * (r ? 0.6 + Math.abs(Math.sin(phase * 2)) * 0.5 : 1);
+          g.rotation = r ? Math.sin(phase * 2) * 0.15 : 0;
           break;
-        case 'lamp':
-          c.setAlpha(r ? 0.75 + Math.min(0.25, Math.abs(r) * 0.08) + Math.sin(this.t * 6) * 0.05 : 0.7);
+        case 'lamp': {
+          const glow = r ? Math.min(1, 0.45 + Math.abs(r) * 0.15) + Math.sin(this.t * 6) * 0.08 : 0;
+          (c.getData('halo') as Phaser.GameObjects.Graphics | undefined)?.setAlpha(glow * 0.55);
+          c.setAlpha(r ? 1 : 0.8);
           break;
-        case 'dancer':
-          g.y = r ? -Math.abs(Math.sin(phase)) * 10 : 0;
-          g.rotation = r ? Math.sin(phase) * 0.2 : 0;
+        }
+        case 'dancer': {
+          // Clementine spins round on her stand and hops to the beat
+          g.y = base.y + (r ? -Math.abs(Math.sin(phase * 2)) * 10 : 0);
+          const turn = r ? Math.cos(phase * 2) : 1;
+          g.scaleX = base.sx * (Math.abs(turn) < 0.12 ? Math.sign(turn || 1) * 0.12 : turn);
           break;
+        }
         case 'drum':
-          g.setScale(r ? 1 + Math.max(0, Math.sin(phase * 2)) * 0.12 : 1);
+          g.setScale(base.sx * (r ? 1 + Math.max(0, Math.sin(phase * 2)) * 0.18 : 1), base.sy * (r ? 1 - Math.max(0, Math.sin(phase * 2)) * 0.12 : 1));
           if (r && Math.floor(phase * 2 / Math.PI) !== Math.floor((phase - Math.PI * 0.5 * r * dt) * 2 / Math.PI)) sfx.tock();
           break;
         case 'cuckoo':
-          g.y = r ? -Math.max(0, Math.sin(phase)) * 16 : 0;
+          g.y = base.y + (r ? -Math.max(0, Math.sin(phase)) * 24 : 0);
+          g.rotation = r ? Math.max(0, Math.sin(phase)) * -0.25 : 0;
           if (r && Math.floor(phase / (Math.PI * 2)) !== Math.floor((phase - Math.PI * 0.5 * r * dt) / (Math.PI * 2))) sfx.cuckoo(1);
           break;
         case 'fountain':
-          g.scaleY = r ? 1 + Math.abs(Math.sin(phase * 3)) * 0.15 : 1;
+          g.scaleY = base.sy * (r ? 1 + Math.abs(Math.sin(phase * 3)) * 0.3 : 1);
           break;
         case 'lift':
-          g.y = r ? Math.sin(phase * 0.5) * 14 : 0;
+          g.y = base.y + (r ? Math.sin(phase * 0.5) * 22 : 0);
           break;
       }
     }
+    this.updateGoalTicks();
   }
 
   // ───────────────────────────── Contraption Cards ─────────────────────────────
@@ -529,7 +590,7 @@ export class BenchScene extends MetaScene {
   private freeBuild(): void {
     this.close();
     this.cardDef = null;
-    this.goalText?.destroy();
+    this.clearGoal();
     this.state = { gears: [], gadgets: [] };
     this.undo = [];
     this.refreshGadgetTray();
@@ -545,14 +606,70 @@ export class BenchScene extends MetaScene {
     this.running = true;
     setButtonIcon(this.runBtn, '⏸');
     this.refreshGadgetTray();
-    this.goalText?.destroy();
+    this.clearGoal();
     this.goalText = this.add
       .text(640, 569, showWords() ? c.say : '', { fontFamily: FONT, fontSize: '19px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 14, y: 3 } })
       .setOrigin(0.5)
       .setDepth(HUD);
     this.goalText.setInteractive().on('pointerup', () => void speak('nana', c.say, `card.${c.id}`));
     void speak('nana', c.say, `card.${c.id}`);
+    this.buildGoalRow(c);
     this.refresh();
+  }
+
+  /**
+   * The card's goal as pictures (it works without reading): the power source, an arrow, then
+   * each gadget to get going, each with a tick that lights while that gadget is running.
+   */
+  private buildGoalRow(c: ContraptionCard): void {
+    this.goalRow?.destroy();
+    this.goalTicks = new Map();
+    const row = this.add.container(0, 569).setDepth(HUD);
+    const src = c.gadgets.filter((g) => isSource(g.kind));
+    const outs = c.gadgets.filter((g) => !isSource(g.kind));
+    const step = 46;
+    const width = (src.length + outs.length) * step + 24;
+    const textW = showWords() ? this.goalText?.width ?? 0 : 0;
+    row.x = textW ? 640 - textW / 2 - width - 6 : 640 - width / 2;
+    let x = step / 2;
+    const plate = this.add.graphics().fillStyle(0x342f29, 0.8).fillRoundedRect(-6, -24, width + 12, 48, 14);
+    row.add(plate);
+    for (const g of src) {
+      row.add(this.gadgetIcon(g.kind, 0.28).setPosition(x, 0));
+      x += step;
+    }
+    row.add(this.add.text(x - 14, 0, '➜', { fontFamily: FONT, fontSize: '22px', color: '#f1d391' }).setOrigin(0.5));
+    x += 24 - step / 2 + step / 2;
+    for (const g of outs) {
+      row.add(this.gadgetIcon(g.kind, 0.28).setPosition(x, 0));
+      const tick = this.add.container(x + 14, -14);
+      tick.add(this.add.graphics().fillStyle(0x485541, 1).fillCircle(0, 0, 10).lineStyle(2, 0xf4ebd5, 1).strokeCircle(0, 0, 10));
+      tick.add(this.add.text(0, 0, '✓', { fontFamily: FONT, fontSize: '14px', color: '#f4ebd5', fontStyle: 'bold' }).setOrigin(0.5));
+      tick.setVisible(false);
+      row.add(tick);
+      this.goalTicks.set(g.id, tick);
+      x += step;
+    }
+    this.goalRow = row;
+  }
+
+  private updateGoalTicks(): void {
+    if (!this.goalRow || !this.run) return;
+    for (const [id, tick] of this.goalTicks) {
+      const on = !this.run.jammed && (this.run.ratio[id] ?? 0) !== 0;
+      if (on !== tick.visible) {
+        tick.setVisible(on);
+        if (on) this.tweens.add({ targets: tick, scale: { from: 1.6, to: 1 }, duration: 220, ease: 'Back.easeOut' });
+      }
+    }
+  }
+
+  private clearGoal(): void {
+    this.goalText?.destroy();
+    this.goalText = undefined;
+    this.goalRow?.destroy();
+    this.goalRow = undefined;
+    this.goalTicks = new Map();
   }
 
   private checkCard(): void {
@@ -600,7 +717,7 @@ export class BenchScene extends MetaScene {
         }
         this.close();
         this.cardDef = null;
-        this.goalText?.destroy();
+        this.clearGoal();
         this.pushUndo();
         this.state = s;
         this.refreshGadgetTray();
@@ -637,7 +754,7 @@ export class BenchScene extends MetaScene {
           if (!st) return;
           this.close();
           this.cardDef = null;
-          this.goalText?.destroy();
+          this.clearGoal();
           this.pushUndo();
           this.state = st;
           this.refreshGadgetTray();
