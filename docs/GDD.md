@@ -1011,37 +1011,61 @@ The game's audio identity is **authentic mechanical foley**. The audio team reco
 
 ## 24. Art Direction
 
-### 24.1 Visual style: "Macro Brass"
-The game looks like the world through a **macro camera lens**: shallow depth of field, warm golden light, dust motes drifting through sunbeams, and every surface richly textured — polished brass, rose copper, worn wood grain, enamel, glass, felt, paper labels in Nana's handwriting.
+### 24.1 Visual style: "Copper & Moss"
+
+The approved direction is a **hand-drawn industrial storybook**: fine walnut-coloured outlines,
+pencil hatching, aged paper, tarnished copper, chipped teal paint, crooked timber and trailing
+greenery. Warm lamplight and pale daylight make the worn workshop welcoming. Machinery feels
+patched, handmade and loved; its texture stays quieter around faces, words and puzzle targets.
+
+The approved title page and stormy-night opening establish the visual baseline for the full
+game. Their composition, Kip proportions and copper/teal/moss materials carry into every room
+and menu. The implementation guide is [`ART_DIRECTION.md`](ART_DIRECTION.md).
 
 ### 24.2 Inside vs. outside
-- **Outside (the shop, the town):** Cozy, painterly, warm; a slightly tilt-shift miniature feel that makes everything look like a beloved toy town.
-- **Inside (the objects):** Vast and wondrous. Scale is everything: gears the size of houses, wires like tree roots, light pouring through tiny holes like cathedral windows. Each object has a distinct color story:
+
+- **Outside (the shop, the town):** Layered illustrations of a seaside workshop and crooked town:
+  drawers, jars, patched wood, copper fittings, ivy, amber lamps and soft blue-green windows.
+  Familiar objects beside Kip establish his thumb-sized scale.
+- **Inside (the objects):** Fixed 2D cutaways with the same ink and material treatment. Gears can
+  feel enormous, wires become tree roots, and shafts of light reveal the machine's interior.
+  Each object keeps a distinct, muted colour story:
 
 | Object | Color story |
 |---|---|
-| Cuckoo Clock | Carved walnut, gold brass, morning sunbeams |
-| Music Box | Velvet rose, silver, pearl, soft candlelight |
-| Toy Train | Primary toy colors, papier-mâché greens, painted sky |
-| Retro Radio | Art-deco amber glow, copper, Bakelite brown, tube-light orange |
-| Tea Machine | Polished copper, emerald glass, white steam |
-| Big Bertie | Retro tin-toy red and cream, flashing bulbs |
-| Star Orrery | Midnight blue, starlight, warm lamp gold |
-| Clock Tower | Stone, iron, stained-glass clock faces, sunset |
+| Cuckoo Clock | Pencilled walnut, tarnished brass, amber morning light |
+| Music Box | Dusty rose velvet, aged silver, ivory, soft candlelight |
+| Toy Train | Faded painted copper, moss hills, pale blue-green sky |
+| Retro Radio | Worn art-deco wood, copper, Bakelite brown, amber tubes |
+| Tea Machine | Patched copper, muted green glass, cream steam |
+| Big Bertie | Faded tin-toy red, parchment cream, small warm bulbs |
+| Star Orrery | Desaturated midnight teal, ivory stars, tarnished brass |
+| Clock Tower | Moss-grey stone, weathered iron, muted glass, copper sunset |
 
 ### 24.3 Kip's design rules
-- Readable silhouette at small sizes (round body + key = instantly recognisable).
-- The winding key always visible — it's the icon.
-- Eyes are the emotional center: shutter-eyelids for blinks, lens zoom for curiosity, tiny reflections for wonder.
+
+- Readable silhouette at small sizes: a round copper pocket-watch body, large winding key,
+  spring legs and broad, slightly mismatched feet.
+- Chipped teal repair patches, small rivets and etched seams connect Kip to the workshop.
+  Player-selected finishes, keys, plates, eyes, hats and feet remain visible and customisable.
+- The winding key stays visible — it's the icon.
+- Big glass-lens eyes are the emotional centre: live pupils, shutter-eyelids, curious looks and
+  bright reflections. A small amber antenna bulb gives warmth without washing out the face.
 - **Toy-ready:** Kip is designed to be manufactured as a real wind-up toy (Section 29).
 
 ### 24.4 Camera: the Diorama View
-Young children struggle with free 3D cameras, so rooms are presented as **cutaway dioramas** — like looking into a dollhouse with the front wall removed.
-- Default: a fixed, carefully composed angle per room that shows every important part.
-- The camera rotates in **90° steps** (swipe or shoulder button) to see around large mechanisms.
-- **Auto-framing** keeps Kip and the current objective in view.
-- **Zoom** in for fiddly work, out to see the whole machine.
-- Big Fix sequences use cinematic, continuous camera flights through the whole object.
+
+The web edition uses **fixed 2D illustrated cutaways**, composed for a 1280×720 landscape canvas
+and scaled to the device. Layered walls, furniture, light and foreground details suggest depth.
+
+- Keep active mechanisms, empty sockets and the parts tray clear of decorative clutter.
+- Animate the live parts: Kip's eyes and spring legs, winding keys, gears, power flow and repaired
+  machines. Painted backdrops provide scenery; they do not replace puzzle interactions.
+- Present words on quiet parchment surfaces with dark walnut type, copper rims and clear
+  moss/teal selections. Preserve generous touch targets, high-contrast outlines and visual hints.
+- Use fine paper grain and bounded hatching; Calm Visuals reduces particles and optional camera effects.
+- Manifest-listed painted assets sit behind live characters and controls. Procedural art remains
+  available when an image is missing or has not been cached for offline play.
 
 ---
 

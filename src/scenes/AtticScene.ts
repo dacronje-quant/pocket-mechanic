@@ -7,6 +7,8 @@
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { drawRoomBackdrop } from '../art/backgrounds';
+import { CM } from '../art/copperMoss';
+import { collectionFrame, etchedPlate } from '../art/finish';
 import { coverImage, withArt } from '../art/generated';
 import { drawSmallObject } from '../art/objects';
 import { ATTIC_OBJECTS, atticRoomId, BOX_COMBINATION } from '../content/attic';
@@ -33,6 +35,7 @@ export class AtticScene extends MetaScene {
     const p = profile();
     drawRoomBackdrop(this, 'attic', 700).setDepth(0);
     this.add.rectangle(0, 0, 1280, 720, 0x0b1020, 0.35).setOrigin(0).setDepth(1);
+    collectionFrame(this, 35, 100, 942, 607, CM.tealDark, 0.62);
     // moonlight through the round window
     const moon = this.add.image(1150, 110, 'glow').setScale(4).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.4).setDepth(2);
     this.tweens.add({ targets: moon, alpha: 0.25, duration: 3000, yoyo: true, repeat: -1 });
@@ -45,15 +48,15 @@ export class AtticScene extends MetaScene {
     scrollGrid(this, 40, 100, cols * cell.w, 610, ATTIC_OBJECTS.length, cell, (i, x, y) => {
       const o = ATTIC_OBJECTS[i];
       const done = objectDone(p, o);
-      const t = tile(this, x, y, 172, 176, () => this.open(o), { caption: showWords() ? o.title : undefined, captionSize: 14, fill: done ? 0xe6e0ff : 0xd8cbb0 });
+      const t = tile(this, x, y, 172, 176, () => this.open(o), { caption: showWords() ? o.title : undefined, captionSize: 14, fill: done ? 0xd4ded2 : 0xd8cbb0 });
       const g = this.add.graphics();
       drawSmallObject(g, o.id, 0, -28, 0.6);
       t.add(g);
       for (let n = 1; n <= 3; n++) {
         const fixed = roomFixed(p, atticRoomId(o.id, n));
-        t.add(this.add.circle(-60 + (n - 1) * 16, -66, 6, fixed ? 0x2e9b5f : 0x9a8a72).setStrokeStyle(2, 0x3b260b));
+        t.add(this.add.circle(-60 + (n - 1) * 16, -66, 6, fixed ? 0x78815a : 0x9a8a72).setStrokeStyle(2, 0x3b260b));
       }
-      if (done) t.add(this.add.text(58, -62, o.clue, { fontFamily: SERIF, fontSize: '30px', color: '#5f3dc4', fontStyle: 'bold' }).setOrigin(0.5));
+      if (done) t.add(this.add.text(58, -62, o.clue, { fontFamily: SERIF, fontSize: '30px', color: '#537a72', fontStyle: 'bold' }).setOrigin(0.5));
       this.hot(`attic-${o.id}`, () => this.open(o));
       return t;
     }).setDepth(10);
@@ -94,10 +97,10 @@ export class AtticScene extends MetaScene {
       g.setVisible(false);
       add(coverImage(this, key, 330, 190, 260, 200));
     });
-    add(this.add.text(460, 440, o.clue, { fontFamily: SERIF, fontSize: '64px', color: '#5f3dc4', fontStyle: 'bold' }).setOrigin(0.5));
+    add(this.add.text(460, 440, o.clue, { fontFamily: SERIF, fontSize: '64px', color: '#537a72', fontStyle: 'bold' }).setOrigin(0.5));
     if (showWords()) {
-      add(this.add.text(820, 170, o.title, { fontFamily: SERIF, fontSize: '30px', color: '#3b260b', fontStyle: 'bold' }).setOrigin(0.5, 0));
-      add(this.add.text(620, 220, o.history, { fontFamily: FONT, fontSize: '19px', color: '#3b260b', wordWrap: { width: 380 }, lineSpacing: 4 }));
+      add(this.add.text(820, 170, o.title, { fontFamily: SERIF, fontSize: '30px', color: '#342f29', fontStyle: 'bold' }).setOrigin(0.5, 0));
+      add(this.add.text(620, 220, o.history, { fontFamily: FONT, fontSize: '19px', color: '#342f29', wordWrap: { width: 380 }, lineSpacing: 4 }));
     }
     add(roundButton(this, 820, 470, '🔊', () => this.bubble.say(o.history, { id: `attic.${o.id}.history` }), { r: 30, fontSize: 24 }));
     [1, 2, 3].forEach((n) =>
@@ -126,13 +129,12 @@ export class AtticScene extends MetaScene {
       return obj;
     };
     add(blocker(this, depth, 0.7, () => this.close()));
-    add(card(this, 640, 360, 900, 520, 0x8a5a33, 0x3d2412));
+    add(card(this, 640, 360, 900, 520, 0x856c50, 0x342f29));
     // the lid: four carved machines
     BOX_LID.forEach((id, i) => {
       const x = 640 + (i - 1.5) * 190;
       const lid = add(this.add.graphics());
-      lid.fillStyle(0xf3e2bd, 1);
-      lid.fillRoundedRect(x - 70, 160, 140, 130, 16);
+      etchedPlate(lid, x - 70, 160, 140, 130, CM.paper, 1, i + 456);
       drawSmallObject(lid, id, x, 225, 0.6);
     });
     // dials cycle through the symbols found so far
@@ -141,7 +143,7 @@ export class AtticScene extends MetaScene {
     const set = [0, 0, 0, 0];
     const dials = [0, 1, 2, 3].map((i) => {
       const x = 640 + (i - 1.5) * 190;
-      const t = add(this.add.text(x, 400, options[0], { fontFamily: SERIF, fontSize: '64px', color: '#3b260b', fontStyle: 'bold', backgroundColor: '#fff6e2', padding: { x: 22, y: 6 } }).setOrigin(0.5));
+      const t = add(this.add.text(x, 400, options[0], { fontFamily: SERIF, fontSize: '64px', color: '#342f29', fontStyle: 'bold', backgroundColor: '#f4ebd5', padding: { x: 22, y: 6 } }).setOrigin(0.5));
       t.setInteractive({ useHandCursor: true });
       t.on('pointerup', () => {
         set[i] = (set[i] + 1) % options.length;

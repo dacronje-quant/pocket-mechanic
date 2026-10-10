@@ -1,6 +1,6 @@
 /**
  * Voices (GDD §23.3). A line plays its generated voice file when the build has
- * one (public/audio/voice, made by scripts/generate-assets.mjs); otherwise the
+ * one (public/audio/voice, made by scripts/generate-elevenlabs.mjs); otherwise the
  * device's own speech reads it in the character's pitch and pace. Kip and
  * Tess only ever beep. Every call resolves when the line has finished, so the
  * story can wait for it.
@@ -11,6 +11,7 @@ import { ac, audioFile, bus, loadBuffer, voiceLevel } from './engine';
 import { beeps } from './sfx';
 
 let playing: AudioBufferSourceNode | null = null;
+let generation = 0;
 let chip = 'voice-classic';
 
 export function setVoiceChip(id: string): void {
@@ -31,6 +32,7 @@ function pickVoice(): SpeechSynthesisVoice | null {
 }
 
 export function stopVoice(): void {
+  generation++;
   try {
     playing?.stop();
   } catch {
@@ -51,6 +53,7 @@ export function lineDuration(text: string): number {
 
 export async function speak(who: CharId, text: string, id?: string): Promise<void> {
   stopVoice();
+  const token = generation;
   const v = VOICES[who];
   if (v?.beeps) {
     beeps(text, chip, who === 'tess' ? 1.25 : 1);
@@ -65,6 +68,7 @@ export async function speak(who: CharId, text: string, id?: string): Promise<voi
   if (file) {
     // a missing or slow voice file must never hold up the story: give it a moment, then use device speech
     const buf = await Promise.race([loadBuffer(file), wait(4).then(() => null)]);
+    if (token !== generation) return;
     const c = ac();
     const dest = bus('voice');
     if (buf && c && dest) {
@@ -91,7 +95,7 @@ export async function speak(who: CharId, text: string, id?: string): Promise<voi
       return;
     }
   }
-  await speakDevice(text, v?.pitch ?? 1, v?.rate ?? 0.95);
+  if (token === generation) await speakDevice(text, v?.pitch ?? 1, v?.rate ?? 0.95);
 }
 
 function speakDevice(text: string, pitch: number, rate: number): Promise<void> {

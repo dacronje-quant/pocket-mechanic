@@ -187,6 +187,7 @@ async function run(device) {
   }
 
   // ── new profile, by touch: colour → letters (with backspace) → ▶ → Play Style ──
+  await tapAt(500, 515);
   await page.waitForFunction(() => window.pm.hot.colour0, null, { timeout: 30000 });
   await page.waitForTimeout(600);
   await shot('01-colours');
@@ -195,7 +196,7 @@ async function run(device) {
   await tapAt(1135, 112);
   await page.waitForTimeout(1500);
   if ((await tappables()).some((t) => t.label === 'A')) fail(`[${device}] keypad appeared after the panel was closed`);
-  await tapAt(640, 420); // + : a new fixer, by touch
+  await tapAt(500, 515); // + : a new fixer, by touch
   await page.waitForFunction(() => window.pm.hot.colour0, null, { timeout: 30000 });
   await page.waitForTimeout(600);
   await tapAt(470 + 200, 250); // second colour
@@ -207,7 +208,7 @@ async function run(device) {
     // slow enough for a blink timer to fire between letters: this froze the game before
     await page.waitForTimeout(k === 'A' ? 4500 : 300);
   }
-  const typed = await page.evaluate(() => window.pm.game.scene.getScene('title').children.list.find((o) => o.type === 'Text' && /^[A-Z·]{1,3}$/.test(o.text) && o.style.fontSize === '40px')?.text);
+  const typed = await page.evaluate(() => window.pm.game.scene.getScene('title').children.list.find((o) => o.name === 'keypad-value')?.text);
   if (typed !== 'SAM') fail(`[${device}] initials should read SAM, got ${typed}`);
   await alive('letters');
   await shot('02-letters');
@@ -296,7 +297,7 @@ async function run(device) {
       const hasJob = await page.evaluate(() => !!window.pm.hot.job);
       if (!hasJob) break;
       if (sameFor === 0) await shot(`shop-after-${repairs}`);
-      await tapAt(560, 500); // the job on the workbench
+      await tapAt(560, 427); // the job on the painted workbench surface
       if (!(await leftScene('shop', 8000))) await tapAt(118, 400); // or the door
       await leftScene('shop', 8000);
     } else {

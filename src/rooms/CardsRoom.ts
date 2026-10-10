@@ -6,13 +6,15 @@
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
+import { CM, drawPatina } from '../art/copperMoss';
+import { etchedPlate } from '../art/finish';
 import { cardKey, runCards, type Card, type Move } from '../mechanism/cards';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
 import { FONT, roundButton } from '../ui/widgets';
 import { cardsSolved } from '../rules';
 
 const MOVE_ICON: Record<Move, string> = { stepL: '⬅', stepR: '➡', spin: '🔄', clap: '👏', wave: '👋', jump: '⬆' };
-const MOVE_COLOR: Record<Move, number> = { stepL: 0x3b7dd8, stepR: 0x2e9b5f, spin: 0x8e5cc4, clap: 0xf2a33a, wave: 0xe05a47, jump: 0x1a9e9a };
+const MOVE_COLOR: Record<Move, number> = { stepL: 0x648995, stepR: 0x8a9b69, spin: 0x917d96, clap: 0xc2a168, wave: 0xbb785b, jump: 0x669891 };
 
 interface CardView {
   card: Card;
@@ -60,9 +62,9 @@ export class CardsRoom extends RoomBase<'cards'> {
     const st = this.add.graphics().setDepth(D.back + 1);
     st.fillStyle(0x000000, 0.3);
     st.fillEllipse(this.stageX + 6, this.stageY + 150, 380, 70);
-    st.fillStyle(0x8a5a33, 1);
+    st.fillStyle(0x856c50, 1);
     st.fillEllipse(this.stageX, this.stageY + 140, 380, 70);
-    st.fillStyle(0xd64541, 1);
+    st.fillStyle(0xad6b51, 1);
     st.fillRect(this.stageX - 200, 100, 30, 420);
     st.fillRect(this.stageX + 170, 100, 30, 420);
     if (this.def.show) {
@@ -75,7 +77,7 @@ export class CardsRoom extends RoomBase<'cards'> {
     this.sprites = this.add.graphics().setDepth(D.mech + 3).setBlendMode(Phaser.BlendModes.ADD);
     if (this.def.scenarios.some((s) => s.sensors)) {
       this.sensorText = this.add
-        .text(this.stageX, 120, '', { fontFamily: FONT, fontSize: '34px', color: '#fff3d0', backgroundColor: '#2b1d14cc', padding: { x: 12, y: 4 } })
+        .text(this.stageX, 120, '', { fontFamily: FONT, fontSize: '34px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 12, y: 4 } })
         .setOrigin(0.5)
         .setDepth(D.hud - 1);
     }
@@ -84,7 +86,7 @@ export class CardsRoom extends RoomBase<'cards'> {
       this.buildParty();
     } else {
       this.buildRack();
-      roundButton(this, 1180, 600, '▶', () => this.play(), { r: 48, fontSize: 44, color: 0x8ce99a, say: 'Play!' }).setDepth(D.hud);
+      roundButton(this, 1180, 600, '▶', () => this.play(), { r: 48, fontSize: 44, color: 0xa0a477, say: 'Play!' }).setDepth(D.hud);
     }
     this.time.delayedCall(900, () => this.showDemo());
   }
@@ -122,19 +124,18 @@ export class CardsRoom extends RoomBase<'cards'> {
     const twoCols = n > 5;
     const perCol = twoCols ? Math.ceil(n / 2) : n;
     const g = this.add.graphics().setDepth(D.back + 2);
-    g.fillStyle(0x3d2b25, 1);
-    g.fillRoundedRect(twoCols ? 150 : 230, 118, twoCols ? 420 : 240, perCol * 62 + 24, 16);
+    etchedPlate(g, twoCols ? 150 : 230, 118, twoCols ? 420 : 240, perCol * 62 + 24, CM.tealDark, 1, 382);
     for (let i = 0; i < n; i++) {
       const col = twoCols ? Math.floor(i / perCol) : 0;
       const row = twoCols ? i % perCol : i;
       const x = (twoCols ? 255 : 350) + col * 210;
       const y = 160 + row * 62;
       this.slotPos.push({ x, y });
-      g.lineStyle(3, 0xfff4c8, 0.45);
+      g.lineStyle(3, 0xf4ebd5, 0.45);
       g.strokeRoundedRect(x - 90, y - 26, 180, 52, 10);
-      g.fillStyle(0xfff4c8, 0.6);
+      g.fillStyle(0xf4ebd5, 0.6);
       g.fillCircle(x - 104, y, 4);
-      this.add.text(x - 104, y - 22, String(i + 1), { fontFamily: FONT, fontSize: '13px', color: '#fff4c8' }).setOrigin(0.5).setDepth(D.back + 3);
+      this.add.text(x - 104, y - 22, String(i + 1), { fontFamily: FONT, fontSize: '13px', color: '#f4ebd5' }).setOrigin(0.5).setDepth(D.back + 3);
     }
     const spots = this.trayCardSpots(this.def.tray.length);
     this.def.tray.forEach((card, i) => {
@@ -169,13 +170,16 @@ export class CardsRoom extends RoomBase<'cards'> {
     const g = this.add.graphics();
     g.fillStyle(0x000000, 0.25);
     g.fillRoundedRect(-86, -22, 176, 50, 8);
-    g.fillStyle(card.type === 'move' ? 0xf6ead0 : card.type === 'repeat' ? 0xd0ebff : 0xe5dbff, 1);
+    g.fillStyle(card.type === 'move' ? CM.paper : card.type === 'repeat' ? 0xc1d3c6 : 0xd1c5ce, 1);
     g.fillRoundedRect(-88, -25, 176, 50, 8);
+    g.lineStyle(1.3, CM.copperDark, 0.8);
+    g.strokeRoundedRect(-88, -25, 176, 50, 8);
+    drawPatina(g, -84, -22, 168, 44, 651, 1.1);
     // punched holes: a row pattern that differs per card
     const key = cardKey(card);
     for (let k = 0; k < 8; k++) {
       const punched = (key.charCodeAt(k % key.length) + k) % 3 === 0;
-      g.fillStyle(punched ? 0x2b1d14 : 0xd9c7a0, 1);
+      g.fillStyle(punched ? 0x342f29 : 0xd9c7a0, 1);
       g.fillCircle(-76 + k * 7, 18, 2.5);
     }
     c.add(g);
@@ -188,7 +192,7 @@ export class CardsRoom extends RoomBase<'cards'> {
       c.add(this.add.text(14, -3, `×${card.times}${card.span && card.span > 1 ? `  ⇣${card.span}` : ''}`, { fontFamily: FONT, fontSize: '24px', color: '#1c3d6e', fontStyle: 'bold' }).setOrigin(0.5));
     } else {
       c.add(this.add.text(-56, -3, '🎵', { fontFamily: FONT, fontSize: '22px' }).setOrigin(0.5));
-      c.add(this.add.text(-24, -3, '?', { fontFamily: FONT, fontSize: '22px', color: '#5f3dc4', fontStyle: 'bold' }).setOrigin(0.5));
+      c.add(this.add.text(-24, -3, '?', { fontFamily: FONT, fontSize: '22px', color: '#537a72', fontStyle: 'bold' }).setOrigin(0.5));
       g.fillStyle(MOVE_COLOR[card.then], 1);
       g.fillRoundedRect(-8, -20, 40, 34, 6);
       c.add(this.add.text(12, -3, MOVE_ICON[card.then], { fontFamily: FONT, fontSize: '20px' }).setOrigin(0.5));
@@ -373,7 +377,7 @@ export class CardsRoom extends RoomBase<'cards'> {
     g.fillStyle(0x3d2b25, 1);
     g.fillRect(X(-34), y + 40, 22 * Math.abs(s), 80);
     g.fillRect(X(12), y + 40, 22 * Math.abs(s), 80);
-    g.fillStyle(0xd64541, 1);
+    g.fillStyle(0xad6b51, 1);
     g.fillRoundedRect(x - 70 * Math.abs(s), y - 80, 140 * Math.abs(s), 130, 20);
     g.fillStyle(0xf2e6c8, 1);
     g.fillRoundedRect(x - 44 * Math.abs(s), y - 56, 88 * Math.abs(s), 60, 10);
@@ -381,7 +385,7 @@ export class CardsRoom extends RoomBase<'cards'> {
       g.fillStyle([0xffd43b, 0x74c0fc, 0x8ce99a, 0xff8787][i], this.pose && Math.floor(this.t * 6 + i) % 2 ? 1 : 0.35);
       g.fillCircle(X(-27 + i * 18), y - 26, 6);
     }
-    g.fillStyle(0xd64541, 1);
+    g.fillStyle(0xad6b51, 1);
     g.fillRoundedRect(x - 50 * Math.abs(s), y - 170, 100 * Math.abs(s), 86, 18);
     g.fillStyle(0xf2e6c8, 1);
     g.fillCircle(X(-22), y - 132, 14 * Math.abs(s));
@@ -389,7 +393,7 @@ export class CardsRoom extends RoomBase<'cards'> {
     g.fillStyle(0x222222, 1);
     g.fillCircle(X(-22), y - 132, 6 * Math.abs(s));
     g.fillCircle(X(22), y - 132, 6 * Math.abs(s));
-    g.lineStyle(16, 0xd64541, 1);
+    g.lineStyle(16, 0xad6b51, 1);
     g.lineBetween(X(-70), y - 66, X(-70) + Math.sin(armL) * 70 * s, y - 66 + Math.cos(armL) * 70);
     g.lineBetween(X(70), y - 66, X(70) + Math.sin(armR) * 70 * s, y - 66 + Math.cos(armR) * 70);
   }

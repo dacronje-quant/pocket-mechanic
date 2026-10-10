@@ -79,9 +79,9 @@ function checkRoom(room: RoomDef): void {
 }
 
 describe('Great Repair rooms', () => {
-  it('has 49 rooms plus 8 Big Fixes, all referenced by a repair', () => {
+  it('has 53 rooms plus 8 Big Fixes, all referenced by a repair', () => {
     const ids = REPAIRS.flatMap((r) => r.rooms);
-    expect(ids.length).toBe(57);
+    expect(ids.length).toBe(61);
     expect(ids.filter((id) => id.endsWith('-bf')).length).toBe(8);
     for (const id of ids) expect(getRoom(id), id).toBeDefined();
     expect(new Set(STORY_ROOMS.map((r) => r.id)).size).toBe(STORY_ROOMS.length);
@@ -98,13 +98,15 @@ describe('Great Repair rooms', () => {
 });
 
 describe('Quick Fixes', () => {
-  it('has 24, unlocking in eight sets of three', () => {
-    expect(QUICK_FIXES.length).toBe(24);
+  it('keeps 24 originals in eight sets of three, plus six preserved story puzzles', () => {
+    const originals = QUICK_FIXES.filter(q => !q.id.startsWith('qf-archive-'));
+    expect(originals.length).toBe(24);
+    expect(QUICK_FIXES.length).toBe(30);
     const sets = new Map<number, number>();
-    for (const q of QUICK_FIXES) sets.set(q.after, (sets.get(q.after) ?? 0) + 1);
+    for (const q of originals) sets.set(q.after, (sets.get(q.after) ?? 0) + 1);
     expect([...sets.values()].every((n) => n === 3)).toBe(true);
     expect(sets.size).toBe(8);
-    expect(new Set(QUICK_FIXES.map((q) => q.id)).size).toBe(24);
+    expect(new Set(QUICK_FIXES.map((q) => q.id)).size).toBe(30);
   });
 
   for (const q of QUICK_FIXES) {

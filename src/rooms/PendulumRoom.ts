@@ -6,6 +6,7 @@
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
+import { CM, drawPatina } from '../art/copperMoss';
 import { notchLength, notchTempo, period, tempoMatches } from '../mechanism/pendulum';
 import { pendulumSolved } from '../rules';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
@@ -50,10 +51,15 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
       const bg = this.add.graphics();
       bg.fillStyle(0x000000, 0.3);
       bg.fillCircle(3, 5, 34);
-      bg.fillStyle(p.fixed ? 0x9aa6b4 : 0xd9a441, 1);
+      bg.fillStyle(p.fixed ? 0x82938c : 0xbca16a, 1);
       bg.fillCircle(0, 0, 34);
-      bg.fillStyle(0xfff0b8, 0.4);
+      bg.fillStyle(0xf4ebd5, 0.4);
       bg.fillCircle(-10, -10, 13);
+      bg.lineStyle(2, CM.ink, 0.8);
+      bg.strokeCircle(0, 0, 34);
+      bg.lineStyle(1, CM.copperLight, 0.7);
+      bg.strokeCircle(0, 0, 29);
+      drawPatina(bg, -21, -21, 42, 42, i + 31, 1.8);
       bob.add(bg);
       bob.setSize(90, 90);
       const v: PView = { id: p.id, px, py: 130, fixed: !!p.fixed, bob, amp: swinging ? 0.3 : 0, phase: 0, side: i };
@@ -115,7 +121,7 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
     }
     if (this.def.goal === 'tempo' && this.style.id !== 'tinker') {
       this.meter = this.add
-        .text(1000, 200, '', { fontFamily: FONT, fontSize: '22px', color: '#fff3d0', backgroundColor: '#2b1d14cc', padding: { x: 12, y: 8 }, align: 'center' })
+        .text(1000, 200, '', { fontFamily: FONT, fontSize: '22px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 12, y: 8 }, align: 'center' })
         .setOrigin(0.5)
         .setDepth(D.hud - 1);
     }
@@ -177,16 +183,16 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
       const by = v.py + Math.cos(ang) * len;
       v.bob.setPosition(bx, by);
       // rod with notches
-      g.lineStyle(10, 0x5e3f10, 1);
+      g.lineStyle(10, 0x554638, 1);
       g.lineBetween(v.px, v.py, v.px + Math.sin(ang) * ROD(this.def.maxNotch), v.py + Math.cos(ang) * ROD(this.def.maxNotch));
       g.lineStyle(5, 0xb88a2c, 1);
       g.lineBetween(v.px, v.py, v.px + Math.sin(ang) * ROD(this.def.maxNotch), v.py + Math.cos(ang) * ROD(this.def.maxNotch));
       for (let k = this.def.minNotch; k <= this.def.maxNotch; k++) {
         const r = ROD(k);
-        g.fillStyle(0xfff0b8, 0.8);
+        g.fillStyle(0xf4ebd5, 0.8);
         g.fillCircle(v.px + Math.sin(ang) * r, v.py + Math.cos(ang) * r, 3);
       }
-      g.fillStyle(0x3d2412, 1);
+      g.fillStyle(0x342f29, 1);
       g.fillCircle(v.px, v.py, 14);
       if (this.style.numbers) {
         g.fillStyle(0, 0);
@@ -198,13 +204,13 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
     if (this.def.pallet || this.def.goal === 'push') {
       for (let i = 0; i < 12; i++) {
         const a = (i / 12) * Math.PI * 2 + (running ? Math.floor(this.t * 2) * 0.26 : 0);
-        g.fillStyle(0xd9a441, 1);
+        g.fillStyle(0xbca16a, 1);
         g.fillTriangle(e.x + 110 + Math.cos(a) * 40, 150 + Math.sin(a) * 40, e.x + 110 + Math.cos(a + 0.2) * 28, 150 + Math.sin(a + 0.2) * 28, e.x + 110 + Math.cos(a - 0.2) * 28, 150 + Math.sin(a - 0.2) * 28);
       }
-      g.fillStyle(0xd9a441, 1);
+      g.fillStyle(0xbca16a, 1);
       g.fillCircle(e.x + 110, 150, 28);
       if (this.def.pallet && !this.state.pallet) {
-        g.lineStyle(3, 0xfff4c8, 0.5 + Math.sin(this.t * 4) * 0.3);
+        g.lineStyle(3, 0xf4ebd5, 0.5 + Math.sin(this.t * 4) * 0.3);
         g.strokeRoundedRect(e.x - 50, e.y + 8, 100, 44, 8);
       }
     }
@@ -217,10 +223,10 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
       // the bridge forms when both bobs swing together
       const [a, b] = this.views;
       const together = this.state.notches[a.id] === this.state.notches[b.id];
-      g.lineStyle(14, together ? 0x8a5a33 : 0x8a5a33, together ? 1 : 0.25);
+      g.lineStyle(14, together ? 0x856c50 : 0x856c50, together ? 1 : 0.25);
       g.lineBetween(a.bob.x + 30, a.bob.y, b.bob.x - 30, b.bob.y);
       if (together) {
-        g.fillStyle(0x8a5a33, 1);
+        g.fillStyle(0x856c50, 1);
         for (let k = 0; k < 8; k++) g.fillRect(a.bob.x + 30 + ((b.bob.x - a.bob.x - 60) * k) / 8, a.bob.y - 12, 18, 6);
       }
     }
@@ -253,7 +259,7 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
     for (const v of this.views) {
       const want = this.def.solution.notches?.[v.id];
       if (want === undefined || want === this.state.notches[v.id]) continue;
-      g.lineStyle(4, 0xfff4c8, alpha + 0.2);
+      g.lineStyle(4, 0xf4ebd5, alpha + 0.2);
       g.strokeCircle(v.px, v.py + ROD(want), 34);
     }
   }

@@ -8,6 +8,8 @@ import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { speak } from '../audio/voice';
 import { drawRoomBackdrop } from '../art/backgrounds';
+import { CM } from '../art/copperMoss';
+import { collectionFrame } from '../art/finish';
 import { coverImage, withArt } from '../art/generated';
 import { drawSmallObject } from '../art/objects';
 import { drawPart } from '../art/parts';
@@ -49,12 +51,13 @@ export class PediaScene extends MetaScene {
     const p = profile();
     drawRoomBackdrop(this, 'shop', 700).setDepth(0);
     this.add.rectangle(0, 0, 1280, 720, 0x1a120c, 0.4).setOrigin(0).setDepth(1);
+    collectionFrame(this, 155, 100, 1090, 597, CM.woodDark, 0.66);
     this.music('shop', 0.5);
     this.backButton();
     this.heading('Part-o-pedia');
     const have = PEDIA.filter((e) => p.pedia.includes(e.id)).length;
     this.add
-      .text(1220, 52, `${have} / ${PEDIA.length}`, { fontFamily: FONT, fontSize: '26px', color: '#ffe48a', fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 6 })
+      .text(1220, 52, `${have} / ${PEDIA.length}`, { fontFamily: FONT, fontSize: '26px', color: '#f1d391', fontStyle: 'bold', stroke: '#342f29', strokeThickness: 6 })
       .setOrigin(1, 0.5)
       .setDepth(HUD);
     const fams: Array<[Family | 'attic', string]> = [...FAMILIES];
@@ -66,7 +69,7 @@ export class PediaScene extends MetaScene {
       drawPart(g, icon, -6, 0, 0.42);
       t.add(g);
       const n = f === 'attic' ? 0 : PEDIA.filter((e) => e.family === f && p.pedia.includes(e.id)).length;
-      if (n) t.add(this.add.text(42, 0, String(n), { fontFamily: FONT, fontSize: '16px', color: '#2e9b5f', fontStyle: 'bold' }).setOrigin(0.5));
+      if (n) t.add(this.add.text(42, 0, String(n), { fontFamily: FONT, fontSize: '16px', color: '#485541', fontStyle: 'bold' }).setOrigin(0.5));
       t.setDepth(10);
       this.tabs.push(t);
       this.hot(`tab-${f}`, () => this.show(f));
@@ -143,11 +146,11 @@ export class PediaScene extends MetaScene {
     spin.on('dragend', () => sfx.whirr());
     const icons = ['🔊', '⚙', '🏠'];
     const lines = pediaLines(e).map((l, i) => [icons[i], l.text, l.id] as const);
-    if (showWords()) this.add2(this.add.text(620, 120, e.name, { fontFamily: SERIF, fontSize: '40px', color: '#3b260b', fontStyle: 'bold' }));
+    if (showWords()) this.add2(this.add.text(620, 120, e.name, { fontFamily: SERIF, fontSize: '40px', color: '#342f29', fontStyle: 'bold' }));
     lines.forEach(([icon, text, id], i) => {
       const y = 220 + i * 140;
       this.add2(roundButton(this, 650, y + 20, icon, () => void speak('nana', text, id), { r: 32, fontSize: 28 }));
-      if (showWords()) this.add2(this.add.text(700, y - 10, text, { fontFamily: FONT, fontSize: '20px', color: '#3b260b', wordWrap: { width: 480 }, lineSpacing: 4 }));
+      if (showWords()) this.add2(this.add.text(700, y - 10, text, { fontFamily: FONT, fontSize: '20px', color: '#342f29', wordWrap: { width: 480 }, lineSpacing: 4 }));
     });
     this.add2(roundButton(this, 1170, 120, '✕', () => this.closePage(), { r: 26, fontSize: 22 }));
     void speak('nana', e.say, `pedia.${e.id}.say`);
@@ -165,8 +168,8 @@ export class PediaScene extends MetaScene {
       this.add2(coverImage(this, key, 200, 210, 360, 300));
     });
     if (showWords()) {
-      this.add2(this.add.text(640, 150, name, { fontFamily: SERIF, fontSize: '36px', color: '#3b260b', fontStyle: 'bold' }));
-      this.add2(this.add.text(640, 220, history, { fontFamily: FONT, fontSize: '21px', color: '#3b260b', wordWrap: { width: 460 }, lineSpacing: 5 }));
+      this.add2(this.add.text(640, 150, name, { fontFamily: SERIF, fontSize: '36px', color: '#342f29', fontStyle: 'bold' }));
+      this.add2(this.add.text(640, 220, history, { fontFamily: FONT, fontSize: '21px', color: '#342f29', wordWrap: { width: 460 }, lineSpacing: 5 }));
     }
     this.add2(roundButton(this, 660, 560, '🔊', () => void speak('nana', history, `attic.${id}.history`), { r: 32, fontSize: 28 }));
     this.add2(roundButton(this, 1110, 140, '✕', () => this.closePage(), { r: 26, fontSize: 22 }));

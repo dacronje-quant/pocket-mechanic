@@ -1,0 +1,388 @@
+[
+  {
+    "index": 1,
+    "file": "ChatGPT Image Oct 10, 2026, 08_31_20 PM.png",
+    "width": 1024,
+    "height": 1536,
+    "sha256": "143190f3eac36ecb7e8dac873bc9fa5ef687c1575232bf3e2071e1f6773a507d",
+    "keys": [
+      "portrait-nana"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "portrait-nana.webp",
+    "runtimeBytes": 438670
+  },
+  {
+    "index": 2,
+    "file": "ChatGPT Image Oct 10, 2026, 08_31_25 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "e44bf5c53f0b3f6d0cad9bb270e1265aeaa89e3097608eda26386f5d8cc255e9",
+    "keys": [
+      "stage-festival",
+      "town-map"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-festival.webp",
+    "runtimeBytes": 717160
+  },
+  {
+    "index": 3,
+    "file": "ChatGPT Image Oct 10, 2026, 08_31_32 PM.png",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "63d0ed603c18de59eb0fa2f8c6dec2bd9ca7192d96295ace0671767e3f211f8d",
+    "keys": [
+      "copper-kip-shell"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "copper-kip-shell.webp",
+    "runtimeBytes": 79206
+  },
+  {
+    "index": 4,
+    "file": "ChatGPT Image Oct 10, 2026, 08_31_36 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "b270d8b994b696233dbc6afae273c78767bd07a23d403d7a70458ff50cbca6f0",
+    "keys": [
+      "shop-hub"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "shop-hub.webp",
+    "runtimeBytes": 744448
+  },
+  {
+    "index": 5,
+    "file": "ChatGPT Image Oct 10, 2026, 08_31_44 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "f14fc5c538190d356ba009af7d62bf51189973270e30199a2b23923e5b0c4704",
+    "keys": [
+      "stage-shop"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-shop.webp",
+    "runtimeBytes": 719704
+  },
+  {
+    "index": 6,
+    "file": "ChatGPT Image Oct 10, 2026, 08_31_51 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "82bd1de832cec4bb6c68a4d580cb1cd93e7ebe1c5641dd0d7b43869b512b2ce4",
+    "keys": [
+      "stage-storm",
+      "stage-shopNight"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-storm.webp",
+    "runtimeBytes": 424704
+  },
+  {
+    "index": 7,
+    "file": "ChatGPT Image Oct 10, 2026, 08_31_58 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "21e5f06e54f0a5f8ce21b676b0ee67b538903ffe2874343b8df44e44b22fc75a",
+    "keys": [
+      "stage-tower",
+      "stage-nest"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-tower.webp",
+    "runtimeBytes": 736902
+  },
+  {
+    "index": 8,
+    "file": "ChatGPT Image Oct 10, 2026, 08_32_04 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "dcfe301d605cf278ff74567b08984cbbc764b52e09cbdfb0a3e3fd47d71ffba0",
+    "keys": [
+      "title"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "title.webp",
+    "runtimeBytes": 521074
+  },
+  {
+    "index": 9,
+    "file": "ChatGPT Image Oct 10, 2026, 08_32_10 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "5f788a73d7c63c04cc775aff61efa3bfcf16bff7f9f813476dbaf7ca4d545094",
+    "keys": [
+      "room-attic",
+      "stage-attic"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-attic.webp",
+    "runtimeBytes": 635326
+  },
+  {
+    "index": 10,
+    "file": "ChatGPT Image Oct 10, 2026, 08_32_17 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "375c79514eec3aff052128e255afb08a088f9d8fb3a72327d2b4f414d246c2d4",
+    "keys": [
+      "room-home"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-home.webp",
+    "runtimeBytes": 626900
+  },
+  {
+    "index": 11,
+    "file": "ChatGPT Image Oct 10, 2026, 08_32_22 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "def52bd417b06ec7551542d7cd6fe589ef3f27c83e4caae748b2babb7e7b4783",
+    "keys": [
+      "stage-fair"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-fair.webp",
+    "runtimeBytes": 716912
+  },
+  {
+    "index": 12,
+    "file": "ChatGPT Image Oct 10, 2026, 08_32_27 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "c7ca9328daeba33037ca8156a76488a24ffa2b7f65c8700141807adae20a6f08",
+    "keys": [
+      "room-bench"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-bench.webp",
+    "runtimeBytes": 595228
+  },
+  {
+    "index": 13,
+    "file": "ChatGPT Image Oct 10, 2026, 08_32_32 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "0a1f9521a41f4a9aff406162e505475a1384a0b97e4b8cedf6007c36ab46f91f",
+    "keys": [
+      "stage-bakery"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-bakery.webp",
+    "runtimeBytes": 657974
+  },
+  {
+    "index": 14,
+    "file": "ChatGPT Image Oct 10, 2026, 08_32_38 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "75e394918f22b93ca79946479151c4459052cf2b956d5531f50ed69248f1bbac",
+    "keys": [
+      "stage-classroom"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-classroom.webp",
+    "runtimeBytes": 649514
+  },
+  {
+    "index": 15,
+    "file": "ChatGPT Image Oct 10, 2026, 08_32_44 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "9c1702e916dbab223b5d512371ec28711713d72ebc45947f68d8347f9cba1dfe",
+    "keys": [
+      "stage-harbor"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-harbor.webp",
+    "runtimeBytes": 705558
+  },
+  {
+    "index": 16,
+    "file": "ChatGPT Image Oct 10, 2026, 08_32_49 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "25d5266beb522d91c60a0e53474273ebba256bd51d7df291234438362fb8e620",
+    "keys": [
+      "room-orrery"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-orrery.webp",
+    "runtimeBytes": 649410
+  },
+  {
+    "index": 17,
+    "file": "ChatGPT Image Oct 10, 2026, 08_32_55 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "f0859f07d452680326596f989ecd896b3763083d96306a7aa51ea836093da965",
+    "keys": [
+      "stage-party"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-party.webp",
+    "runtimeBytes": 685288
+  },
+  {
+    "index": 18,
+    "file": "ChatGPT Image Oct 10, 2026, 08_33_04 PM.png",
+    "width": 1672,
+    "height": 940,
+    "sha256": "defb45737f3adf1d7d0cd1a7c39da4ace706dccc461da2464424ad396d158250",
+    "keys": [
+      "stage-cafe"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-cafe.webp",
+    "runtimeBytes": 707816
+  },
+  {
+    "index": 19,
+    "file": "ChatGPT Image Oct 10, 2026, 08_33_10 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "1500965b40c5fe71b7219c61461822beb203faa949ea1ec388c902b38e203c6f",
+    "keys": [
+      "room-shop"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-shop.webp",
+    "runtimeBytes": 603720
+  },
+  {
+    "index": 20,
+    "file": "ChatGPT Image Oct 10, 2026, 08_33_19 PM.png",
+    "width": 1672,
+    "height": 940,
+    "sha256": "e1071885a751fe97fd447b79f0e0456671dbfaa3b8af20468e4e881588410530",
+    "keys": [
+      "stage-street"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-street.webp",
+    "runtimeBytes": 730720
+  },
+  {
+    "index": 21,
+    "file": "ChatGPT Image Oct 10, 2026, 08_33_25 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "8ea991dfc54a89f7eb3ffe81edc4e89b789e2f0521008a03dee6cfb4dbd3f452",
+    "keys": [
+      "room-tower"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-tower.webp",
+    "runtimeBytes": 652474
+  },
+  {
+    "index": 22,
+    "file": "ChatGPT Image Oct 10, 2026, 08_33_31 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "f1ed25587f556c3de636e62f7f098a4ca0b5c51eb82eadcf9d3a525cfe4be601",
+    "keys": [
+      "stage-shop-day"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "stage-shop-day.webp",
+    "runtimeBytes": 703098
+  },
+  {
+    "index": 23,
+    "file": "ChatGPT Image Oct 10, 2026, 08_33_38 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "9230c653dcf1f72b90d6ef59f4da53030d98d40d74b1cc2e45c209e25a679aad",
+    "keys": [
+      "room-bertie"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-bertie.webp",
+    "runtimeBytes": 660556
+  },
+  {
+    "index": 24,
+    "file": "ChatGPT Image Oct 10, 2026, 08_33_45 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "1c57e1a299f0d41b65f4b76c1450ad1bcfc9c4a654c7ead9acdcefa14b57bd7c",
+    "keys": [
+      "room-tea"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-tea.webp",
+    "runtimeBytes": 604896
+  },
+  {
+    "index": 25,
+    "file": "ChatGPT Image Oct 10, 2026, 08_33_51 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "161c390c5ab6a20b9e55d9c0b24a9ea88289333f83aeeb3c969bb855f48f9e00",
+    "keys": [
+      "room-radio"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-radio.webp",
+    "runtimeBytes": 651614
+  },
+  {
+    "index": 26,
+    "file": "ChatGPT Image Oct 10, 2026, 08_33_58 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "39eca36cda3d05f7387023f2070206883fec162bdb671384e4b9b27cb6c06a5d",
+    "keys": [
+      "room-train"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-train.webp",
+    "runtimeBytes": 608662
+  },
+  {
+    "index": 27,
+    "file": "ChatGPT Image Oct 10, 2026, 08_34_03 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "0bab619bfa646c10c426f2a11f92095dd18583bf23fb468e31f1768cb6712464",
+    "keys": [
+      "room-musicbox"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-music.webp",
+    "runtimeBytes": 566680
+  },
+  {
+    "index": 28,
+    "file": "ChatGPT Image Oct 10, 2026, 08_34_09 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "cae89e4c999d8ffb23bc2c11e490260c8f3b1127d11d72d320238072bab1c41f",
+    "keys": [
+      "room-clock"
+    ],
+    "usage": "runtime",
+    "runtimeFile": "room-clock.webp",
+    "runtimeBytes": 627334
+  },
+  {
+    "index": 29,
+    "file": "ChatGPT Image Oct 10, 2026, 08_34_24 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "182df7c76eb33a938d2c387dfddee97bbe41bc5a047b70abfd6fdba94f068ca4",
+    "keys": [],
+    "usage": "approved-composition-reference"
+  },
+  {
+    "index": 30,
+    "file": "ChatGPT Image Oct 10, 2026, 08_34_30 PM.png",
+    "width": 1672,
+    "height": 941,
+    "sha256": "7c6b691f758b91819331442ce720970e7fc06fd76243ac359c74be07a672c0d2",
+    "keys": [],
+    "usage": "approved-composition-reference"
+  }
+]

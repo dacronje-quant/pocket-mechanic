@@ -1,0 +1,234 @@
+{
+  "provider": "ElevenLabs",
+  "model": "eleven_v3",
+  "characters": {
+    "nana": {
+      "name": "Nana Odette",
+      "voiceId": "JW2giHRKg1oOGoR3AGfJ",
+      "description": "An elderly British woman, a kind grandmother and clockmaker in a cosy storybook repair shop. Warm, slightly husky, smiling, patient, gently playful. Natural age in her voice, clear consonants and an unhurried pace for children aged four to ten. Conversational and affectionate, with a little wonder and gentle laughter. Studio clean, no music or effects.",
+      "audition": "nana-a",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.92,
+        "use_speaker_boost": true
+      }
+    },
+    "albert": {
+      "name": "Albert Finch",
+      "voiceId": "dcQOeVZ7Vxgs3Z0rTTNX",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a round, gentle baker; warm, sentimental and a little flustered. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.92,
+        "use_speaker_boost": true
+      }
+    },
+    "rosa": {
+      "name": "Rosa",
+      "voiceId": "cgSgspJ2msm6clMCkdW9",
+      "performer": "Jessica",
+      "description": "Existing adult performer for a fictional storybook character.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.95,
+        "use_speaker_boost": true
+      }
+    },
+    "ada": {
+      "name": "Ada",
+      "voiceId": "FGY2WhTYpPnrIDTdsKH5",
+      "performer": "Laura",
+      "description": "Existing adult performer for a fictional storybook character.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.95,
+        "use_speaker_boost": true
+      }
+    },
+    "theo": {
+      "name": "Theo",
+      "voiceId": "bIHbv24MWmeRgasZH58o",
+      "performer": "Will",
+      "description": "Existing adult performer for a fictional storybook character.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.95,
+        "use_speaker_boost": true
+      }
+    },
+    "marigold": {
+      "name": "Captain Marigold",
+      "voiceId": "xnma2BQZtceO93H6dfgJ",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a gruff but kind retired lighthouse keeper; steady and secretly sentimental. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.92,
+        "use_speaker_boost": true
+      }
+    },
+    "fisher": {
+      "name": "The Fishers",
+      "voiceId": "tgoalZ7LJYYStZMONxqw",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a cheerful, grateful fisherman. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 1,
+        "use_speaker_boost": true
+      }
+    },
+    "magnus": {
+      "name": "Magnus",
+      "voiceId": "eLTUPzaZbHXj0Mq1jqFi",
+      "description": "A male British theatrical magpie in a warm children's storybook. Rich resonant baritone with a slightly croaky bird-like edge, extravagantly expressive, vain, flamboyant and comically grand. A lovable stage performer, never threatening. Clear words and measured pace for young children. Can soften into a shy, vulnerable tone when lonely. Studio clean, no music or effects.",
+      "audition": "magnus-a",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.95,
+        "use_speaker_boost": true
+      }
+    },
+    "pepperwhistle": {
+      "name": "Mrs. Pepperwhistle",
+      "voiceId": "QEjs4giAKXTbIiFM4Vh2",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a tall, theatrical cafe owner; grand, dramatic and delighted. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.95,
+        "use_speaker_boost": true
+      }
+    },
+    "pockets": {
+      "name": "Professor Pockets",
+      "voiceId": "QsXe00gGhV7tumbNMYUw",
+      "description": "A fictional character voice for a warm children's clockwork storybook: an eccentric, excitable fairground showman. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 1,
+        "use_speaker_boost": true
+      }
+    },
+    "bertie": {
+      "name": "Big Bertie",
+      "voiceId": "tmUZTlv4eLSqYRL5VBsM",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a booming, joyful fairground robot who loves to dance. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.9,
+        "use_speaker_boost": true
+      }
+    },
+    "juniper": {
+      "name": "Miss Juniper",
+      "voiceId": "4jysc9E1QgAlrcNcKZAd",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a gentle, dreamy schoolteacher who loves the stars; soft and calm. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.92,
+        "use_speaker_boost": true
+      }
+    },
+    "odette": {
+      "name": "Young Odette",
+      "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
+      "performer": "Alice",
+      "description": "Existing adult performer for a fictional storybook character.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.95,
+        "use_speaker_boost": true
+      }
+    },
+    "whisker": {
+      "name": "Whisker",
+      "voiceId": "p5PoVy8tgxLeQWN7MgKz",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a plump, easily startled mouse who loves crumbs. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 1.02,
+        "use_speaker_boost": true
+      }
+    },
+    "pip": {
+      "name": "Pip",
+      "voiceId": "hpp4J3VqNfWAUOO0d1Us",
+      "performer": "Bella",
+      "description": "Existing adult performer for a fictional storybook character.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.95,
+        "use_speaker_boost": true
+      }
+    },
+    "ade": {
+      "name": "Mr. Ade",
+      "voiceId": "vP9IO549qYHzA8Nnu53J",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a cheerful postman who is always whistling. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 1,
+        "use_speaker_boost": true
+      }
+    },
+    "mateo": {
+      "name": "Mateo",
+      "voiceId": "TX3LPaxmHKxFdv7VOQHJ",
+      "performer": "Liam",
+      "description": "Existing adult performer for a fictional storybook character.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.95,
+        "use_speaker_boost": true
+      }
+    },
+    "lindqvist": {
+      "name": "Mr. Lindqvist",
+      "voiceId": "z5Pzqx6ovzo3XUPJ05SM",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a precise piano teacher who is secretly silly. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.92,
+        "use_speaker_boost": true
+      }
+    },
+    "odum": {
+      "name": "Mrs. Odum",
+      "voiceId": "Ww5NheFT4AqROhVqq3lR",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a down-to-earth farmer who loves the weather. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 0.92,
+        "use_speaker_boost": true
+      }
+    },
+    "busker": {
+      "name": "The Busker",
+      "voiceId": "bLbd1cSUs3XrzmnA5W8p",
+      "description": "A fictional character voice for a warm children's clockwork storybook: a friendly park busker. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "speed": 1,
+        "use_speaker_boost": true
+      }
+    }
+  }
+}

@@ -30,7 +30,7 @@ const forceCanvas = new URLSearchParams(location.search).get('renderer') === 'ca
 const game = new Phaser.Game({
   type: forceCanvas ? Phaser.CANVAS : Phaser.AUTO,
   parent: 'game',
-  backgroundColor: '#1a120c',
+  backgroundColor: '#32291f',
   width: 1280,
   height: 720,
   scale: {

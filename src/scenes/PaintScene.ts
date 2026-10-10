@@ -8,6 +8,8 @@
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { drawRoomBackdrop } from '../art/backgrounds';
+import { CM, drawPatina } from '../art/copperMoss';
+import { collectionFrame, rivet } from '../art/finish';
 import { Kip } from '../art/Kip';
 import { drawSmallObject } from '../art/objects';
 import { drawPart } from '../art/parts';
@@ -67,6 +69,8 @@ export class PaintScene extends MetaScene {
     this.grid = undefined;
     drawRoomBackdrop(this, 'shop', 700).setDepth(0);
     this.add.rectangle(0, 0, 1280, 720, 0x1a120c, 0.3).setOrigin(0).setDepth(1);
+    collectionFrame(this, 120, 174, 365, 430, CM.tealDark, 0.78).setDepth(2);
+    collectionFrame(this, 550, 174, 690, 403, CM.woodDark, 0.72);
     this.music('shop', 0.7);
     this.backButton();
     this.heading(this.who === 'tess' ? "Tess's Corner" : 'Paint & Polish');
@@ -76,10 +80,16 @@ export class PaintScene extends MetaScene {
     const stand = this.add.graphics().setDepth(2);
     stand.fillStyle(0x000000, 0.3);
     stand.fillEllipse(300, 600, 340, 60);
-    stand.fillStyle(0x8a5a33, 1);
+    stand.fillStyle(0x856c50, 1);
     stand.fillEllipse(300, 590, 320, 56);
     stand.fillStyle(0xa36d40, 1);
     stand.fillEllipse(300, 584, 300, 46);
+    stand.lineStyle(2, CM.ink, 0.75);
+    stand.strokeEllipse(300, 590, 320, 56);
+    stand.lineStyle(1, CM.copperLight, 0.7);
+    stand.strokeEllipse(300, 584, 300, 46);
+    drawPatina(stand, 188, 581, 224, 24, 753, 1.5);
+    for (const x of [180, 250, 350, 420]) rivet(stand, x, 594, 2.5);
     if (this.look().initials !== p.initials && this.who === 'kip') this.setLook({ ...this.look(), initials: p.initials });
     this.big = new Kip(this, 300, 590, this.look(), this.who).setScale(3.6).setDepth(5);
     this.big.setInteractive(new Phaser.Geom.Rectangle(-35, -90, 70, 90), Phaser.Geom.Rectangle.Contains);
@@ -89,7 +99,7 @@ export class PaintScene extends MetaScene {
     });
 
     SLOTS.forEach(([slot, icon], i) => {
-      const b = roundButton(this, 600 + i * 64, 130, icon, () => this.showSlot(slot), { r: 28, fontSize: 24, color: slot === this.slot ? 0xffc928 : 0xe0ab48 }).setDepth(HUD);
+      const b = roundButton(this, 600 + i * 64, 130, icon, () => this.showSlot(slot), { r: 28, fontSize: 24, color: slot === this.slot ? 0xd3a278 : 0xbca16a }).setDepth(HUD);
       this.slotBtns.push(b);
       this.hot(`slot-${slot}`, () => this.showSlot(slot));
     });
@@ -129,15 +139,15 @@ export class PaintScene extends MetaScene {
     const g = this.add.graphics();
     const s = c.source;
     if (s.kind === 'shiny') {
-      g.fillStyle(0xfff6e2, 1);
+      g.fillStyle(0xf4ebd5, 1);
       g.fillRoundedRect(14, -66, 50, 26, 10);
       t.add(g);
       t.add(this.add.image(26, -53, 'bit').setScale(1));
-      t.add(this.add.text(54, -53, String(s.cost), { fontFamily: FONT, fontSize: '15px', color: '#3b260b', fontStyle: 'bold' }).setOrigin(0.5));
+      t.add(this.add.text(54, -53, String(s.cost), { fontFamily: FONT, fontSize: '15px', color: '#342f29', fontStyle: 'bold' }).setOrigin(0.5));
       return;
     }
     drawPadlock(g, 46, -50, 0.7);
-    g.fillStyle(0xfff6e2, 1);
+    g.fillStyle(0xf4ebd5, 1);
     g.fillCircle(-44, -48, 18);
     if (s.kind === 'repair') drawSmallObject(g, REPAIRS[s.repair - 1].object, -44, -48, 0.2);
     else if (s.kind === 'quick') drawSmallObject(g, QUICK_FIXES.find((q) => q.room.id === s.quick)?.object ?? 'door', -44, -48, 0.2);
@@ -256,7 +266,7 @@ export class PaintScene extends MetaScene {
         this.big.celebrate();
         persist();
         this.showSlot(this.slot);
-      }, { fill: saved ? 0xf3e2bd : 0xd8cbb0 });
+      }, { fill: saved ? 0xe9dcc0 : 0xd8cbb0 });
       if (saved) t.add(new Kip(this, 0, 36, saved, this.who).setScale(0.75));
       row.add(t);
     }

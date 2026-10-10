@@ -293,8 +293,9 @@ async function music() {
 // ───────────────────────────── images ─────────────────────────────
 
 const STYLE =
-  'A warm, cosy storybook illustration for a children’s game (ages 4 to 10) in a "macro brass" style: soft painterly textures, ' +
-  'glowing lamplight, polished brass, copper and honey-coloured wood, rounded friendly shapes and gentle colours. ' +
+  'A warm, cosy Copper & Moss storybook illustration for a children’s game (ages 4 to 10): scratchy pen contours, pencil hatching, ' +
+  'watercolour washes and aged paper grain. Weathered copper, oxidised teal, moss green, cream plaster and dark walnut wood, ' +
+  'trailing ivy, tiny rivets, repaired seams, friendly handmade shapes and warm amber lamplight. Keep play areas quiet and readable. ' +
   'No text, letters, numbers, signs with writing, logos or watermarks. Nothing scary.';
 const STAGE = 'An empty scene with no people or animals: characters are drawn on top later, so keep the lower middle simple and uncluttered.';
 

@@ -7,6 +7,8 @@ import Phaser from 'phaser';
 import { LINES } from '../content/story';
 import * as sfx from '../audio/sfx';
 import { ensureGearTexture, type GearVariant } from '../art/textures';
+import { CM } from '../art/copperMoss';
+import { rivet } from '../art/finish';
 import { meshPhase, pitchRadius, MODULE } from '../mechanism/graph';
 import type { GearOutput, GearPlacement } from '../content/types';
 import { canPlaceGear, evalGears, gearId, type GearEval } from '../rules';
@@ -52,17 +54,17 @@ export class GearRoom extends RoomBase<'gear'> {
     // output arbors and widgets
     for (const out of def.outputs) {
       const s = def.shafts.find((q) => q.id === out.shaft)!;
-      arbors.lineStyle(14, 0x5e3f10, 1);
+      arbors.lineStyle(14, 0x554638, 1);
       arbors.lineBetween(s.x, s.y, out.at.x, out.at.y);
-      arbors.lineStyle(8, 0xd9a441, 1);
+      arbors.lineStyle(8, 0xbca16a, 1);
       arbors.lineBetween(s.x, s.y, out.at.x, out.at.y);
-      arbors.lineStyle(2, 0xfff0b8, 0.5);
+      arbors.lineStyle(2, 0xf4ebd5, 0.5);
       arbors.lineBetween(s.x, s.y - 2, out.at.x, out.at.y - 2);
       const g = this.add.graphics().setDepth(D.widget);
       const w = { out, g, a: Math.random() * Math.PI * 2, b: 0.3, beat: 0, label: undefined as Phaser.GameObjects.Text | undefined };
       if (this.style.numbers) {
         w.label = this.add
-          .text(out.at.x, out.at.y + (out.size ?? 70) + 28, '', { fontFamily: FONT, fontSize: '17px', color: '#fff3d0', backgroundColor: '#2b1d14cc', padding: { x: 8, y: 4 }, align: 'center' })
+          .text(out.at.x, out.at.y + (out.size ?? 70) + 28, '', { fontFamily: FONT, fontSize: '17px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 8, y: 4 }, align: 'center' })
           .setOrigin(0.5)
           .setDepth(D.hud - 1);
       }
@@ -75,12 +77,17 @@ export class GearRoom extends RoomBase<'gear'> {
     for (const s of def.shafts) {
       pegG.fillStyle(0x000000, 0.35);
       pegG.fillCircle(s.x + 2, s.y + 4, 13);
-      pegG.fillStyle(0x7a5413, 1);
+      pegG.fillStyle(0x79503d, 1);
       pegG.fillCircle(s.x, s.y, 13);
       pegG.fillStyle(s.peg ? 0xe7bb55 : 0xb88a2c, 1);
       pegG.fillCircle(s.x, s.y, 9);
+      pegG.lineStyle(1.3, CM.ink, 0.8);
+      pegG.strokeCircle(s.x, s.y, 13);
+      pegG.lineStyle(1, CM.cream, 0.5);
+      pegG.strokeCircle(s.x - 1, s.y - 1, 10);
+      rivet(pegG, s.x, s.y, 3);
       if ((s.layers ?? [0]).length > 1) {
-        pegG.lineStyle(3, 0xfff0b8, 0.8);
+        pegG.lineStyle(3, 0xf4ebd5, 0.8);
         pegG.strokeCircle(s.x, s.y, 17);
       }
       for (const gdef of s.gears ?? []) {
@@ -111,7 +118,7 @@ export class GearRoom extends RoomBase<'gear'> {
     if (this.style.numbers) {
       for (const v of this.views) {
         v.label = this.add
-          .text(v.img.x, v.img.y, `${v.teeth}`, { fontFamily: FONT, fontSize: '19px', color: '#fff8e0', fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 5 })
+          .text(v.img.x, v.img.y, `${v.teeth}`, { fontFamily: FONT, fontSize: '19px', color: '#fff8e0', fontStyle: 'bold', stroke: '#342f29', strokeThickness: 5 })
           .setOrigin(0.5)
           .setDepth(D.drag + 1);
       }
@@ -316,13 +323,13 @@ export class GearRoom extends RoomBase<'gear'> {
       if (here) continue;
       const s = this.def.shafts.find((q) => q.id === p.shaft)!;
       const r = pitchRadius(p.teeth);
-      g.fillStyle(0xfff4c8, alpha * 0.4);
+      g.fillStyle(0xf4ebd5, alpha * 0.4);
       g.fillCircle(s.x, s.y, r);
-      g.lineStyle(3, 0xfff4c8, alpha + 0.2);
+      g.lineStyle(3, 0xf4ebd5, alpha + 0.2);
       g.strokeCircle(s.x, s.y, r + MODULE * 0.8);
       for (let i = 0; i < p.teeth; i++) {
         const a = (i / p.teeth) * Math.PI * 2 + this.time.now / 3000;
-        g.fillStyle(0xfff4c8, alpha + 0.2);
+        g.fillStyle(0xf4ebd5, alpha + 0.2);
         g.fillCircle(s.x + Math.cos(a) * (r + MODULE * 0.8), s.y + Math.sin(a) * (r + MODULE * 0.8), 2.5);
       }
     }
@@ -332,15 +339,15 @@ export class GearRoom extends RoomBase<'gear'> {
     const sol = this.evalR.sol;
     for (const n of this.evalR.nodes) {
       const powered = (sol.omega.get(n.id) ?? 0) !== 0;
-      g.lineStyle(3, powered ? 0xffd76a : 0x7fd3ff, powered ? 0.95 : 0.6);
+      g.lineStyle(3, powered ? 0xf1d391 : 0x7fd3ff, powered ? 0.95 : 0.6);
       g.strokeCircle(n.x, n.y, pitchRadius(n.teeth));
-      g.fillStyle(powered ? 0xffd76a : 0x7fd3ff, 0.9);
+      g.fillStyle(powered ? 0xf1d391 : 0x7fd3ff, 0.9);
       g.fillCircle(n.x, n.y, 5);
     }
     for (const [a, b] of sol.powerEdges) {
       const na = this.evalR.nodes.find((q) => q.id === a)!;
       const nb = this.evalR.nodes.find((q) => q.id === b)!;
-      g.lineStyle(12, 0xffc928, 0.25);
+      g.lineStyle(12, 0xd3a278, 0.25);
       g.lineBetween(na.x, na.y, nb.x, nb.y);
       g.lineStyle(4, 0xfff0a0, 0.95);
       g.lineBetween(na.x, na.y, nb.x, nb.y);
@@ -360,7 +367,7 @@ export class GearRoom extends RoomBase<'gear'> {
       if (!empty) continue;
       const near = this.evalR.nodes.some((n) => (sol.omega.get(n.id) ?? 0) !== 0 && Math.hypot(n.x - s.x, n.y - s.y) < 260);
       if (!near && s.id !== this.def.driver.shaft) continue;
-      g.fillStyle(0xffc928, 0.25 + pulse * 0.35);
+      g.fillStyle(0xd3a278, 0.25 + pulse * 0.35);
       g.fillCircle(s.x, s.y, 16 + pulse * 12);
       g.lineStyle(3, 0xffffff, 0.4 + pulse * 0.5);
       g.strokeCircle(s.x, s.y, 22 + pulse * 10);
@@ -429,12 +436,12 @@ export class GearRoom extends RoomBase<'gear'> {
       const a = this.driverAngle;
       const hx = s.x + Math.cos(a) * (r + 18);
       const hy = s.y + Math.sin(a) * (r + 18);
-      g.lineStyle(8, 0x5e3f10, 1);
+      g.lineStyle(8, 0x554638, 1);
       g.lineBetween(s.x, s.y, hx, hy);
-      g.fillStyle(0xd64541, 1);
+      g.fillStyle(0xad6b51, 1);
       g.fillCircle(hx, hy, 11);
     } else if (src === 'spring') {
-      g.lineStyle(4, 0xc0c8d0, 0.9);
+      g.lineStyle(4, 0x9aaba4, 0.9);
       g.beginPath();
       for (let i = 0; i < 80; i++) {
         const a = i * 0.3 - this.driverAngle * 0.2;
@@ -451,7 +458,7 @@ export class GearRoom extends RoomBase<'gear'> {
       }
     } else if (src === 'steam' || src === 'water') {
       const p = Math.sin(this.driverAngle) * 20;
-      g.fillStyle(src === 'steam' ? 0x9aa6b4 : 0x5fa8d3, 1);
+      g.fillStyle(src === 'steam' ? 0x82938c : 0x5fa8d3, 1);
       g.fillRect(s.x - r - 90, s.y - 16 + p * 0.2, 70, 32);
     }
     void at;
@@ -471,7 +478,7 @@ export class GearRoom extends RoomBase<'gear'> {
         g.fillCircle(x, y, size + 18);
         g.fillStyle(0xb88a2c, 1);
         g.fillCircle(x, y, size + 6);
-        g.fillStyle(0xf6ead0, 1);
+        g.fillStyle(0xe9dcc0, 1);
         g.fillCircle(x, y, size);
         for (let i = 0; i < 60; i++) {
           const a = (i / 60) * Math.PI * 2;
@@ -482,9 +489,9 @@ export class GearRoom extends RoomBase<'gear'> {
         }
         const m = w.out.ratio !== undefined ? w.b : w.a;
         const h = w.out.ratio !== undefined ? w.a : w.b;
-        g.lineStyle(10, 0x2b1d14, 1);
+        g.lineStyle(10, 0x342f29, 1);
         g.lineBetween(x, y, x + Math.sin(h) * size * 0.5, y - Math.cos(h) * size * 0.5);
-        g.lineStyle(6, 0x2b1d14, 1);
+        g.lineStyle(6, 0x342f29, 1);
         g.lineBetween(x, y, x + Math.sin(m) * size * 0.82, y - Math.cos(m) * size * 0.82);
         g.fillStyle(0xb88a2c, 1);
         g.fillCircle(x, y, 11);
@@ -503,7 +510,7 @@ export class GearRoom extends RoomBase<'gear'> {
           g.fillStyle(0xe8e8f0, 0.95);
           g.fillEllipse(x + Math.cos(a) * size * 0.5, y + Math.sin(a) * size * 0.5, size * 0.9, size * 0.32);
         }
-        g.fillStyle(0x5e3f10, 1);
+        g.fillStyle(0x554638, 1);
         g.fillCircle(x, y, 12);
         if (Math.abs(omega) > 4) {
           g.lineStyle(2, 0xffffff, 0.5);
@@ -513,7 +520,7 @@ export class GearRoom extends RoomBase<'gear'> {
       case 'wheels':
       case 'paddle': {
         for (const dx of [-size * 0.6, size * 0.6]) {
-          g.lineStyle(6, w.out.widget === 'paddle' ? 0x8a5a33 : 0x2b2b33, 1);
+          g.lineStyle(6, w.out.widget === 'paddle' ? 0x856c50 : 0x2b2b33, 1);
           g.strokeCircle(x + dx, y, size * 0.45);
           for (let i = 0; i < 6; i++) {
             const a = w.a + (i / 6) * Math.PI * 2;
@@ -521,7 +528,7 @@ export class GearRoom extends RoomBase<'gear'> {
             g.lineBetween(x + dx, y, x + dx + Math.cos(a) * size * 0.45, y + Math.sin(a) * size * 0.45);
           }
         }
-        g.lineStyle(6, 0xd9a441, 1);
+        g.lineStyle(6, 0xbca16a, 1);
         const px = Math.cos(w.a) * size * 0.25;
         const py = Math.sin(w.a) * size * 0.25;
         g.lineBetween(x - size * 0.6 + px, y + py, x + size * 0.6 + px, y + py);
@@ -535,12 +542,12 @@ export class GearRoom extends RoomBase<'gear'> {
         const a = w.a;
         g.lineStyle(4, 0xb88a2c, 0.9);
         g.strokeCircle(x, y, size);
-        g.lineStyle(5, 0xd9a441, 1);
+        g.lineStyle(5, 0xbca16a, 1);
         g.lineBetween(x, y, x + Math.cos(a) * size, y + Math.sin(a) * size);
         const colors: Record<string, number> = { Mercury: 0xb0a8a0, Venus: 0xe8c39e, Earth: 0x5fa8d3 };
         g.fillStyle(colors[w.out.label ?? ''] ?? 0xe05a47, 1);
         g.fillCircle(x + Math.cos(a) * size, y + Math.sin(a) * size, 12);
-        g.fillStyle(0xffd76a, 1);
+        g.fillStyle(0xf1d391, 1);
         g.fillCircle(x, y, 18);
         break;
       }
@@ -548,7 +555,7 @@ export class GearRoom extends RoomBase<'gear'> {
         const h = ((w.a / (Math.PI * 2)) * 30) % 160;
         g.lineStyle(3, 0xc8b28a, 1);
         g.lineBetween(x, y - size, x, y + 80 - h);
-        g.fillStyle(0x8a5a33, 1);
+        g.fillStyle(0x856c50, 1);
         g.fillRect(x - 40, y + 80 - h, 80, 12);
         break;
       }
@@ -564,20 +571,20 @@ export class GearRoom extends RoomBase<'gear'> {
           g.fillStyle(0xffd43b, 1);
           g.fillEllipse(x, y - 10, size * 1.2 * Math.max(0.2, sx), 16);
         } else if (w.out.widget === 'grinder') {
-          g.fillStyle(0x6e4527, 1);
+          g.fillStyle(0x554638, 1);
           g.fillRoundedRect(x - 30, y - size * 0.6, 60, size * 1.2, 14);
-          g.fillStyle(0x3d2412, 1);
+          g.fillStyle(0x342f29, 1);
           g.fillCircle(x + Math.cos(w.a) * 14, y - size * 0.6 + Math.sin(w.a) * 5, 9);
           if (omega !== 0 && Math.random() < 0.15) {
             g.fillStyle(0x333333, 0.6);
             g.fillCircle(x + (Math.random() - 0.5) * 30, y + size * 0.7 + Math.random() * 20, 3);
           }
         } else if (w.out.widget === 'bell') {
-          g.fillStyle(0xd9a441, 1);
+          g.fillStyle(0xbca16a, 1);
           g.fillTriangle(x - 30, y + 20, x + 30, y + 20, x, y - 30);
           g.fillCircle(x, y - 14, 18);
           const hit = Math.sin(w.a) > 0.95;
-          g.lineStyle(5, 0x5e3f10, 1);
+          g.lineStyle(5, 0x554638, 1);
           g.lineBetween(x + 50, y + 30, x + (hit ? 28 : 40), y - 6);
           if (omega !== 0) {
             w.beat += Math.abs(omega) * dt;
@@ -589,9 +596,9 @@ export class GearRoom extends RoomBase<'gear'> {
         } else {
           g.fillStyle(0x3a2212, 1);
           g.fillCircle(x, y, (w.out.size ?? 50) + 8);
-          g.fillStyle(0xf6ead0, 1);
+          g.fillStyle(0xe9dcc0, 1);
           g.fillCircle(x, y, w.out.size ?? 50);
-          g.lineStyle(5, 0x2b1d14, 1);
+          g.lineStyle(5, 0x342f29, 1);
           const s = (w.out.size ?? 50) * 0.8;
           g.lineBetween(x, y, x + Math.sin(w.a) * s, y - Math.cos(w.a) * s);
           if (w.out.widget === 'drum' && omega !== 0) {

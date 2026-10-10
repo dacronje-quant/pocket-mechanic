@@ -7,6 +7,8 @@ import * as sfx from '../audio/sfx';
 import { ensureGearTexture } from '../art/textures';
 import { star } from '../art/Kip';
 import type { ThemeId } from '../content/types';
+import { withArt } from '../art/generated';
+import { atlasFrame } from '../art/sprites';
 
 export type FiddleKind = 'bell' | 'owl' | 'spring' | 'switch' | 'cog' | 'gauge' | 'whistle' | 'humbug' | 'mouse' | 'valve' | 'twinkle' | 'moth' | 'pigeon' | 'horn' | 'lights' | 'note' | 'cup' | 'signal' | 'coo';
 
@@ -73,13 +75,13 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
       g.fillEllipse(0, 22, 40, 42);
       g.fillStyle(0xe7bb55, 1);
       g.fillTriangle(-5, 4, 5, 4, 0, 14);
-      g.fillStyle(0xf3e2bd, 1);
+      g.fillStyle(0xe9dcc0, 1);
       g.fillCircle(-13, -6, 11);
       g.fillCircle(13, -6, 11);
       const spin = { a: 0 };
       const draw = () => {
         pupils.clear();
-        pupils.fillStyle(0x2b1d14, 1);
+        pupils.fillStyle(0x342f29, 1);
         pupils.fillCircle(-13 + Math.cos(spin.a) * 4, -6 + Math.sin(spin.a) * 4, 4.5);
         pupils.fillCircle(13 + Math.cos(spin.a) * 4, -6 + Math.sin(spin.a) * 4, 4.5);
       };
@@ -97,9 +99,9 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
       break;
     }
     case 'spring':
-      g.lineStyle(5, 0xc0c8d0, 1);
+      g.lineStyle(5, 0x9aaba4, 1);
       for (let i = 0; i < 6; i++) g.strokeEllipse(0, 30 - i * 11, 32, 10);
-      g.fillStyle(0xd9a441, 1);
+      g.fillStyle(0xbca16a, 1);
       g.fillCircle(0, -40, 12);
       hit(60, 100);
       tap = () => {
@@ -118,15 +120,15 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
         }
         bulb.fillStyle(on ? 0xfff3b0 : 0x8f8a7a, 1);
         bulb.fillCircle(0, -58, 14);
-        bulb.fillStyle(0x7a5413, 1);
+        bulb.fillStyle(0x79503d, 1);
         bulb.fillRect(-7, -44, 14, 8);
         lever.clear();
-        lever.fillStyle(0xf3e2bd, 1);
+        lever.fillStyle(0xe9dcc0, 1);
         lever.fillRoundedRect(-6, on ? -20 : 0, 12, 20, 5);
       };
       g.fillStyle(0xb88a2c, 1);
       g.fillRoundedRect(-20, -28, 40, 56, 8);
-      g.fillStyle(0x3d2412, 1);
+      g.fillStyle(0x342f29, 1);
       g.fillRoundedRect(-8, -16, 16, 32, 6);
       draw();
       c.add([bulb, lever]);
@@ -151,14 +153,14 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
     }
     case 'gauge': {
       const needle = scene.add.graphics();
-      g.fillStyle(0x7a5413, 1);
+      g.fillStyle(0x79503d, 1);
       g.fillCircle(0, 0, 34);
-      g.fillStyle(0xf6ead0, 1);
+      g.fillStyle(0xe9dcc0, 1);
       g.fillCircle(0, 0, 28);
       g.fillStyle(0x2e9b5f, 0.6);
       g.slice(0, 0, 26, -Math.PI * 0.6, -Math.PI * 0.4, false);
       g.fillPath();
-      needle.lineStyle(3, 0xd64541, 1);
+      needle.lineStyle(3, 0xad6b51, 1);
       needle.lineBetween(0, 0, 0, -22);
       needle.rotation = -0.9;
       c.add(needle);
@@ -170,9 +172,9 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
       break;
     }
     case 'whistle':
-      g.fillStyle(0xc0c8d0, 1);
+      g.fillStyle(0x9aaba4, 1);
       g.fillRoundedRect(-14, -30, 28, 60, 10);
-      g.fillStyle(0x9aa6b4, 1);
+      g.fillStyle(0x82938c, 1);
       g.fillRect(-10, -20, 20, 6);
       hit(60, 80);
       tap = () => {
@@ -226,9 +228,9 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
     case 'valve':
       g.fillStyle(0xc8703f, 1);
       g.fillRect(-30, 0, 60, 14);
-      g.fillStyle(0xd64541, 1);
+      g.fillStyle(0xad6b51, 1);
       g.fillCircle(0, -10, 18);
-      g.fillStyle(0x5e3f10, 1);
+      g.fillStyle(0x554638, 1);
       g.fillCircle(0, -10, 5);
       hit(70, 70);
       tap = () => {
@@ -276,7 +278,7 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
     case 'horn':
       g.fillStyle(0xffd43b, 1);
       g.fillTriangle(-30, 0, 20, -24, 20, 24);
-      g.fillStyle(0xd64541, 1);
+      g.fillStyle(0xad6b51, 1);
       g.fillCircle(-30, 0, 12);
       hit(70, 60);
       tap = () => {
@@ -313,7 +315,7 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
       break;
     }
     case 'note':
-      g.fillStyle(0x5f3dc4, 1);
+      g.fillStyle(0x667a6a, 1);
       g.fillEllipse(-6, 14, 22, 16);
       g.fillRect(3, -24, 5, 38);
       g.fillTriangle(8, -24, 8, -12, 22, -14);
@@ -357,9 +359,9 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
       break;
     }
     case 'coo':
-      g.fillStyle(0x3d2412, 1);
+      g.fillStyle(0x342f29, 1);
       g.fillRoundedRect(-26, -26, 52, 52, 6);
-      g.fillStyle(0x8a5a33, 1);
+      g.fillStyle(0x856c50, 1);
       g.fillCircle(0, 4, 14);
       g.fillStyle(0xe8a33d, 1);
       g.fillTriangle(10, 0, 10, 8, 22, 4);
@@ -370,9 +372,29 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
       };
       break;
   }
+  let painted: Phaser.GameObjects.Image | undefined;
+  const prop = ({ owl: 0, spring: 1, switch: 2, coo: 3 } as Partial<Record<FiddleKind, number>>)[kind];
+  const creature = ({ coo: 1, mouse: 9, humbug: 4, moth: 7, pigeon: 8 } as Partial<Record<FiddleKind, number>>)[kind];
+  const gadget = ({ bell: 6, switch: 1, gauge: 2, horn: 3, lights: 5, valve: 4 } as Partial<Record<FiddleKind, number>>)[kind];
+  if (prop !== undefined || creature !== undefined || gadget !== undefined) {
+    withArt(scene, prop !== undefined ? 'puzzle-props' : creature !== undefined ? 'portrait-creatures' : 'busy-gadgets', (key) => {
+      if (!c.active || !c.scene) return;
+      const index = prop ?? creature ?? gadget!;
+      const frame = atlasFrame(scene, key, index, prop !== undefined || creature !== undefined ? 4 : 3, prop !== undefined ? 4 : creature !== undefined ? 3 : 6, true);
+      for (const child of c.list) (child as Phaser.GameObjects.Graphics).setVisible(false);
+      painted = scene.add.image(0, 0, key, frame).setName(`fiddle:${kind}`);
+      painted.setScale(78 / Math.max(painted.width, painted.height)); c.add(painted);
+    });
+  }
   c.on('pointerup', () => {
     taps++;
     tap();
+    if (painted && prop === undefined && gadget !== undefined) {
+      const image = painted, key = image.texture.key;
+      image.setFrame(atlasFrame(scene, key, gadget + 9, 3, 6, true));
+      scene.time.delayedCall(650, () => { if (image.scene) image.setFrame(atlasFrame(scene, key, gadget, 3, 6, true)); });
+    }
+    if (painted && prop === 2) { painted.setTint(on ? 0xffe4a3 : 0xffffff); wobble(5); }
     touched();
   });
   return c;

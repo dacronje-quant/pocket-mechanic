@@ -5,6 +5,7 @@
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
+import { CM, drawPatina } from '../art/copperMoss';
 import { leverTilt, pulleyEffort } from '../mechanism/balance';
 import { balanceSolved, leverWeights } from '../rules';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
@@ -50,7 +51,7 @@ export class BalanceRoom extends RoomBase<'balance'> {
     if (this.def.mode === 'lever') this.buildLever();
     else this.buildPulley();
     const icon = this.def.mode === 'lever' && !this.def.lever?.kip ? '✋' : '💪';
-    roundButton(this, 1180, 600, icon, () => this.pull(), { r: 48, fontSize: 40, color: 0x8ce99a, say: 'Pull!' }).setDepth(D.hud);
+    roundButton(this, 1180, 600, icon, () => this.pull(), { r: 48, fontSize: 40, color: 0xa0a477, say: 'Pull!' }).setDepth(D.hud);
   }
 
   // ───────────── lever ─────────────
@@ -64,7 +65,7 @@ export class BalanceRoom extends RoomBase<'balance'> {
       kg.fillTriangle(-40, 54, 44, 54, 2, -6);
       kg.fillStyle(0x7a4b26, 1);
       kg.fillTriangle(-42, 50, 42, 50, 0, -10);
-      kg.fillStyle(0xe0ab48, 1);
+      kg.fillStyle(0xbca16a, 1);
       kg.fillCircle(0, 28, 10);
       k.add(kg);
       k.setSize(100, 80);
@@ -96,14 +97,17 @@ export class BalanceRoom extends RoomBase<'balance'> {
       const s = 20 + mass * 6;
       wg.fillStyle(0x000000, 0.3);
       wg.fillRoundedRect(-s / 2 + 3, -s / 2 + 5, s, s, 8);
-      wg.fillStyle(0x6c757d, 1);
+      wg.fillStyle(0x60736d, 1);
       wg.fillRoundedRect(-s / 2, -s / 2, s, s, 8);
-      wg.fillStyle(0x9aa6b4, 1);
+      wg.fillStyle(0x82938c, 1);
       wg.fillRoundedRect(-s / 2 + 4, -s / 2 + 4, s - 8, s * 0.35, 5);
+      wg.lineStyle(1.5, CM.ink, 0.8);
+      wg.strokeRoundedRect(-s / 2, -s / 2, s, s, 8);
+      drawPatina(wg, -s / 2 + 3, -s / 2 + 3, s - 6, s - 6, mass * 83, 1.5);
       c.add(wg);
       // dots show the weight without numbers
-      for (let k = 0; k < mass; k++) c.add(this.add.circle(-((mass - 1) * 6) / 2 + k * 6, s * 0.18, 2.5, 0xfff3d0));
-      if (this.style.numbers) c.add(this.add.text(0, -s / 2 - 12, String(mass), { fontFamily: FONT, fontSize: '16px', color: '#fff3d0', fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 4 }).setOrigin(0.5));
+      for (let k = 0; k < mass; k++) c.add(this.add.circle(-((mass - 1) * 6) / 2 + k * 6, s * 0.18, 2.5, 0xf4ebd5));
+      if (this.style.numbers) c.add(this.add.text(0, -s / 2 - 12, String(mass), { fontFamily: FONT, fontSize: '16px', color: '#f4ebd5', fontStyle: 'bold', stroke: '#342f29', strokeThickness: 4 }).setOrigin(0.5));
       c.setSize(s + 20, s + 20);
       const v: WeightView = { mass, obj: c, home: spots[i], slot: null };
       this.weights.push(v);
@@ -158,11 +162,11 @@ export class BalanceRoom extends RoomBase<'balance'> {
     for (let i = 0; i < P.wheels; i++) {
       const c = this.add.container(spots[i].x, spots[i].y).setDepth(D.trayPart).setScale(0.8);
       const wg = this.add.graphics();
-      wg.fillStyle(0x9aa6b4, 1);
+      wg.fillStyle(0x82938c, 1);
       wg.fillCircle(0, 0, 30);
       wg.fillStyle(0x5a6470, 1);
       wg.fillCircle(0, 0, 22);
-      wg.fillStyle(0xd9a441, 1);
+      wg.fillStyle(0xbca16a, 1);
       wg.fillCircle(0, 0, 8);
       c.add(wg);
       c.setSize(70, 70);
@@ -282,7 +286,7 @@ export class BalanceRoom extends RoomBase<'balance'> {
       g.fillStyle(0x7a4b26, 1);
       g.fillTriangle(pivot.x - 42, BY + 110, pivot.x + 42, BY + 110, pivot.x, BY + 50);
     } else this.fulcrumKnob.setPosition(pivot.x, BY + 60);
-    g.fillStyle(0x5e3f10, 1);
+    g.fillStyle(0x554638, 1);
     g.fillRect(BX - (L.half + 1) * STEP, BY + 110, (L.half + 1) * 2 * STEP, 12);
     // the beam
     const end = (pos: number) => this.beamPoint(pos, 0);
@@ -290,14 +294,14 @@ export class BalanceRoom extends RoomBase<'balance'> {
     const b = end(L.half + 0.5);
     g.lineStyle(26, 0x5a3a22, 1);
     g.lineBetween(a.x, a.y, b.x, b.y);
-    g.lineStyle(18, 0x8a5a33, 1);
+    g.lineStyle(18, 0x856c50, 1);
     g.lineBetween(a.x, a.y, b.x, b.y);
     for (let p = -L.half; p <= L.half; p++) {
       const q = end(p);
-      g.fillStyle(L.slots.includes(p) ? 0xfff4c8 : 0x3d2412, L.slots.includes(p) ? 0.8 : 1);
+      g.fillStyle(L.slots.includes(p) ? 0xf4ebd5 : 0x342f29, L.slots.includes(p) ? 0.8 : 1);
       g.fillCircle(q.x, q.y, L.slots.includes(p) ? 6 : 3);
     }
-    g.fillStyle(0xd9a441, 1);
+    g.fillStyle(0xbca16a, 1);
     g.fillCircle(pivot.x, pivot.y, 9);
     // fixed loads: the clock weights (or bridge planks)
     for (const w of L.fixed) {
@@ -318,7 +322,7 @@ export class BalanceRoom extends RoomBase<'balance'> {
     // Kip hangs on the end when pulling
     if (L.kip && this.state.pulled) {
       const q = this.beamPoint(L.kip.pos, 0);
-      g.fillStyle(0xd9a441, 1);
+      g.fillStyle(0xbca16a, 1);
       g.fillCircle(q.x, q.y + 30, 18);
     }
   }
@@ -326,10 +330,10 @@ export class BalanceRoom extends RoomBase<'balance'> {
   private drawPulley(g: Phaser.GameObjects.Graphics): void {
     const P = this.def.pulley!;
     const slots = this.pulleySlots();
-    g.fillStyle(0x5e3f10, 1);
+    g.fillStyle(0x554638, 1);
     g.fillRect(slots[0].x - 80, 120, slots[slots.length - 1].x - slots[0].x + 160, 18);
     for (const s of slots) {
-      g.lineStyle(3, 0xfff4c8, 0.4);
+      g.lineStyle(3, 0xf4ebd5, 0.4);
       g.strokeCircle(s.x, s.y, 32);
     }
     const used = this.wheels.filter((w) => w.getData('slot') >= 0).map((w) => slots[w.getData('slot') as number]);
@@ -352,10 +356,10 @@ export class BalanceRoom extends RoomBase<'balance'> {
     // the load
     const art = P.art ?? 'weights';
     if (art === 'bridge') {
-      g.fillStyle(0x8a5a33, 1);
+      g.fillStyle(0x856c50, 1);
       g.fillRect(420, loadY, 440, 26);
       for (let k = 0; k < 11; k++) {
-        g.fillStyle(0x6e4527, 1);
+        g.fillStyle(0x554638, 1);
         g.fillRect(424 + k * 40, loadY + 4, 32, 18);
       }
     } else {
@@ -366,7 +370,7 @@ export class BalanceRoom extends RoomBase<'balance'> {
     }
     if (P.helper) {
       // Big Bertie helps pull
-      g.fillStyle(0xd64541, 1);
+      g.fillStyle(0xad6b51, 1);
       g.fillRoundedRect(990, 380, 90, 110, 16);
       g.fillRoundedRect(1000, 320, 70, 60, 14);
       g.fillStyle(0xf2e6c8, 1);
@@ -406,7 +410,7 @@ export class BalanceRoom extends RoomBase<'balance'> {
     if (this.def.mode === 'lever') {
       const want = this.def.solution.fulcrum;
       if (want !== undefined && want !== this.state.fulcrum) {
-        g.lineStyle(4, 0xfff4c8, alpha + 0.2);
+        g.lineStyle(4, 0xf4ebd5, alpha + 0.2);
         g.strokeTriangle(BX + want * STEP - 42, BY + 110, BX + want * STEP + 42, BY + 110, BX + want * STEP, BY + 50);
       }
     } else {
@@ -415,7 +419,7 @@ export class BalanceRoom extends RoomBase<'balance'> {
         .slice(0, want)
         .forEach((s) => {
           if (this.wheels.some((w) => w.getData('slot') === Number(s.id))) return;
-          g.lineStyle(4, 0xfff4c8, alpha + 0.2);
+          g.lineStyle(4, 0xf4ebd5, alpha + 0.2);
           g.strokeCircle(s.x, s.y, 30);
         });
     }

@@ -7,6 +7,7 @@ import Phaser from 'phaser';
 import { LINES } from '../content/story';
 import * as sfx from '../audio/sfx';
 import { speak } from '../audio/voice';
+import { CM, drawPatina } from '../art/copperMoss';
 import { clarity, dialPitch, dialTuned, waveSample } from '../mechanism/tune';
 import { D, RoomBase, type HintTarget } from './RoomBase';
 import { FONT } from '../ui/widgets';
@@ -69,12 +70,17 @@ export class TuneRoom extends RoomBase<'tune'> {
       const kg = this.add.graphics();
       kg.fillStyle(0x000000, 0.3);
       kg.fillCircle(3, 5, 30);
-      kg.fillStyle(0x7a5413, 1);
+      kg.fillStyle(0x79503d, 1);
       kg.fillCircle(0, 0, 30);
-      kg.fillStyle(mode === 'boiler' && i === 0 ? 0xe05a47 : mode === 'boiler' ? 0x3b7dd8 : 0xe0ab48, 1);
+      kg.fillStyle(mode === 'boiler' && i === 0 ? 0xe05a47 : mode === 'boiler' ? 0x3b7dd8 : 0xbca16a, 1);
       kg.fillCircle(0, 0, 25);
-      kg.fillStyle(0xfff0b8, 0.4);
+      kg.fillStyle(0xf4ebd5, 0.4);
       kg.fillCircle(-8, -9, 11);
+      kg.lineStyle(2, CM.ink, 0.8);
+      kg.strokeCircle(0, 0, 30);
+      kg.lineStyle(1, CM.copperLight, 0.7);
+      kg.strokeCircle(0, 0, 27);
+      drawPatina(kg, -16, -16, 32, 32, i + 378, 1.7);
       knob.add(kg);
       knob.setSize(80, 80);
       knob.setInteractive({ draggable: true, useHandCursor: true });
@@ -171,7 +177,7 @@ export class TuneRoom extends RoomBase<'tune'> {
       const val = this.state[v.id];
       const tuned = dialTuned(val, d.target, d.tol);
       // the track
-      g.lineStyle(12, 0x2b1d14, 0.8);
+      g.lineStyle(12, 0x342f29, 0.8);
       g.lineBetween(v.a.x, v.a.y, v.b.x, v.b.y);
       g.lineStyle(6, 0xb88a2c, 1);
       g.lineBetween(v.a.x, v.a.y, v.b.x, v.b.y);
@@ -191,13 +197,13 @@ export class TuneRoom extends RoomBase<'tune'> {
         g.lineBetween(base.x, base.y, tip.x + ring, tip.y + 20);
         g.lineStyle(16, 0xdee2e6, 1);
         g.lineBetween(base.x, base.y, tip.x + ring, tip.y + 20);
-        g.fillStyle(0x6c757d, 1);
+        g.fillStyle(0x60736d, 1);
         g.fillRect(base.x - 40, 470, 80, 30);
       } else if (mode === 'whistle') {
         const h = 90 + v.i * 26;
-        g.fillStyle(0xd9a441, 1);
+        g.fillStyle(0xbca16a, 1);
         g.fillRoundedRect(v.a.x - 22, 270 - h, 44, h, 10);
-        g.fillStyle(0x2b1d14, 1);
+        g.fillStyle(0x342f29, 1);
         g.fillRect(v.a.x - 14, 250, 28, 8);
         if (tuned) {
           g.fillStyle(0xffffff, 0.5);
@@ -246,10 +252,10 @@ export class TuneRoom extends RoomBase<'tune'> {
           const avg = this.def.dials.reduce((s, q) => s + clarity(this.state[q.id], q.target, q.tol), 0) / this.def.dials.length;
           const mix = this.def.dials.reduce((s, q) => s + this.state[q.id], 0) / this.def.dials.length;
           const tgt = this.def.dials.reduce((s, q) => s + q.target, 0) / this.def.dials.length;
-          drawWave(tgt, 0xffd76a, 0.5, 0, 6);
+          drawWave(tgt, 0xf1d391, 0.5, 0, 6);
           drawWave(mix, avg >= 1 ? 0x8ce99a : 0x74c0fc, 1, 1 - avg, 3);
           // the tuning scale with a needle
-          g.fillStyle(0xf6ead0, 1);
+          g.fillStyle(0xe9dcc0, 1);
           g.fillRoundedRect(340, 360, 600, 50, 10);
           for (let k = 0; k <= 20; k++) {
             g.lineStyle(2, 0x3b260b, 0.7);
@@ -260,7 +266,7 @@ export class TuneRoom extends RoomBase<'tune'> {
           g.lineBetween(nx, 362, nx, 406);
         }
       } else {
-        drawWave(d.target, 0xffd76a, 0.5, 0, 6);
+        drawWave(d.target, 0xf1d391, 0.5, 0, 6);
         drawWave(val, tuned ? 0x8ce99a : 0x74c0fc, 1, 1 - clarity(val, d.target, d.tol), 3);
       }
       if (this.style.numbers) {
@@ -285,7 +291,7 @@ export class TuneRoom extends RoomBase<'tune'> {
     for (const v of this.dials) {
       const d = this.def.dials[v.i];
       if (dialTuned(this.state[v.id], d.target, d.tol)) continue;
-      g.lineStyle(4, 0xfff4c8, alpha + 0.2);
+      g.lineStyle(4, 0xf4ebd5, alpha + 0.2);
       g.strokeCircle(v.a.x + (v.b.x - v.a.x) * d.target, v.a.y + (v.b.y - v.a.y) * d.target, 30);
     }
   }

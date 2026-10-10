@@ -10,7 +10,7 @@ import * as sfx from '../audio/sfx';
 import { playMelody } from '../audio/music';
 import { speak, stopVoice } from '../audio/voice';
 import { drawStage } from '../art/backgrounds';
-import { paintedBackdrop } from '../art/generated';
+import { CM, CM_CSS, drawPatina } from '../art/copperMoss';
 import { MachineArt } from '../art/objects';
 import { badge, Portrait } from '../art/portraits';
 import { REPAIRS } from '../content/repairs';
@@ -64,7 +64,6 @@ export class StoryScene extends MetaScene {
     }
     this.story = story;
     drawStage(this, story.bg).setDepth(0);
-    paintedBackdrop(this, `stage-${story.bg}`, 1);
     this.musicFor(story);
 
     if ((story.id === 'epilogue' || story.id === 'magnus-nest') && profile().nest) this.drawNest(1040, 150);
@@ -95,9 +94,9 @@ export class StoryScene extends MetaScene {
     // subtitles (or a sound wave for reading-free play)
     this.subBg = this.add.graphics().setDepth(HUD - 5);
     this.wave = this.add.graphics().setDepth(HUD - 4);
-    this.subName = this.add.text(250, 600, '', { fontFamily: SERIF, fontSize: '22px', color: '#7a5413', fontStyle: 'bold' }).setDepth(HUD - 4);
+    this.subName = this.add.text(250, 600, '', { fontFamily: SERIF, fontSize: '22px', color: CM_CSS.copperDark, fontStyle: 'bold' }).setDepth(HUD - 4);
     this.subText = this.add
-      .text(250, 630, '', { fontFamily: FONT, fontSize: '26px', color: '#2b1d14', wordWrap: { width: 860 }, lineSpacing: 4 })
+      .text(250, 630, '', { fontFamily: FONT, fontSize: '26px', color: CM_CSS.ink, wordWrap: { width: 860 }, lineSpacing: 4 })
       .setDepth(HUD - 4);
 
     const calm = settings().calm;
@@ -168,14 +167,25 @@ export class StoryScene extends MetaScene {
     g.clear();
     g.fillStyle(0x000000, 0.28);
     g.fillRoundedRect(144, 586, 1000, 116, 24);
-    g.fillStyle(0xfff6e2, 0.97);
+    g.fillStyle(CM.copperDark, 1);
     g.fillRoundedRect(140, 580, 1000, 116, 24);
-    g.lineStyle(3, 0xb88a2c, 1);
-    g.strokeRoundedRect(140, 580, 1000, 116, 24);
+    g.fillStyle(CM.paper, 0.98);
+    g.fillRoundedRect(146, 586, 988, 104, 19);
+    g.lineStyle(1, CM.brass, 0.9);
+    g.strokeRoundedRect(143, 583, 994, 110, 21);
+    drawPatina(g, 150, 587, 980, 7, 508, 0.3);
+    for (const x of [154, 1126]) for (const y of [593, 682]) {
+      g.fillStyle(CM.brass, 1);
+      g.fillCircle(x, y, 3);
+      g.lineStyle(1, CM.copperDark, 1);
+      g.lineBetween(x - 1.5, y + 1, x + 1.5, y - 1);
+    }
     this.subFace?.destroy();
     this.subFace = badge(this, 196, 638, line.who, 40).setDepth(HUD - 4);
     this.subName.setText(words ? VOICES[line.who]?.name ?? '' : '');
-    this.subText.setText(words ? line.text : '');
+    this.subText.setFontSize(26).setText(words ? line.text : '');
+    // Long lines stay inside the parchment strip on every play style.
+    for (let size = 25; this.subText.height > 58 && size >= 18; size--) this.subText.setFontSize(size);
     this.wave.setVisible(!words);
   }
 

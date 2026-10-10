@@ -65,7 +65,7 @@ await page.evaluate(() => {
 });
 await page.goto(URL_BASE);
 await waitScene("s === 'title'");
-await page.mouse.click(640, 600); // the first tap unlocks sound
+await page.mouse.click(500, 515); // the first tap unlocks sound
 await page.waitForFunction(() => window.pm.hot.colour0, null, { timeout: 30000 });
 await shot('01-new-profile');
 await hot('colour0');

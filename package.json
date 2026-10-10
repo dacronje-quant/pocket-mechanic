@@ -9,6 +9,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "assets": "node scripts/generate-assets.mjs",
+    "assets:audio": "node scripts/generate-elevenlabs.mjs",
+    "audition": "node scripts/elevenlabs-audition.mjs",
+    "audition:serve": "node scripts/elevenlabs-audition.mjs --serve --lan",
     "playthrough": "node scripts/playthrough.mjs",
     "playthrough:touch": "node scripts/touch-playthrough.mjs"
   },

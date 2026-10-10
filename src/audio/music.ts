@@ -2,7 +2,7 @@
  * Music that is the machine (GDD §23.2). Each object has a theme made of
  * layers: a broken machine plays a sparse version and every fixed room adds
  * an instrument, so players hear their progress. Themes are synthesised here
- * as a fallback; a generated loop (Lyria) under public/audio/music replaces a
+ * as a fallback; a generated loop under public/audio/music replaces a
  * theme when the manifest lists one — crossfaded into itself so it never
  * clicks, and heard through a low-pass filter that opens up as rooms are
  * fixed, so the generated music still tells the player their progress.
@@ -63,7 +63,7 @@ let timer: ReturnType<typeof setInterval> | null = null;
 let nextTime = 0;
 let step = 0;
 let tempoScale = 1;
-/** A generated loop (Lyria) playing: crossfaded repeats through a low-pass filter that opens with progress. */
+/** A generated loop playing: crossfaded repeats through a low-pass filter that opens with progress. */
 let file: { buf: AudioBuffer; filter: BiquadFilterNode; out: GainNode; voices: Array<{ src: AudioBufferSourceNode; gain: GainNode }>; timer: ReturnType<typeof setTimeout> | null } | null = null;
 let fileProgress = 1;
 let fileWindDown = false;

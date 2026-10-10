@@ -1,3 +1,4 @@
+import { ARCHIVE_QUICK_FIXES } from './rooms/variety';
 /** Quick Fixes (GDD §15): 24 short single-mechanism repairs, unlocking in threes. */
 import { followerPattern } from '../mechanism/cams';
 import { meshedPosition } from '../mechanism/graph';
@@ -669,5 +670,7 @@ export const QUICK_FIXES: QuickFixDef[] = [
     }),
   },
 ];
+
+QUICK_FIXES.push(...ARCHIVE_QUICK_FIXES);
 
 export const QUICK_FIX_ROOMS: RoomDef[] = QUICK_FIXES.map((q) => q.room);

@@ -5,6 +5,7 @@
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
+import { CM, drawPatina } from '../art/copperMoss';
 import { bestPhase, CAM_PROFILES, CAM_STEPS, camMatches, type CamShape } from '../mechanism/cams';
 import type { FollowerArt } from '../content/types';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
@@ -85,14 +86,17 @@ export class CamRoom extends RoomBase<'cam'> {
     }
     g.fillStyle(0x000000, 0.25);
     g.fillPoints(pts.map((p) => new Phaser.Math.Vector2(p.x + 3, p.y + 5)), true);
-    g.fillStyle(0xd9a441, 1);
+    g.fillStyle(0xbca16a, 1);
     g.fillPoints(pts, true);
     g.lineStyle(3, 0x8a5f17, 1);
     g.strokePoints(pts, true, true);
-    g.fillStyle(0x5e3f10, 1);
+    drawPatina(g, -21, -21, 42, 42, 773, 1.6);
+    g.fillStyle(0x554638, 1);
     g.fillCircle(0, 0, 9);
+    g.lineStyle(1, CM.copperLight, 0.7);
+    g.strokeCircle(0, 0, 13);
     // a marker so the cam's turn is visible
-    g.fillStyle(0xfff0b8, 1);
+    g.fillStyle(0xf4ebd5, 1);
     g.fillCircle(0, -22, 4);
   }
 
@@ -171,11 +175,11 @@ export class CamRoom extends RoomBase<'cam'> {
     g.clear();
     const stepNow = Math.floor((this.turn % 1) * CAM_STEPS);
     // the drive shaft and its crank
-    g.lineStyle(14, 0x5e3f10, 1);
+    g.lineStyle(14, 0x554638, 1);
     g.lineBetween(220, SHAFT_Y, 1060, SHAFT_Y);
     g.lineStyle(6, 0xb88a2c, 1);
     g.lineBetween(220, SHAFT_Y, 1060, SHAFT_Y);
-    g.fillStyle(0xd64541, 1);
+    g.fillStyle(0xad6b51, 1);
     g.fillCircle(220 + Math.cos(this.turn * Math.PI * 2) * 30, SHAFT_Y + Math.sin(this.turn * Math.PI * 2) * 30, 12);
     for (const f of this.def.followers) {
       const x = this.xs[f.id];
@@ -195,7 +199,7 @@ export class CamRoom extends RoomBase<'cam'> {
       this.drawFollower(g, f.art, x, h, 1, match);
       // target pattern strip
       for (let k = 0; k < CAM_STEPS; k++) {
-        g.fillStyle(f.target[k] ? 0xffd76a : 0x3d2b25, k === stepNow ? 1 : 0.7);
+        g.fillStyle(f.target[k] ? 0xf1d391 : 0x3d2b25, k === stepNow ? 1 : 0.7);
         g.fillRect(x - 60 + k * 10, 516, 8, 10);
       }
     }
@@ -207,7 +211,7 @@ export class CamRoom extends RoomBase<'cam'> {
 
   private drawFollower(g: Phaser.GameObjects.Graphics, art: FollowerArt, x: number, h: number, alpha: number, happy: boolean): void {
     const top = SHAFT_Y - 60 - h * 50;
-    g.lineStyle(10, 0x6c757d, alpha);
+    g.lineStyle(10, 0x60736d, alpha);
     g.lineBetween(x, SHAFT_Y - 50, x, top);
     const y = top - 20;
     g.fillStyle(0xffffff, alpha === 1 ? 0 : 0);
@@ -239,7 +243,7 @@ export class CamRoom extends RoomBase<'cam'> {
         }
         break;
       case 'hammer':
-        g.fillStyle(0x6c757d, alpha);
+        g.fillStyle(0x60736d, alpha);
         g.fillRect(x - 30, y - 40, 60, 26);
         break;
       case 'bird':
@@ -281,7 +285,7 @@ export class CamRoom extends RoomBase<'cam'> {
   protected drawGhosts(g: Phaser.GameObjects.Graphics, alpha: number): void {
     for (const f of this.def.followers) {
       if (this.state[f.id]) continue;
-      g.lineStyle(4, 0xfff4c8, alpha + 0.2);
+      g.lineStyle(4, 0xf4ebd5, alpha + 0.2);
       g.strokeCircle(this.xs[f.id], SHAFT_Y, 42);
     }
   }

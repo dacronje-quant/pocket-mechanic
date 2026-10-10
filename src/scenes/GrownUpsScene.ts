@@ -8,6 +8,8 @@ import Phaser from 'phaser';
 import { setLevels } from '../audio/engine';
 import { setSoft } from '../audio/sfx';
 import { Kip } from '../art/Kip';
+import { CM, drawLeafSprig, drawPatina } from '../art/copperMoss';
+import { etchedPlate } from '../art/finish';
 import type { PlayStyleId } from '../content/types';
 import { whatWeLearned } from '../core/progress';
 import { persist, removeProfile, save, settings, type Settings } from '../core/save';
@@ -44,9 +46,14 @@ export class GrownUpsScene extends MetaScene {
   protected build(data: Record<string, unknown>): void {
     this.back = data.back === 'title' ? 'title' : 'shop';
     this.confirm = null;
-    this.add.rectangle(0, 0, 1280, 720, 0xf3e2bd).setOrigin(0).setDepth(0);
-    this.add.rectangle(0, 0, 1280, 96, 0x3d2412).setOrigin(0).setDepth(HUD - 1);
-    this.add.text(640, 48, 'For grown-ups', { fontFamily: SERIF, fontSize: '36px', color: '#ffd76a', fontStyle: 'bold' }).setOrigin(0.5).setDepth(HUD);
+    const paper = this.add.graphics().setDepth(0);
+    paper.fillStyle(CM.paper, 1);
+    paper.fillRect(0, 0, 1280, 720);
+    drawPatina(paper, 0, 0, 1280, 720, 1733, 2.5);
+    const header = this.add.graphics().setDepth(HUD - 1);
+    etchedPlate(header, -8, -8, 1296, 104, CM.tealDark, 1, 305);
+    drawLeafSprig(header, 1240, 5, 65, 52, 0.6);
+    this.add.text(640, 48, 'For grown-ups', { fontFamily: SERIF, fontSize: '36px', color: '#f1d391', fontStyle: 'bold' }).setOrigin(0.5).setDepth(HUD);
     // with every profile removed there is no shop to go back to: go to the title to make one
     this.backButton(() => goScene(this, save.profiles.length ? this.back : 'title'), '✓');
     this.render();
@@ -81,7 +88,7 @@ export class GrownUpsScene extends MetaScene {
     for (const p of save.profiles) {
       const row = this.y;
       this.content.add(new Kip(this, 120, row + 70, p.look).setScale(1.1));
-      this.content.add(this.add.text(180, row + 4, p.initials || '(no letters)', { fontFamily: SERIF, fontSize: '26px', color: '#3b260b', fontStyle: 'bold' }));
+      this.content.add(this.add.text(180, row + 4, p.initials || '(no letters)', { fontFamily: SERIF, fontSize: '26px', color: '#342f29', fontStyle: 'bold' }));
       this.options(
         'Play Style',
         (['tinker', 'fixer', 'engineer'] as PlayStyleId[]).map((id) => [`${PLAY_STYLES[id].icon} ${PLAY_STYLES[id].name}`, id] as Opt<PlayStyleId>),
@@ -102,7 +109,7 @@ export class GrownUpsScene extends MetaScene {
           this.confirm = null;
         } else this.confirm = p.id;
         this.render();
-      }, this.confirm === p.id ? 0xd64541 : 0x9a8a72);
+      }, this.confirm === p.id ? 0xad6b51 : 0x9a8a72);
       this.y += 30;
     }
 
@@ -142,7 +149,7 @@ export class GrownUpsScene extends MetaScene {
       this.button('Reopen the shop for today', 360, this.y + 6, () => {
         reopen();
         this.render();
-      }, 0x2e9b5f);
+      }, 0x78815a);
       this.y += 60;
     }
 
@@ -161,37 +168,43 @@ export class GrownUpsScene extends MetaScene {
   private section(title: string): void {
     this.y += 18;
     const g = this.add.graphics();
-    g.fillStyle(0x7a5413, 1);
+    g.fillStyle(0x79503d, 1);
     g.fillRect(60, this.y + 40, 1160, 3);
     this.content.add(g);
-    this.content.add(this.add.text(60, this.y, title, { fontFamily: SERIF, fontSize: '28px', color: '#5e3f10', fontStyle: 'bold' }));
+    this.content.add(this.add.text(60, this.y, title, { fontFamily: SERIF, fontSize: '28px', color: '#665d50', fontStyle: 'bold' }));
     this.y += 56;
   }
 
   private text(t: string, x = 60, width = 1160): void {
-    const tx = this.add.text(x, this.y, t, { fontFamily: FONT, fontSize: '19px', color: '#3b260b', wordWrap: { width }, lineSpacing: 4 });
+    const tx = this.add.text(x, this.y, t, { fontFamily: FONT, fontSize: '19px', color: '#342f29', wordWrap: { width }, lineSpacing: 4 });
     this.content.add(tx);
     this.y += tx.height + 12;
   }
 
-  private button(label: string, x: number, y: number, onTap: () => void, color = 0x7a5413): Phaser.GameObjects.Text {
-    const t = this.add
-      .text(x, y, label, { fontFamily: FONT, fontSize: '18px', color: '#fff6e2', backgroundColor: `#${color.toString(16).padStart(6, '0')}`, padding: { x: 12, y: 8 } })
-      .setInteractive({ useHandCursor: true });
+  private button(label: string, x: number, y: number, onTap: () => void, color = 0x79503d): Phaser.GameObjects.Container {
+    const t = this.add.text(12, 8, label, { fontFamily: FONT, fontSize: '18px', color: '#f4ebd5' });
+    const c = this.add.container(x, y);
+    const g = this.add.graphics();
+    const w = t.width + 24;
+    const h = t.height + 16;
+    etchedPlate(g, 0, 0, w, h, color, 1, Math.round(x + y));
+    c.add([g, t]);
+    c.setSize(w, h).setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains);
+    c.input!.cursor = 'pointer';
     let sx = 0;
     let sy = 0;
-    t.on('pointerdown', (p: Phaser.Input.Pointer) => ((sx = p.x), (sy = p.y)));
-    t.on('pointerup', (p: Phaser.Input.Pointer) => Math.hypot(p.x - sx, p.y - sy) < 12 && onTap());
-    this.content.add(t);
-    return t;
+    c.on('pointerdown', (p: Phaser.Input.Pointer) => ((sx = p.x), (sy = p.y)));
+    c.on('pointerup', (p: Phaser.Input.Pointer) => Math.hypot(p.x - sx, p.y - sy) < 12 && onTap());
+    this.content.add(c);
+    return c;
   }
 
   private options<T>(label: string, opts: Array<Opt<T>>, current: T, onPick: (v: T) => void, x = 60, y = this.y): void {
-    this.content.add(this.add.text(x, y + 8, label, { fontFamily: FONT, fontSize: '19px', color: '#3b260b', fontStyle: 'bold' }));
+    this.content.add(this.add.text(x, y + 8, label, { fontFamily: FONT, fontSize: '19px', color: '#342f29', fontStyle: 'bold' }));
     let bx = x + Math.max(300, label.length * 9.5 + 20);
     let by = y;
     for (const [name, v] of opts) {
-      const b = this.button(name, bx, by, () => onPick(v), v === current ? 0x2e7d6b : 0xb39a72);
+      const b = this.button(name, bx, by, () => onPick(v), v === current ? CM.tealDark : CM.woodDark);
       if (bx + b.width > 1220) {
         bx = x + 300;
         by += 46;
