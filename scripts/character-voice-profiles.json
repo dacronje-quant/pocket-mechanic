@@ -1,0 +1,78 @@
+{
+  "provider": "ElevenLabs",
+  "model": "eleven_ttv_v3",
+  "revision": "portrait-2026-10-11",
+  "note": "Young roles use natural adult performers. Do not request or create voices of minors, child-like voices, or clones of real people.",
+  "characters": {
+    "rosa": {
+      "name": "Rosa",
+      "appearance": "Seven-year-old girl with pigtails, a friendly expressive face and a pink dress.",
+      "direction": "Bright, curious and affectionate; lighter conversational delivery instead of a polished narrator.",
+      "description": "A female adult voice performer in her early twenties, with a naturally light clear soprano speaking register. Bright, curious, friendly and affectionate; an open smiling sound and lively conversational rhythm. Gentle British English, clearly pronounced words, expressive small reactions and an unhurried pace. A natural adult performance for a fictional storybook character. Clean dry studio speech, no music or sound effects.",
+      "speed": 0.97
+    },
+    "theo": {
+      "name": "Theo",
+      "appearance": "Small curly-haired boy in overalls; cheerful train-loving twin.",
+      "direction": "Light tenor, eager and playful; avoid a deep relaxed presenter voice.",
+      "description": "A male adult voice performer in his early twenties, with a naturally light high-tenor speaking register. Eager, playful and enthusiastic, with clear bright vowels and quick little changes of expression. Gentle British English; an easy conversational smile and clear unhurried words. A natural adult performance for a fictional storybook character. Avoid bass resonance, radio-presenter formality or shouting. Clean dry studio speech, no music or sound effects.",
+      "speed": 0.98
+    },
+    "ada": {
+      "name": "Ada",
+      "appearance": "Small girl with hair puffs and orange overalls; confident twin.",
+      "direction": "Lively and decisive, with crisp playful emphasis; distinct from Rosa.",
+      "description": "A female adult voice performer in her early twenties, with a naturally clear upper mezzo-soprano register. Lively, decisive, sunny and spirited, with crisp playful emphasis and a confident smile. Gentle British English, expressive conversational rhythm, clear words and measured pace. A natural adult performance for a fictional storybook character. Never shrill, stern or sales-like. Clean dry studio speech, no music or sound effects.",
+      "speed": 0.97
+    },
+    "pip": {
+      "name": "Pip",
+      "appearance": "Very small blond boy in a yellow jumper.",
+      "direction": "Light, soft, cheerful male performance; replace the mature female narrator.",
+      "description": "A male adult voice performer in his early twenties, with a naturally high light tenor speaking register and soft rounded vowels. Gentle, cheerful and slightly bashful, with a friendly smile and warm understated amusement. British English, a soft conversational voice and short clear unhurried phrases. A natural adult performance for a fictional storybook character. No booming chest resonance, corporate narration or forced rasp. Clean dry studio speech, no music or sound effects.",
+      "speed": 0.96
+    },
+    "mateo": {
+      "name": "Mateo",
+      "appearance": "Small curly-haired boy in green clothes; Rosa’s little brother.",
+      "direction": "Light, mischievous and giggly; avoid the confident social-media presenter tone.",
+      "description": "A male adult voice performer in his early twenties, with a naturally light forward high-tenor voice and a smiling, slightly nasal resonance. Mischievous, playful and warmly amused, with tiny natural chuckles and lively short phrases. British English, clear words and easy conversational pacing. A natural adult performance for a fictional storybook character. Never a deep announcer or brash sales presenter. Clean dry studio speech, no music or sound effects.",
+      "speed": 0.98
+    },
+    "odette": {
+      "name": "Young Odette",
+      "appearance": "Young apprentice with goggles, a long braid and green work clothes.",
+      "direction": "Bright, earnest and curious; lighter than Nana and the former mature educator.",
+      "description": "A female adult voice performer in her early twenties, with a naturally light lyrical soprano voice. Bright, earnest, thoughtful and curious, with a warm sincere smile and gentle confidence. British English; clear words, a natural conversational rhythm and an unhurried pace. A natural adult performance for a fictional storybook character. Avoid mature school-lecturer formality, breathless excitement and a husky grandmother tone. Clean dry studio speech, no music or sound effects.",
+      "speed": 0.96
+    },
+    "marigold": {
+      "name": "Captain Marigold",
+      "appearance": "Older silver-haired woman in a navy captain’s coat and cap.",
+      "direction": "Older female, steady and reassuring, with a little weathered warmth.",
+      "description": "An older woman in her late sixties, a retired harbour captain and lighthouse keeper. British English with a warm gently weathered lower female speaking register, a little natural rasp and a reassuring smile. Steady, practical, kind and quietly authoritative; she cares deeply about bringing everyone safely home. Clear consonants, measured conversational pacing, never harsh or intimidating. Clean dry studio speech, no music or effects.",
+      "speed": 0.92
+    },
+    "pockets": {
+      "name": "Professor Pockets",
+      "appearance": "White-haired older man with round glasses, top hat and many pockets.",
+      "direction": "Older male, whimsical and animated; gentle rather than booming.",
+      "description": "An elderly British man in his seventies, an eccentric kind fairground inventor with a light warm tenor voice. Whimsical, delighted and animated, with a gently papery age texture, curious rising intonation and a little amused chuckle. Clear words and measured conversational pacing; welcoming and playful, never booming or threatening. A natural fictional storybook performance. Clean dry studio speech, no music or effects.",
+      "speed": 0.96
+    },
+    "odum": {
+      "name": "Mrs. Odum",
+      "appearance": "Older woman with silver braids, spectacles and a straw gardening hat.",
+      "direction": "Older female, practical and warm, with calm matter-of-fact delivery.",
+      "description": "An older British woman in her late sixties, a cheerful practical farmer and gardener. Warm, down-to-earth and matter-of-fact, with a naturally mature female voice, a little soft age texture and a relaxed affectionate smile. Clear diction and an unhurried conversational pace. Confident but never stern; delighted by rain and growing things. Clean dry studio speech, no music or effects.",
+      "speed": 0.92
+    },
+    "lindqvist": {
+      "name": "Mr. Lindqvist",
+      "appearance": "Silver-haired older man with spectacles, bow tie and formal waistcoat.",
+      "direction": "Older male, precise but warm, with understated amusement.",
+      "description": "An elderly British man in his late sixties, a precise gentle piano teacher with spectacles and a bow tie. A warm clear light baritone voice with subtle natural age texture. Careful diction, musical phrasing and quietly amused kindness; dignified but secretly playful. Unhurried conversation, never a stern lecture or grand announcer voice. Clean dry studio speech, no music or effects.",
+      "speed": 0.92
+    }
+  }
+}

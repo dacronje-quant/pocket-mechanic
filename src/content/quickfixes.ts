@@ -64,7 +64,7 @@ export const QUICK_FIXES: QuickFixDef[] = [
     owner: 'pip',
     ownerName: 'Pip',
     object: 'mouse',
-    payoff: 'The mouse scurries round and round in circles.',
+    payoff: 'Look! My mouse is running round and round again!',
     after: 0,
     reward: 'bulb-orange',
     room: room({
@@ -197,7 +197,7 @@ export const QUICK_FIXES: QuickFixDef[] = [
     owner: 'mateo',
     ownerName: 'Mateo',
     object: 'jack',
-    payoff: 'POP! (A gentle, giggly pop.)',
+    payoff: 'Pop! Hello, little jack-in-the-box!',
     after: 2,
     reward: 'bulb-pink',
     room: room({

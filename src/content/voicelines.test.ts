@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { LINES, storyById } from './story';
 import { allVoiceLines, uiLineId } from './voicelines';
 import { VOICES } from './voices';
+import manifest from '../../public/audio/manifest.json';
 
 /** Every source file's text (scenes, rooms, …), to check the ids they speak. */
 const SRC = Object.entries(import.meta.glob('../**/*.ts', { query: '?raw', import: 'default', eager: true }) as Record<string, string>)
@@ -28,6 +29,18 @@ describe('voice lines', () => {
     const ids = new Set(lines.map((l) => l.id));
     expect(ids.has(uiLineId('Back to the shop'))).toBe(true);
     expect(ids.has(uiLineId('Next!'))).toBe(true);
+  });
+
+  it('records every spoken line, including computed button labels', () => {
+    const labels = SRC.flatMap(text => [...text.matchAll(/\bsay: '([^'\\]{2,60})'/g)].map(match => match[1]));
+    const recordings = manifest.voice as Record<string, string>;
+    for (const line of allVoiceLines(labels)) {
+      if (VOICES[line.who].beeps) continue;
+      expect(recordings[line.id], line.id).toMatch(/^(voice|sfx)\/[\w-]+\.mp3$/);
+    }
+    for (const label of ['Kip', 'Tess', 'Tilt up', 'Tilt down', 'Tilt left', 'Tilt right', 'Contraption Cards', 'Nest Studio']) {
+      expect(recordings[uiLineId(label)], label).toBeDefined();
+    }
   });
 
   it('include every LINES id that scenes and rooms speak', () => {

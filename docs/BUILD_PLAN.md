@@ -175,7 +175,7 @@ at Engineer difficulty; each gives a clue symbol for the Mystery Box.
 
 Production audio uses scripts/generate-elevenlabs.mjs (npm run assets:audio), with a local ignored ELEVENLABS_API_KEY in .env. The game receives only static media and retains immediate synthesized/device-speech fallbacks.
 
-- **Preserved voices:** Nana A and Magnus A, plus a fixed supporting cast. The original bank has 867 unique spoken recordings for 1,145 spoken line IDs; Pudding's recorded meow completes the 1,146-entry voice manifest. Identical words from the same actor share a file. Robot beeps remain configurable synthesis. The ten new kinds use separate age-specific instruction ids and deliberate device speech until those recordings exist; archived puzzles reuse their unchanged original recordings. See `PUZZLE_VARIETY.md` for the fallback policy.
+- **Voices:** 1,290 spoken line IDs are recorded, including all 120 age-specific introductions/hints for the ten newer kinds, six archived-puzzle payoffs, the three newer static control labels, and previously omitted computed control/menu labels. Same words from the same actor share a file; the active bank has 990 unique spoken recordings plus Pudding's recorded meow. Nana A and Magnus A remain unchanged. Six young roles and four older characters were recast against their current portraits; see `VOICE_CASTING.md`. Young roles use natural adult performers because ElevenLabs restricts child-like voice creation. Device speech remains a runtime recovery fallback, but no authored line is exempt from recording checks. Archived puzzles keep their unchanged instruction IDs.
 - **Music:** 14 instrumental themes, including the approved workshop theme. Playback crossfades repeats and adjusts filtering as repairs progress.
 - **Effects:** 44 cues in 46 files, including three satisfying brass gear click variations. Approved clock, spring, steam, bell and ratchet recordings are reused. Pitch-sensitive musical puzzle tones remain exact synthesis.
 - **Processing:** normalized MP3, a peak limiter, resumable raw response cache, bounded decoding caches, and background offline catalogue caching. node scripts/check-audio.mjs checks coverage and fully decodes every referenced file. Human listening is still needed to judge pronunciation and artistry.
@@ -207,7 +207,7 @@ Production audio uses scripts/generate-elevenlabs.mjs (npm run assets:audio), wi
 - [x] RoomBase + 25 room kinds, including ten authored spatial/reasoning kinds
 - [x] Content: 53 rooms + 8 Big Fixes, story scripts, 30 Quick Fixes, 23-object Attic + Mystery Box, Part-o-pedia, cosmetics, stamps, Contraption Cards
 - [x] Puzzle variety: all ten kinds, three genuine age variants, preserved archives and save-compatible gates (`PUZZLE_VARIETY.md`)
-- [x] Age-specific instructions and stable voice ids; new lines use device speech pending recordings
+- [x] Age-specific instructions and stable voice ids; all new puzzle instructions, hints and computed control labels are recorded
 - [x] Hub & meta scenes (title/profiles, shop, story, Test Run, rewards, festival, shelf + Tune-Ups, town, Part-o-pedia, Paint & Polish, Nook + Job Book, Invention Bench, Attic, Quick Fixes, grown-ups)
 - [x] Generated media tooling and players; production ElevenLabs audio and recovered painted originals bundled locally (see section 6)
 - [x] Engine/content/voice verification suite: 225 tests passing; all authored solutions checked in every age mode
