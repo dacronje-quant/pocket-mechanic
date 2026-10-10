@@ -77,21 +77,29 @@ export function unlockAudio(): void {
   for (const fn of onUnlock.splice(0)) fn();
 }
 
-// ── generated audio files (Gemini voices / Lyria music), if the build has them ──
+// ── generated audio files, if the build has them ──
 
 export interface AudioManifest {
   voice: Record<string, string>;
   music: Record<string, string>;
+  sfx: Record<string, string[]>;
 }
 
-let manifest: AudioManifest = { voice: {}, music: {} };
+let manifest: AudioManifest = { voice: {}, music: {}, sfx: {} };
 
 export async function loadManifest(): Promise<void> {
   try {
     const res = await fetch('./audio/manifest.json', { cache: 'no-cache' });
     if (!res.ok) return;
     const m = (await res.json()) as Partial<AudioManifest>;
-    manifest = { voice: m.voice ?? {}, music: m.music ?? {} };
+    manifest = { voice: m.voice ?? {}, music: m.music ?? {}, sfx: m.sfx ?? {} };
+    whenUnlocked(() => void preloadEffects());
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      const files = [...new Set([...Object.values(manifest.voice), ...Object.values(manifest.music), ...Object.values(manifest.sfx).flat()])];
+      void navigator.serviceWorker.ready.then(registration => {
+        registration.active?.postMessage({ type: 'CACHE_AUDIO', files });
+      }).catch(() => undefined);
+    }
   } catch {
     /* no generated audio: device speech and synthesized music are used instead */
   }
@@ -101,9 +109,44 @@ export function audioFile(kind: 'voice' | 'music', id: string): string | undefin
   return manifest[kind][id];
 }
 
+export function soundFiles(id: string): string[] {
+  return manifest.sfx[id] ?? [];
+}
+
+async function preloadEffects(): Promise<void> {
+  const files = [...new Set(Object.values(manifest.sfx).flat())];
+  let next = 0;
+  await Promise.all(Array.from({ length: 4 }, async () => {
+    while (next < files.length) await loadBuffer(files[next++]);
+  }));
+}
+
 const buffers = new Map<string, Promise<AudioBuffer | null>>();
+const decoded = new Map<string, AudioBuffer>();
+
+/** Ready effects play synchronously; a late download must not make a stale click. */
+export function readyBuffer(url: string): AudioBuffer | null {
+  return decoded.get(url) ?? null;
+}
+
+function retainBuffer(url: string, buffer: AudioBuffer): void {
+  decoded.delete(url);
+  decoded.set(url, buffer);
+  const family = url.split('/')[0];
+  const max = family === 'voice' ? 24 : family === 'music' ? 2 : Infinity;
+  const sameFamily = [...decoded.keys()].filter(key => key.startsWith(`${family}/`));
+  for (const old of sameFamily.slice(0, Math.max(0, sameFamily.length - max))) {
+    decoded.delete(old);
+    buffers.delete(old);
+  }
+}
 
 export function loadBuffer(url: string): Promise<AudioBuffer | null> {
+  const hit = decoded.get(url);
+  if (hit) {
+    retainBuffer(url, hit);
+    return Promise.resolve(hit);
+  }
   let p = buffers.get(url);
   if (!p) {
     // Before the first tap there is no AudioContext yet: don't cache that "no".
@@ -115,7 +158,7 @@ export function loadBuffer(url: string): Promise<AudioBuffer | null> {
         if (!res.ok) return null;
         const data = await res.arrayBuffer();
         // Older Safari only has the callback form of decodeAudioData.
-        return await new Promise<AudioBuffer | null>((ok) => {
+        const buffer = await new Promise<AudioBuffer | null>((ok) => {
           try {
             const r = c.decodeAudioData(data, (b) => ok(b), () => ok(null));
             if (r && typeof r.catch === 'function') r.catch(() => ok(null));
@@ -123,6 +166,9 @@ export function loadBuffer(url: string): Promise<AudioBuffer | null> {
             ok(null);
           }
         });
+        if (buffer) retainBuffer(url, buffer);
+        else buffers.delete(url);
+        return buffer;
       } catch {
         return null;
       }

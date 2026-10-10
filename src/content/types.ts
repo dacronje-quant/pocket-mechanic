@@ -2,6 +2,7 @@
  * Content types. Every room is plain data plus a room kind (BUILD_PLAN §2);
  * the rules for each kind live in src/rules (pure) and the scenes in src/rooms.
  */
+import type { VarietyKind, VarietyRoomDef } from './variety-types';
 import type { LeverGoal, LeverWeight } from '../mechanism/balance';
 import type { CamShape } from '../mechanism/cams';
 import type { Card, Scenario } from '../mechanism/cards';
@@ -27,7 +28,8 @@ export type RoomKind =
   | 'chain'
   | 'hunt'
   | 'busy'
-  | 'nest';
+  | 'nest'
+  | VarietyKind;
 
 export type ThemeId = 'clock' | 'musicbox' | 'train' | 'radio' | 'tea' | 'bertie' | 'orrery' | 'tower' | 'shop' | 'attic' | 'bench' | 'home';
 
@@ -319,7 +321,8 @@ export type RoomDef =
   | Styled<ChainRoomDef>
   | Styled<HuntRoomDef>
   | Styled<BusyRoomDef>
-  | Styled<NestRoomDef>;
+  | Styled<NestRoomDef>
+  | { [K in VarietyKind]: Styled<Extract<VarietyRoomDef, { kind: K }>> }[VarietyKind];
 
 export type RoomOf<K extends RoomKind> = Extract<RoomDef, { kind: K }>;
 

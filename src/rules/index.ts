@@ -1,3 +1,8 @@
+import { placePiece, piecesSolved, slideMove, slideSolved, symmetrySet, symmetrySolved,
+  sortingSolution, sortingSolved, sudokuSet, sudokuSolved, jugMove, jugsSolved,
+  tiltMove, tiltSolved, layersSet, layersSolved, differenceFind, differenceSolved,
+  type SudokuState } from '../mechanism/variety';
+import type { Placement, SlideState, SortingState, JugsState, TiltState, LayerPlacement } from '../content/variety-types';
 /**
  * Room rules: pure functions per room kind (no Phaser). Scenes keep a plain
  * state object in step with what's on screen and ask these whether the room
@@ -342,6 +347,9 @@ export interface StateOf {
   hunt: Set<number>;
   busy: Set<number>;
   nest: Record<number, string>;
+  shadow: Placement[]; packing: Placement[]; slide: SlideState; symmetry: Record<number, string>;
+  sorting: SortingState; sudoku: SudokuState; jugs: JugsState; tilt: TiltState;
+  layers: LayerPlacement[]; difference: Set<number>;
 }
 
 type DefOf<K extends RoomKind> = Effective<Extract<RoomDef, { kind: K }>>;
@@ -354,6 +362,52 @@ interface KindRules<K extends RoomKind> {
 }
 
 export const RULES: { [K in RoomKind]: KindRules<K> } = {
+  shadow: {
+    initial: () => [],
+    solution: (d) => d.solution.reduce((state, p) => placePiece(d, state, p), [] as Placement[]),
+    solved: (d, s) => piecesSolved(d, s),
+  },
+  packing: {
+    initial: () => [],
+    solution: (d) => d.solution.reduce((state, p) => placePiece(d, state, p), [] as Placement[]),
+    solved: (d, s) => piecesSolved(d, s),
+  },
+  slide: {
+    initial: (d) => ({ tiles: [...d.initial], moves: 0 }),
+    solution: (d) => d.solutionMoves.reduce((state, at) => slideMove(d, state, at), { tiles: [...d.initial], moves: 0 }),
+    solved: (d, s) => slideSolved(d, s),
+  },
+  symmetry: {
+    initial: (d) => Object.fromEntries(d.seeds.map(p => [p.at, p.token])),
+    solution: (d) => d.solution.reduce((state, p) => symmetrySet(d, state, p.at, p.token), Object.fromEntries(d.seeds.map(p => [p.at, p.token]))),
+    solved: (d, s) => symmetrySolved(d, s),
+  },
+  sorting: { initial: (d) => ({ order: d.items.map(i => i.id), weighings: 0 }), solution: (d) => sortingSolution(d), solved: (d, s) => sortingSolved(d, s) },
+  sudoku: {
+    initial: (d) => ({ cells: [...d.givens] }),
+    solution: (d) => d.solution.reduce((state, value, at) => sudokuSet(d, state, at, value), { cells: [...d.givens] }),
+    solved: (d, s) => sudokuSolved(d, s),
+  },
+  jugs: {
+    initial: (d) => ({ volumes: [...d.initial], pours: 0 }),
+    solution: (d) => d.solution.reduce((state, action) => jugMove(d, state, action), { volumes: [...d.initial], pours: 0 }),
+    solved: (d, s) => jugsSolved(d, s),
+  },
+  tilt: {
+    initial: (d) => ({ marbles: [...d.initial], moves: 0 }),
+    solution: (d) => d.solution.reduce((state, direction) => tiltMove(d, state, direction), { marbles: [...d.initial], moves: 0 }),
+    solved: (d, s) => tiltSolved(d, s),
+  },
+  layers: {
+    initial: () => [],
+    solution: (d) => d.solution.reduce((state, p) => layersSet(d, state, p), [] as LayerPlacement[]),
+    solved: (d, s) => layersSolved(d, s),
+  },
+  difference: {
+    initial: () => new Set(),
+    solution: (d) => d.differences.reduce((state, _, index) => differenceFind(d, state, index), new Set<number>()),
+    solved: (d, s) => differenceSolved(d, s),
+  },
   gear: {
     initial: (d) => (d.initial ?? []).map((p) => ({ ...p })),
     solution: (d) => d.solution.map((p) => ({ ...p })),

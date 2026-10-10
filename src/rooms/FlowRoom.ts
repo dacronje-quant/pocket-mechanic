@@ -6,6 +6,8 @@
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
+import { CM } from '../art/copperMoss';
+import { etchedPlate } from '../art/finish';
 import {
   channels,
   cloneGrid,
@@ -73,10 +75,8 @@ export class FlowRoom extends RoomBase<'flow'> {
     this.oy = 112 + (430 - g0.rows * this.S) / 2;
     // board
     const board = this.add.graphics().setDepth(D.back + 1);
-    board.fillStyle(0x000000, 0.25);
-    board.fillRoundedRect(this.ox - 14, this.oy - 10, g0.cols * this.S + 28, g0.rows * this.S + 28, 18);
-    board.fillStyle(this.def.family === 'tracks' ? 0x7cb342 : this.def.family === 'circuit' ? 0x2a1a0e : 0x1d3a33, 0.85);
-    board.fillRoundedRect(this.ox - 10, this.oy - 10, g0.cols * this.S + 20, g0.rows * this.S + 20, 16);
+    etchedPlate(board, this.ox - 14, this.oy - 14, g0.cols * this.S + 28, g0.rows * this.S + 28,
+      this.def.family === 'tracks' ? CM.mossDark : this.def.family === 'circuit' ? CM.woodDark : CM.tealDark, 0.93, 345);
     this.tilesG = this.add.graphics().setDepth(D.mech);
     this.liveG = this.add.graphics().setDepth(D.mech + 2);
     this.trainG = this.add.graphics().setDepth(D.parts + 2);
@@ -115,7 +115,7 @@ export class FlowRoom extends RoomBase<'flow'> {
       });
     });
     if (this.def.family === 'tracks') {
-      roundButton(this, 1180, 600, '▶', () => this.runTrains(), { r: 48, fontSize: 44, color: 0x8ce99a, say: 'Go!' }).setDepth(D.hud);
+      roundButton(this, 1180, 600, '▶', () => this.runTrains(), { r: 48, fontSize: 44, color: 0xa0a477, say: 'Go!' }).setDepth(D.hud);
     }
   }
 
@@ -409,7 +409,7 @@ export class FlowRoom extends RoomBase<'flow'> {
       if (!t) return;
       const c = this.cellCenter(i);
       if (t.slot) {
-        g.lineStyle(3, 0xfff4c8, 0.5);
+        g.lineStyle(3, 0xf4ebd5, 0.5);
         g.strokeRoundedRect(c.x - this.S / 2 + 6, c.y - this.S / 2 + 6, this.S - 12, this.S - 12, 10);
         return; // the placed part draws itself
       }
@@ -452,7 +452,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     } else {
       const pipeCol = fam === 'pipes' ? 0xc8703f : 0xb5652e;
       const width = fam === 'pipes' ? S * 0.3 : S * 0.12;
-      for (const ch of chans) for (const d of ch) line(d, width + 6, 0x2b1d14, 0.6);
+      for (const ch of chans) for (const d of ch) line(d, width + 6, 0x342f29, 0.6);
       for (const ch of chans) for (const d of ch) line(d, width, pipeCol);
       if (fam === 'pipes') for (const ch of chans) for (const d of ch) line(d, width * 0.5, 0xd5f5e3, 0.35);
       if (fam === 'circuit') {
@@ -477,7 +477,7 @@ export class FlowRoom extends RoomBase<'flow'> {
         g.lineBetween(x - h + 10, y, x + h - 10, y);
         break;
       case 'W':
-        g.fillStyle(0x2b1d14, 1);
+        g.fillStyle(0x342f29, 1);
         g.fillRoundedRect(x - h * 0.7, y - h * 0.7, S * 0.7, S * 0.7, 10);
         g.fillStyle(0x5fa8d3, 1);
         g.fillRoundedRect(x - h * 0.6, y - h * 0.4, S * 0.6, S * 0.45, 8);
@@ -497,7 +497,7 @@ export class FlowRoom extends RoomBase<'flow'> {
             g.fillEllipse(x, y + 4, S * 0.5, S * 0.3);
           }
         } else {
-          g.fillStyle(0xf6ead0, 1);
+          g.fillStyle(0xe9dcc0, 1);
           g.fillRoundedRect(x - h * 0.55, y - h * 0.5, S * 0.55, S * 0.6, 10);
           g.fillStyle(wet ? 0x5fa8d3 : 0x8f8a7a, wet ? 1 : 0.4);
           g.fillRoundedRect(x - h * 0.45, y - h * 0.2 + (wet ? 0 : h * 0.3), S * 0.45, wet ? S * 0.38 : S * 0.08, 6);
@@ -517,7 +517,7 @@ export class FlowRoom extends RoomBase<'flow'> {
           const ex = x - DX[dir] * h * 0.4;
           const ey = y - DY[dir] * h * 0.4;
           g.lineBetween(bx, by, bx + (ex - bx) * Math.cos(ang) - (ey - by) * Math.sin(ang), by + (ex - bx) * Math.sin(ang) + (ey - by) * Math.cos(ang));
-          g.fillStyle(0xd9a441, 1);
+          g.fillStyle(0xbca16a, 1);
           g.fillCircle(bx, by, 6);
         } else {
           g.fillStyle(0xd64541, 1);
@@ -538,7 +538,7 @@ export class FlowRoom extends RoomBase<'flow'> {
           g.fillStyle(0xffd43b, 1);
           g.fillCircle(x, y, S * 0.08);
         } else {
-          g.fillStyle(0x6c757d, 1);
+          g.fillStyle(0x60736d, 1);
           g.fillCircle(x, y, S * 0.16);
         }
         break;
@@ -558,7 +558,7 @@ export class FlowRoom extends RoomBase<'flow'> {
         }
         g.fillStyle(lit > 0.02 ? 0xfff3b0 : 0x8f8a7a, 0.5 + lit * 0.5);
         g.fillCircle(x, y - 4, S * 0.2);
-        g.fillStyle(0x9aa6b4, 1);
+        g.fillStyle(0x82938c, 1);
         g.fillRect(x - S * 0.09, y + S * 0.12, S * 0.18, S * 0.1);
         if (t.bright && this.style.numbers && cell >= 0) {
           g.lineStyle(2, 0xffd43b, 1);
@@ -569,7 +569,7 @@ export class FlowRoom extends RoomBase<'flow'> {
       case 'Q': {
         const ring = cell >= 0 && level > 0.3;
         const wob = ring ? Math.sin(this.time.now / 30) * 4 : 0;
-        g.fillStyle(0xd9a441, 1);
+        g.fillStyle(0xbca16a, 1);
         g.fillTriangle(x - S * 0.22 + wob, y + S * 0.18, x + S * 0.22 + wob, y + S * 0.18, x + wob, y - S * 0.24);
         g.fillCircle(x + wob, y - S * 0.06, S * 0.16);
         break;
@@ -580,7 +580,7 @@ export class FlowRoom extends RoomBase<'flow'> {
         break;
       case 'F': {
         const blown = cell >= 0 && (this.circ?.blown.includes(cell) || t.state);
-        g.fillStyle(0xf6ead0, 1);
+        g.fillStyle(0xe9dcc0, 1);
         g.fillRoundedRect(x - S * 0.12, y - S * 0.3, S * 0.24, S * 0.6, 8);
         g.lineStyle(3, blown ? 0x555555 : 0xffb347, 1);
         if (blown) {
@@ -612,7 +612,7 @@ export class FlowRoom extends RoomBase<'flow'> {
       case 'Y': {
         g.fillStyle(t.state ? 0x8ce99a : 0xd64541, 1);
         g.fillCircle(x + S * 0.3, y + S * 0.3, S * 0.09);
-        g.lineStyle(3, 0x2b1d14, 1);
+        g.lineStyle(3, 0x342f29, 1);
         g.lineBetween(x + S * 0.3, y + S * 0.3, x + S * 0.3 + (t.state ? 8 : -8), y + S * 0.18);
         break;
       }
@@ -624,7 +624,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     const gauge = this.S * 0.14;
     const sleepers = (pts: Array<{ x: number; y: number; nx: number; ny: number }>) => {
       for (const p of pts) {
-        g.lineStyle(this.S * 0.07, 0x8a5a33, 1);
+        g.lineStyle(this.S * 0.07, 0x856c50, 1);
         g.lineBetween(p.x - p.nx * gauge * 1.6, p.y - p.ny * gauge * 1.6, p.x + p.nx * gauge * 1.6, p.y + p.ny * gauge * 1.6);
       }
     };
@@ -696,7 +696,7 @@ export class FlowRoom extends RoomBase<'flow'> {
       const c = this.cellCenter(i);
       const probe: Tile = { ...t, kind: t.sol.kind, rot: t.sol.rot ?? 0 };
       for (const ch of channels(probe)) for (const d of ch) {
-        g.lineStyle(this.S * 0.16, 0xfff4c8, alpha);
+        g.lineStyle(this.S * 0.16, 0xf4ebd5, alpha);
         g.lineBetween(c.x, c.y, c.x + DX[d] * this.S * 0.45, c.y + DY[d] * this.S * 0.45);
       }
     });
@@ -719,7 +719,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     for (const port of leaks) {
       const c = this.cellCenter(port >> 2);
       const d = port & 3;
-      g.fillStyle(0xffc928, 0.3 + pulse * 0.4);
+      g.fillStyle(0xd3a278, 0.3 + pulse * 0.4);
       g.fillCircle(c.x + DX[d] * h, c.y + DY[d] * h, 12 + pulse * 10);
     }
     cells.forEach((t, i) => {

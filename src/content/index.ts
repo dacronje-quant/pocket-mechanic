@@ -1,3 +1,4 @@
+import { varietyStoryRooms } from './rooms/variety';
 /** Content registry: every room by id, plus lookups used by scenes and tests. */
 import { atticRoom } from './attic';
 import { QUICK_FIX_ROOMS, QUICK_FIXES } from './quickfixes';
@@ -11,7 +12,7 @@ import { R7_ROOMS } from './rooms/r7';
 import { R8_ROOMS } from './rooms/r8';
 import type { RoomDef } from './types';
 
-export const STORY_ROOMS: RoomDef[] = [...R1_ROOMS, ...R2_ROOMS, ...R3_ROOMS, ...R4_ROOMS, ...R5_ROOMS, ...R6_ROOMS, ...R7_ROOMS, ...R8_ROOMS];
+export const STORY_ROOMS: RoomDef[] = varietyStoryRooms([...R1_ROOMS, ...R2_ROOMS, ...R3_ROOMS, ...R4_ROOMS, ...R5_ROOMS, ...R6_ROOMS, ...R7_ROOMS, ...R8_ROOMS]);
 
 const BY_ID = new Map<string, RoomDef>([...STORY_ROOMS, ...QUICK_FIX_ROOMS].map((r) => [r.id, r]));
 

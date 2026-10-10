@@ -1,29 +1,41 @@
 /**
  * Every line the game can speak, with a stable id: the catalogue that
- * scripts/generate-assets.mjs turns into Gemini voice files. Scenes speak the
+ * scripts/generate-elevenlabs.mjs turns into voice files. Scenes speak the
  * same ids, so a generated file is used whenever the build has one (and the
  * device's own speech reads the line otherwise).
  */
 import { ATTIC_OBJECTS, atticRooms } from './attic';
+import { effective } from '../rules';
+import { hasStyledVoice, roomVoiceId } from './roomVoice';
 import { CARDS } from './bench';
 import { STORY_ROOMS } from './index';
 import { PEDIA, pediaLines } from './pedia';
 import { QUICK_FIXES } from './quickfixes';
 import { REPAIRS, TREASURES } from './repairs';
 import { LINES, SPOKEN_PLAY_STYLE, STORIES } from './story';
-import type { CharId, RoomDef } from './types';
+import type { CharId, PlayStyleId, RoomDef } from './types';
 
 export interface VoiceLine {
   id: string;
   who: CharId;
   text: string;
+  /** New instructions use device speech until a matching recording exists. */
+  deviceFallback?: true;
 }
 
 /** Voice-file id for a spoken button label (read-aloud menus). */
 export const uiLineId = (say: string): string => `ui.${say.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
 
+const DEVICE_UI_IDS = new Set(['Turn the selected piece', 'Look at the complete photograph', 'Put the marbles back'].map(uiLineId));
+
 function roomLines(r: RoomDef): VoiceLine[] {
-  return [{ id: `${r.id}.intro`, who: 'nana' as CharId, text: r.intro }, ...r.hints.map((h, i) => ({ id: `${r.id}.hint.${i}`, who: 'nana' as CharId, text: h }))];
+  const styles: PlayStyleId[] = hasStyledVoice(r.kind) ? ['tinker', 'fixer', 'engineer'] : ['fixer'];
+  return styles.flatMap(style => {
+    const def = hasStyledVoice(r.kind) ? effective(r, style) : r;
+    const fallback = hasStyledVoice(r.kind) ? { deviceFallback: true as const } : {};
+    return [{ id: roomVoiceId(def, style, 'intro'), who: 'nana' as CharId, text: def.intro, ...fallback },
+      ...def.hints.map((text, i) => ({ id: roomVoiceId(def, style, `hint.${i}`), who: 'nana' as CharId, text, ...fallback }))];
+  });
 }
 
 /** All spoken lines. `uiLabels` are the read-aloud button labels (found in the source by the script). */
@@ -35,7 +47,7 @@ export function allVoiceLines(uiLabels: string[] = []): VoiceLine[] {
   for (const r of STORY_ROOMS) out.push(...roomLines(r));
   for (const q of QUICK_FIXES) {
     out.push(...roomLines(q.room));
-    out.push({ id: `${q.id}.payoff`, who: q.owner, text: q.payoff });
+    out.push({ id: `${q.id}.payoff`, who: q.owner, text: q.payoff, ...(q.id.startsWith('qf-archive-') ? { deviceFallback: true as const } : {}) });
   }
   for (const r of atticRooms()) out.push(...roomLines(r));
   for (const e of PEDIA) for (const l of pediaLines(e)) out.push({ id: l.id, who: 'nana', text: l.text });
@@ -45,7 +57,7 @@ export function allVoiceLines(uiLabels: string[] = []): VoiceLine[] {
   for (const c of CARDS) out.push({ id: `card.${c.id}`, who: 'nana', text: c.say });
   for (const label of uiLabels) {
     const id = uiLineId(label);
-    if (id !== 'ui.') out.push({ id, who: 'nana', text: label });
+    if (id !== 'ui.') out.push({ id, who: 'nana', text: label, ...(DEVICE_UI_IDS.has(id) ? { deviceFallback: true as const } : {}) });
   }
   // later entries never override earlier ones
   const seen = new Set<string>();

@@ -8,6 +8,8 @@ import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { ensureGearTexture } from '../art/textures';
 import { drawPart } from '../art/parts';
+import { CM } from '../art/copperMoss';
+import { rivet } from '../art/finish';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
 import { puffAt } from './fiddles';
 
@@ -49,7 +51,13 @@ export class OilRoom extends RoomBase<'oil'> {
     this.pawlObj = undefined;
     this.crankG = undefined;
     this.payoffG = this.add.graphics().setDepth(D.mech - 1);
+    const mounts = this.add.graphics().setDepth(D.back + 1);
     for (const p of this.def.parts) {
+      mounts.lineStyle(5, CM.copperDark, 0.8);
+      mounts.strokeCircle(p.x, p.y, p.size * 0.72);
+      mounts.lineStyle(1, CM.copperLight, 0.65);
+      mounts.strokeCircle(p.x - 1, p.y - 1, p.size * 0.72 + 3);
+      rivet(mounts, p.x, p.y, 4);
       const g = this.add.graphics().setDepth(D.mech + 1);
       const v: PartView = { id: p.id, x: p.x, y: p.y, size: p.size, art: p.art, required: p.required, g, spin: 0 };
       if (p.art === 'gear' || p.art === 'wheel') {
@@ -85,9 +93,9 @@ export class OilRoom extends RoomBase<'oil'> {
     if (this.def.pawl) {
       const c = this.add.container(this.pawlHome.x, this.pawlHome.y).setDepth(D.trayPart).setScale(0.9);
       const pg = this.add.graphics();
-      pg.fillStyle(0x6c757d, 1);
+      pg.fillStyle(0x60736d, 1);
       pg.fillTriangle(-30, -6, 30, -6, 20, 16);
-      pg.fillStyle(0xd9a441, 1);
+      pg.fillStyle(0xbca16a, 1);
       pg.fillCircle(-26, -2, 8);
       c.add(pg);
       c.setSize(80, 60);
@@ -232,10 +240,10 @@ export class OilRoom extends RoomBase<'oil'> {
       const k = this.def.crank;
       const g = this.crankG;
       g.clear();
-      g.fillStyle(0x5e3f10, 1);
+      g.fillStyle(0x554638, 1);
       g.fillCircle(k.x, k.y, 70);
       // the mainspring tightens with each turn
-      g.lineStyle(4, 0xc0c8d0, 1);
+      g.lineStyle(4, 0x9aaba4, 1);
       g.beginPath();
       const coils = 3 + this.state.turns * 2;
       for (let i = 0; i < coils * 12; i++) {
@@ -246,11 +254,11 @@ export class OilRoom extends RoomBase<'oil'> {
       g.strokePath();
       const hx = k.x + Math.cos(this.crankAngle) * 100;
       const hy = k.y + Math.sin(this.crankAngle) * 100;
-      g.lineStyle(14, 0x7a5413, 1);
+      g.lineStyle(14, 0x79503d, 1);
       g.lineBetween(k.x, k.y, hx, hy);
-      g.fillStyle(0xd64541, 1);
+      g.fillStyle(0xad6b51, 1);
       g.fillCircle(hx, hy, 20);
-      g.fillStyle(0xd9a441, 1);
+      g.fillStyle(0xbca16a, 1);
       g.fillCircle(k.x, k.y, 14);
       // turn pips
       for (let i = 0; i < k.turns; i++) {
@@ -259,15 +267,15 @@ export class OilRoom extends RoomBase<'oil'> {
       }
       if (this.def.pawl) {
         const pw = this.def.pawl;
-        g.fillStyle(0x9aa6b4, 1);
+        g.fillStyle(0x82938c, 1);
         for (let i = 0; i < 16; i++) {
           const a = (i / 16) * Math.PI * 2 + this.crankAngle * 0.5;
           g.fillTriangle(pw.x - 70 + Math.cos(a) * 46, pw.y + 60 + Math.sin(a) * 46, pw.x - 70 + Math.cos(a + 0.25) * 34, pw.y + 60 + Math.sin(a + 0.25) * 34, pw.x - 70 + Math.cos(a - 0.1) * 34, pw.y + 60 + Math.sin(a - 0.1) * 34);
         }
-        g.fillStyle(0x6c757d, 1);
+        g.fillStyle(0x60736d, 1);
         g.fillCircle(pw.x - 70, pw.y + 60, 34);
         if (!this.state.pawl) {
-          g.lineStyle(3, 0xfff4c8, 0.4 + Math.sin(this.t * 4) * 0.3);
+          g.lineStyle(3, 0xf4ebd5, 0.4 + Math.sin(this.t * 4) * 0.3);
           g.strokeRoundedRect(pw.x - 40, pw.y - 24, 80, 48, 8);
         }
       }
@@ -282,19 +290,19 @@ export class OilRoom extends RoomBase<'oil'> {
     switch (this.def.payoff) {
       case 'stair':
         for (const p of this.parts.filter((q) => q.required)) {
-          g.fillStyle(0xffd76a, 0.15);
+          g.fillStyle(0xf1d391, 0.15);
           g.fillCircle(p.x, p.y, p.size * 1.4);
         }
         break;
       case 'door':
-        g.fillStyle(0x8a5a33, 1);
+        g.fillStyle(0x856c50, 1);
         g.fillRect(600, 160, 200 * Math.abs(Math.cos(t)), 360);
         break;
       case 'jack': {
         const pop = Math.min(1, (t % 4) * 3);
         g.fillStyle(0xe05a47, 1);
         g.fillRoundedRect(860, 380, 160, 140, 10);
-        g.lineStyle(5, 0xc0c8d0, 1);
+        g.lineStyle(5, 0x9aaba4, 1);
         for (let i = 0; i < 6; i++) g.strokeEllipse(940, 370 - i * 18 * pop, 40, 12);
         g.fillStyle(0xf2c9a5, 1);
         g.fillCircle(940, 360 - 110 * pop, 34);
@@ -319,7 +327,7 @@ export class OilRoom extends RoomBase<'oil'> {
         g.fillTriangle(900 + Math.cos(t * 2) * 90, 160, 900 + Math.cos(t * 2) * 60, 148, 900 + Math.cos(t * 2) * 60, 172);
         break;
       case 'vault':
-        g.fillStyle(0xffd76a, 0.12 + Math.sin(t * 3) * 0.06);
+        g.fillStyle(0xf1d391, 0.12 + Math.sin(t * 3) * 0.06);
         g.fillCircle(this.def.crank?.x ?? 640, this.def.crank?.y ?? 360, 140);
         break;
     }
@@ -337,7 +345,7 @@ export class OilRoom extends RoomBase<'oil'> {
   protected drawGhosts(g: Phaser.GameObjects.Graphics, alpha: number): void {
     for (const p of this.parts) {
       if (!p.required || this.state.oiled.has(p.id)) continue;
-      g.lineStyle(4, 0xfff4c8, alpha + 0.1);
+      g.lineStyle(4, 0xf4ebd5, alpha + 0.1);
       g.strokeCircle(p.x, p.y, p.size * 1.15);
     }
   }

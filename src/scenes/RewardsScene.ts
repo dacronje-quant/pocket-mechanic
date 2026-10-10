@@ -8,6 +8,8 @@ import * as sfx from '../audio/sfx';
 import { playMelody } from '../audio/music';
 import { speak } from '../audio/voice';
 import { drawStage } from '../art/backgrounds';
+import { CM } from '../art/copperMoss';
+import { etchedPlate } from '../art/finish';
 import { coverImage, withArt } from '../art/generated';
 import { Kip } from '../art/Kip';
 import { MachineArt } from '../art/objects';
@@ -47,7 +49,7 @@ export class RewardsScene extends MetaScene {
 
     // the postcard: a generated picture of the fixed object back home, or a drawn one
     const pc = this.add.container(250, 250).setDepth(5).setAngle(-4);
-    pc.add(card(this, 0, 0, 380, 250, 0xfff6e2));
+    pc.add(card(this, 0, 0, 380, 250, 0xf4ebd5));
     const drawn = new MachineArt(this, 0, 10, r.object, 0.42).setWorking(true);
     pc.add(drawn);
     withArt(this, `postcard-${r.key}`, (key) => {
@@ -65,7 +67,7 @@ export class RewardsScene extends MetaScene {
     const kip = new Kip(this, -40, 120, look).setScale(2.4);
     center.add(kip);
     center.add(badge(this, -120, -120, r.owner, 34));
-    if (token && showWords()) center.add(this.add.text(0, -150, token.name, { fontFamily: FONT, fontSize: '18px', color: '#3b260b', fontStyle: 'bold', wordWrap: { width: 300 }, align: 'center' }).setOrigin(0.5));
+    if (token && showWords()) center.add(this.add.text(0, -150, token.name, { fontFamily: FONT, fontSize: '18px', color: '#342f29', fontStyle: 'bold', wordWrap: { width: 300 }, align: 'center' }).setOrigin(0.5));
     if (token) {
       const wear = roundButton(this, 640, 530, '✓', () => {
         p.look = look;
@@ -73,7 +75,7 @@ export class RewardsScene extends MetaScene {
         sfx.sparkle();
         kip.celebrate();
         wear.destroy();
-      }, { r: 34, fontSize: 30, color: 0x8ce99a, say: 'Wear it!' }).setDepth(HUD);
+      }, { r: 34, fontSize: 30, color: 0xa0a477, say: 'Wear it!' }).setDepth(HUD);
       this.hot('wear', () => wear.emit('pointerup'));
     }
     this.time.delayedCall(400, () => {
@@ -98,12 +100,11 @@ export class RewardsScene extends MetaScene {
       const y = 150 + i * 92;
       const row = this.add.container(1010, y).setDepth(5).setAlpha(0);
       const g = this.add.graphics();
-      g.fillStyle(0xfff6e2, 0.95);
-      g.fillRoundedRect(-170, -38, 340, 76, 16);
+      etchedPlate(g, -170, -38, 340, 76, CM.paper, 0.96, i + 180);
       const icon = this.add.graphics().setPosition(-126, 0);
       it.draw(icon);
       row.add([g, icon]);
-      if (showWords()) row.add(this.add.text(-84, 0, it.label, { fontFamily: FONT, fontSize: '18px', color: '#3b260b', fontStyle: 'bold', wordWrap: { width: 240 } }).setOrigin(0, 0.5));
+      if (showWords()) row.add(this.add.text(-84, 0, it.label, { fontFamily: FONT, fontSize: '18px', color: '#342f29', fontStyle: 'bold', wordWrap: { width: 240 } }).setOrigin(0, 0.5));
       if (it.act) {
         row.setSize(340, 76).setInteractive({ useHandCursor: true });
         row.on('pointerup', it.act);
@@ -117,8 +118,8 @@ export class RewardsScene extends MetaScene {
     persist();
     stamps.forEach((st, i) => this.time.delayedCall(2200 + i * 2600, () => toast(this, `Stamp: ${st.name}`, undefined, st.glyph)));
 
-    roundButton(this, 1180, 640, '▶', () => this.finish(), { r: 40, fontSize: 36, color: 0x8ce99a, say: 'Next' }).setDepth(HUD);
-    if (showWords()) this.add.text(250, 400, r.title, { fontFamily: SERIF, fontSize: '22px', color: '#fff3d0', fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 5 }).setOrigin(0.5).setDepth(6);
+    roundButton(this, 1180, 640, '▶', () => this.finish(), { r: 40, fontSize: 36, color: 0xa0a477, say: 'Next' }).setDepth(HUD);
+    if (showWords()) this.add.text(250, 400, r.title, { fontFamily: SERIF, fontSize: '22px', color: '#f4ebd5', fontStyle: 'bold', stroke: '#342f29', strokeThickness: 5 }).setOrigin(0.5).setDepth(6);
     pm.next = () => this.finish();
   }
 

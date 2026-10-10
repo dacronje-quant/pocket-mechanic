@@ -5,6 +5,8 @@
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
+import { CM, drawPatina } from '../art/copperMoss';
+import { rivet } from '../art/finish';
 import { playMelody } from '../audio/music';
 import { NOTE_FREQS, pinKey, pinProgress, pinSet } from '../mechanism/pins';
 import { D, RoomBase, type HintTarget } from './RoomBase';
@@ -43,10 +45,15 @@ export class MusicRoom extends RoomBase<'music'> {
     const back = this.add.graphics().setDepth(D.back + 1);
     back.fillStyle(0x000000, 0.3);
     back.fillRoundedRect(this.x0 - 24, this.y0 - 18, steps * this.cw + 48, notes * this.ch + 36, 30);
-    back.fillStyle(0xc0c8d0, 1);
+    back.fillStyle(0x9aaba4, 1);
     back.fillRoundedRect(this.x0 - 20, this.y0 - 20, steps * this.cw + 40, notes * this.ch + 36, 28);
     back.fillStyle(0xe9ecef, 1);
     back.fillRoundedRect(this.x0 - 14, this.y0 - 14, steps * this.cw + 28, notes * this.ch * 0.45, 20);
+    back.lineStyle(2, CM.copperDark, 0.8);
+    back.strokeRoundedRect(this.x0 - 20, this.y0 - 20, steps * this.cw + 40, notes * this.ch + 36, 28);
+    drawPatina(back, this.x0 - 12, this.y0 - 12, steps * this.cw + 24, notes * this.ch + 20, 294, 1.2);
+    rivet(back, this.x0 - 7, this.y0 - 7);
+    rivet(back, this.x0 + steps * this.cw + 7, this.y0 + notes * this.ch + 3);
     this.gridG = this.add.graphics().setDepth(D.mech);
     this.headG = this.add.graphics().setDepth(D.mech + 1);
     this.comb = this.add.graphics().setDepth(D.mech + 2);
@@ -56,7 +63,7 @@ export class MusicRoom extends RoomBase<'music'> {
       const n = notes - 1 - Math.floor((p.worldY - this.y0) / this.ch);
       if (s >= 0 && s < steps && n >= 0 && n < notes) this.togglePin(s, n);
     });
-    roundButton(this, 1180, 600, '👂', () => this.listen(), { r: 46, fontSize: 38, color: 0x8ce99a, say: 'Listen to the song' }).setDepth(D.hud);
+    roundButton(this, 1180, 600, '👂', () => this.listen(), { r: 46, fontSize: 38, color: 0xa0a477, say: 'Listen to the song' }).setDepth(D.hud);
     if (this.launch.mode === 'playground') {
       // Compose Your Own (GDD §14, Repair 2): clear the cylinder and write a tune to keep
       roundButton(this, 100, 600, '🧹', () => {
@@ -124,11 +131,11 @@ export class MusicRoom extends RoomBase<'music'> {
           g.fillCircle(x + 2, y + 3, this.ch * 0.26);
           g.fillStyle(0xf8f9fa, 1);
           g.fillCircle(x, y, this.ch * 0.26);
-          g.fillStyle(0x9aa6b4, 1);
+          g.fillStyle(0x82938c, 1);
           g.fillCircle(x + 2, y + 2, this.ch * 0.12);
         } else {
           const wanted = glow && this.melody.has(k);
-          g.fillStyle(wanted ? 0xffd76a : 0x6c757d, wanted ? 0.5 + Math.sin(this.time.now / 200) * 0.3 : 0.55);
+          g.fillStyle(wanted ? 0xf1d391 : 0x60736d, wanted ? 0.5 + Math.sin(this.time.now / 200) * 0.3 : 0.55);
           g.fillCircle(x, y, this.ch * (wanted ? 0.2 : 0.09));
         }
       }
@@ -160,7 +167,7 @@ export class MusicRoom extends RoomBase<'music'> {
     const cg = this.comb;
     cg.clear();
     const cx = this.x0 + steps * this.cw + 40;
-    cg.fillStyle(0x6c757d, 1);
+    cg.fillStyle(0x60736d, 1);
     cg.fillRect(cx + 70, this.y0 - 20, 22, notes * this.ch + 40);
     for (let n = 0; n < notes; n++) {
       const y = this.y0 + (notes - 1 - n) * this.ch + this.ch / 2;
@@ -192,7 +199,7 @@ export class MusicRoom extends RoomBase<'music'> {
     if (this.style.id === 'tinker') return;
     for (const [s, n] of this.def.melody) {
       if (this.state.has(pinKey(s, n))) continue;
-      g.lineStyle(3, 0xfff4c8, alpha);
+      g.lineStyle(3, 0xf4ebd5, alpha);
       g.strokeCircle(this.x0 + s * this.cw + this.cw / 2, this.y0 + (this.def.notes - 1 - n) * this.ch + this.ch / 2, this.ch * 0.26);
     }
   }

@@ -1,3 +1,4 @@
+import { roomVoiceId } from '../content/roomVoice';
 /**
  * Everything every room shares: the backdrop, Kip (and Tess), the HUD, the
  * parts drawer and drag-and-snap, hints, the Peek Lens, Golden Gears, Lost
@@ -13,6 +14,9 @@ import { setVoiceChip, speak } from '../audio/voice';
 import { drawRoomBackdrop, sunbeams } from '../art/backgrounds';
 import { Kip } from '../art/Kip';
 import { PALETTES } from '../art/palette';
+import { CM } from '../art/copperMoss';
+import { drawerFinish, etchedPlate, repairMounts } from '../art/finish';
+import { beginArtScene } from '../art/generated';
 import { drawPart } from '../art/parts';
 import { ensureBasics, ensureGearTexture } from '../art/textures';
 import { getRoom, isBigFix, quickFixOf } from '../content/index';
@@ -197,6 +201,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
   }
 
   create(): void {
+    beginArtScene(this);
     resetLeaving();
     const s = settings();
     ensureBasics(this);
@@ -206,6 +211,9 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     const pal = PALETTES[this.def.theme];
 
     drawRoomBackdrop(this, this.def.theme, FLOOR_Y).setDepth(D.bg);
+    repairMounts(this);
+    // Quiet only the working area; the painted scenery remains visible around it.
+    this.add.graphics().setDepth(D.back).fillStyle(CM.paper, .22).fillRoundedRect(192, 192, 896, 348, 18).setName('mechanism:quiet-backing');
     if (this.def.theme === 'clock' || this.def.theme === 'shop' || this.def.theme === 'tower') sunbeams(this, pal.light, 0.045).setDepth(D.back);
     if (!s.calm) {
       this.add
@@ -259,7 +267,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     this.titleCard();
     this.cameras.main.fadeIn(300, 26, 18, 12);
     if (this.launch.mode !== 'playground') {
-      this.time.delayedCall(1300, () => this.bubble.say(this.def.intro, { id: `${this.def.id}.intro` }));
+      this.time.delayedCall(1300, () => this.bubble.say(this.def.intro, { id: roomVoiceId(this.def, this.style.id, 'intro') }));
     }
     pm.scene = this.scene.key;
     pm.next = null;
@@ -303,8 +311,11 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     g.fillRoundedRect(x - w / 2 + 12, y - h / 2 + 10, w - 24, h - 28, 10);
     g.fillStyle(Phaser.Display.Color.ValueToColor(pal.tray[0]).lighten(15).color, 1);
     g.fillRoundedRect(x - w / 2, y + h / 2 - 20, w, 20, 8);
-    g.fillStyle(0xd9a441, 1);
+    g.fillStyle(0xbca16a, 1);
     g.fillRoundedRect(x - 30, y + h / 2 - 15, 60, 10, 5);
+    drawerFinish(g, x - w / 2, y - h / 2, w, h);
+    g.lineStyle(1, CM.ink, 0.55);
+    g.strokeRoundedRect(x - 30, y + h / 2 - 15, 60, 10, 5);
     g.setData('tray', true);
   }
 
@@ -322,7 +333,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
         speed: { min: 40, max: 180 },
         lifespan: { min: 300, max: 650 },
         scale: { start: 1.1, end: 0 },
-        tint: [0xffd76a, 0xfff3b0, 0xffb347],
+        tint: [0xf1d391, 0xfff3b0, 0xffb347],
         blendMode: 'ADD',
         emitting: false,
       })
@@ -621,7 +632,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     const c = this.add.container(W / 2, 330).setDepth(D.banner).setScale(0.6).setAlpha(0);
     c.add(card(this, 0, 0, 520, 300));
     c.add(this.add.image(-170, -70, ensureGearTexture(this, 16, 'gold')).setScale(1.1));
-    c.add(this.add.text(30, -78, showWords() ? 'Fixed!' : '✓', { fontFamily: SERIF, fontSize: '64px', color: '#3b260b', fontStyle: 'bold' }).setOrigin(0.5));
+    c.add(this.add.text(30, -78, showWords() ? 'Fixed!' : '✓', { fontFamily: SERIF, fontSize: '64px', color: '#342f29', fontStyle: 'bold' }).setOrigin(0.5));
     const rec = p.rooms[this.def.id];
     for (let i = 1; i <= 3; i++) {
       const got = rec?.gold.includes(i);
@@ -632,14 +643,14 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     if (medal) {
       const names = ['', 'Copper', 'Silver', 'Gold', 'Brass Masterpiece'];
       const cols = ['', '#b87333', '#c0c0c0', '#ffd700', '#e0ab48'];
-      c.add(this.add.text(0, 62, `${'●'.repeat(medal)} ${names[medal]}`, { fontFamily: FONT, fontSize: '26px', color: cols[medal], fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 5 }).setOrigin(0.5));
+      c.add(this.add.text(0, 62, `${'●'.repeat(medal)} ${names[medal]}`, { fontFamily: FONT, fontSize: '26px', color: cols[medal], fontStyle: 'bold', stroke: '#342f29', strokeThickness: 5 }).setOrigin(0.5));
     }
     const next = afterRoom(p, this.launch);
     pm.next = () => this.leave(next);
     const btnY = 112;
     c.add(roundButton(this, -120, btnY, '↻', () => this.scene.restart(), { r: 36, fontSize: 34, say: 'Again!' }));
     c.add(roundButton(this, 0, btnY, '⌂', () => this.leave({ scene: 'shop' }), { r: 36, fontSize: 34, say: 'Back to the shop' }));
-    c.add(roundButton(this, 120, btnY, '▶', () => this.leave(next), { r: 42, fontSize: 38, color: 0x8ce99a, say: 'Next!' }));
+    c.add(roundButton(this, 120, btnY, '▶', () => this.leave(next), { r: 42, fontSize: 38, color: 0xa0a477, say: 'Next!' }));
     c.add(
       roundButton(this, 236, -128, '✕', () => {
         this.bannerShown = false;
@@ -660,7 +671,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
 
   /** After closing the banner: a small "next" button stays in the corner. */
   private keepPlayingButton(next: Parameters<typeof go>[1]): void {
-    roundButton(this, 1180, 470, '▶', () => this.leave(next), { r: 36, fontSize: 32, color: 0x8ce99a, say: 'Next!' }).setDepth(D.hud);
+    roundButton(this, 1180, 470, '▶', () => this.leave(next), { r: 36, fontSize: 32, color: 0xa0a477, say: 'Next!' }).setDepth(D.hud);
   }
 
   protected leave(step: Parameters<typeof go>[1]): void {
@@ -763,7 +774,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       g.lineBetween(0, 16, 2, 26);
       c.setAngle(25);
     } else {
-      g.fillStyle(kind === 'treasure' ? 0xff8fab : kind === 'blueprint' ? 0x7fd3ff : 0xffd76a, 1);
+      g.fillStyle(kind === 'treasure' ? 0xff8fab : kind === 'blueprint' ? 0x7fd3ff : 0xf1d391, 1);
       for (let i = 0; i < 4; i++) {
         const a = (i / 4) * Math.PI * 2;
         g.fillTriangle(Math.cos(a) * 18, Math.sin(a) * 18, Math.cos(a + 1.3) * 4, Math.sin(a + 1.3) * 4, Math.cos(a - 1.3) * 4, Math.sin(a - 1.3) * 4);
@@ -799,10 +810,12 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
   }
 
   private buildHud(): void {
+    const ledger = this.add.graphics().setDepth(D.hud - 1);
+    etchedPlate(ledger, 104, 24, 138, 56, CM.paper, 0.95, 46);
     roundButton(this, 56, 52, '⌂', () => this.pauseMenu(), { say: 'Menu' }).setDepth(D.hud);
     this.goldIcon = this.add.image(138, 52, ensureGearTexture(this, 12, 'gold')).setDepth(D.hud).setScale(0.9);
     this.goldText = this.add
-      .text(174, 52, '', { fontFamily: FONT, fontSize: '30px', color: '#ffe48a', fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 6 })
+      .text(174, 52, '', { fontFamily: FONT, fontSize: '30px', color: '#342f29', fontStyle: 'bold' })
       .setOrigin(0, 0.5)
       .setDepth(D.hud);
     this.refreshGold();
@@ -821,14 +834,14 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       roundButton(this, x, 52, '?', () => this.requestHint(), { fontSize: 38 }).setDepth(D.hud);
     }
     x -= 90;
-    roundButton(this, x, 52, '💬', () => this.bubble.say(this.def.intro, { id: `${this.def.id}.intro` }), { fontSize: 28, say: '' }).setDepth(D.hud);
+    roundButton(this, x, 52, '💬', () => this.bubble.say(this.def.intro, { id: roomVoiceId(this.def, this.style.id, 'intro') }), { fontSize: 28, say: '' }).setDepth(D.hud);
     if (tessUnlocked(profile()) && settings().coop !== 'hands') {
       x -= 90;
       roundButton(this, x, 52, '👥', () => this.toggleTess(), { fontSize: 28 }).setDepth(D.hud);
     }
     if (this.launch.mode === 'tuneup') {
       this.timerText = this.add
-        .text(640, 52, '', { fontFamily: FONT, fontSize: '24px', color: '#fff3d0', backgroundColor: '#2b1d14cc', padding: { x: 14, y: 6 } })
+        .text(640, 52, '', { fontFamily: FONT, fontSize: '24px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 14, y: 6 } })
         .setOrigin(0.5)
         .setDepth(D.hud);
     }
@@ -887,10 +900,10 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       items.push(o);
       return o;
     };
-    if (showWords()) add(this.add.text(640, 190, this.def.title, { fontFamily: SERIF, fontSize: '30px', color: '#3b260b', fontStyle: 'bold' }).setOrigin(0.5));
+    if (showWords()) add(this.add.text(640, 190, this.def.title, { fontFamily: SERIF, fontSize: '30px', color: '#342f29', fontStyle: 'bold' }).setOrigin(0.5));
     add(roundButton(this, 460, 290, '⌂', () => this.leave({ scene: 'shop' }), { r: 46, fontSize: 40, say: 'Back to the shop' }));
     add(roundButton(this, 640, 290, '↻', () => this.scene.restart(), { r: 46, fontSize: 40, say: 'Start again' }));
-    add(roundButton(this, 820, 290, '▶', close, { r: 46, fontSize: 40, color: 0x8ce99a, say: 'Keep playing' }));
+    add(roundButton(this, 820, 290, '▶', close, { r: 46, fontSize: 40, color: 0xa0a477, say: 'Keep playing' }));
     // switch Play Style any time (GDD §12.1)
     (['tinker', 'fixer', 'engineer'] as PlayStyleId[]).forEach((sid, i) => {
       const st = PLAY_STYLES[sid];
@@ -899,18 +912,20 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
           profile().style = sid;
           persist();
           this.scene.restart();
-        }, { r: 40, fontSize: 34, color: profile().style === sid ? 0xffc928 : 0xe0ab48, say: st.tagline }),
+        }, { r: 40, fontSize: 34, color: profile().style === sid ? 0xd3a278 : 0xbca16a, say: st.tagline }),
       );
     });
   }
 
   private titleCard(): void {
     if (!showWords()) return;
-    const t = this.add
-      .text(640, 330, this.def.title, { fontFamily: SERIF, fontSize: '50px', color: PALETTES[this.def.theme].ink, fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 10 })
-      .setOrigin(0.5)
-      .setDepth(D.banner + 1)
-      .setAlpha(0);
+    const t = this.add.container(640, 330).setDepth(D.banner + 1).setAlpha(0).setAngle(-1);
+    const title = this.add.text(0, 0, this.def.title, { fontFamily: SERIF, fontSize: '44px', color: '#342f29', fontStyle: 'bold', align: 'center', wordWrap: { width: 900 } }).setOrigin(0.5);
+    const plate = this.add.graphics();
+    const w = Math.min(1000, title.width + 90);
+    const h = Math.max(94, title.height + 42);
+    etchedPlate(plate, -w / 2, -h / 2, w, h, CM.paper, 1, 418);
+    t.add([plate, title]);
     this.tweens.chain({
       targets: t,
       tweens: [
@@ -928,7 +943,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     const tier = Math.min(this.hintTier, h.length - 1);
     this.hintsUsed++;
     profile().stats.hints++;
-    this.bubble.say(h[tier], { id: `${this.def.id}.hint.${tier}` });
+    this.bubble.say(h[tier], { id: roomVoiceId(this.def, this.style.id, `hint.${tier}`) });
     if (tier >= 2) this.showPath(true);
     this.hintTier++;
   }
@@ -953,7 +968,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       this.hintStage = 3;
       const tier = this.style.id === 'tinker' ? 2 : Math.min(this.hintTier, 2);
       this.hintsUsed++;
-      this.bubble.say(this.def.hints[tier], { id: `${this.def.id}.hint.${tier}` });
+      this.bubble.say(this.def.hints[tier], { id: roomVoiceId(this.def, this.style.id, `hint.${tier}`) });
       this.hintTier++;
     } else if (this.hintStage === 3 && t > at.path) {
       this.hintStage = 4;
@@ -968,7 +983,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     const h = this.hintTarget();
     const p = h?.from ?? h?.to;
     if (!p) return;
-    const ring = this.add.image(p.x, p.y, 'ring').setDepth(D.drag - 1).setTint(0xffd76a).setScale(0.6);
+    const ring = this.add.image(p.x, p.y, 'ring').setDepth(D.drag - 1).setTint(0xf1d391).setScale(0.6);
     this.tweens.add({ targets: ring, scale: 1.8, alpha: 0, duration: 700, repeat: 3, onComplete: () => ring.destroy() });
     sfx.chirp();
   }
@@ -993,10 +1008,10 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       const f = i / Math.max(1, n);
       const lift = Math.sin(f * Math.PI) * -60;
       const a = 0.4 + 0.6 * Math.abs(Math.sin(this.elapsed * 4 - i * 0.5));
-      g.fillStyle(0xffd76a, a);
+      g.fillStyle(0xf1d391, a);
       g.fillCircle(h.from.x + dx * f, h.from.y + dy * f + lift, 6);
     }
-    g.lineStyle(4, 0xffd76a, 0.8);
+    g.lineStyle(4, 0xf1d391, 0.8);
     g.strokeCircle(h.to.x, h.to.y, 30 + Math.sin(this.elapsed * 5) * 6);
   }
 

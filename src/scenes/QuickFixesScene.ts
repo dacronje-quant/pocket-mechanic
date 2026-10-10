@@ -5,6 +5,8 @@
  */
 import * as sfx from '../audio/sfx';
 import { drawRoomBackdrop } from '../art/backgrounds';
+import { CM } from '../art/copperMoss';
+import { collectionFrame } from '../art/finish';
 import { drawSmallObject } from '../art/objects';
 import { badge } from '../art/portraits';
 import { drawPadlock } from '../art/shop';
@@ -25,6 +27,7 @@ export class QuickFixesScene extends MetaScene {
     const p = profile();
     drawRoomBackdrop(this, 'shop', 700).setDepth(0);
     this.add.rectangle(0, 0, 1280, 720, 0x1a120c, 0.35).setOrigin(0).setDepth(1);
+    collectionFrame(this, 48, 99, 1180, 601, CM.woodDark, 0.68);
     this.music('shop', 0.6);
     this.backButton();
     this.heading('Quick Fixes');
@@ -42,23 +45,23 @@ export class QuickFixesScene extends MetaScene {
           return;
         }
         go(this, { scene: 'room', launch: { roomId: q.room.id, mode: 'quick' } });
-      }, { caption: showWords() ? q.title : undefined, captionSize: 14, locked: !open, fill: fixed ? 0xe8f7d8 : undefined });
+      }, { caption: showWords() ? q.title : undefined, captionSize: 14, locked: !open, fill: fixed ? 0xd8dfc5 : undefined });
       const g = this.add.graphics();
       drawSmallObject(g, q.object, 0, -26, 0.62);
       t.add(g);
-      t.add(badge(this, -62, -62, q.owner, 20));
+      t.add(badge(this, -59, -59, q.owner, 26));
       if (!open) {
         const lock = this.add.graphics();
         drawPadlock(lock, 54, -58, 0.9);
         if (q.after) {
-          lock.fillStyle(0xfff6e2, 1);
+          lock.fillStyle(0xf4ebd5, 1);
           lock.fillCircle(54, -12, 20);
           drawSmallObject(lock, REPAIRS[q.after - 1].object, 54, -12, 0.24);
         }
         t.add(lock);
         g.setAlpha(0.5);
       } else if (fixed) {
-        t.add(this.add.text(60, -62, '✓', { fontFamily: FONT, fontSize: '30px', color: '#2e9b5f', fontStyle: 'bold' }).setOrigin(0.5));
+        t.add(this.add.text(60, -62, '✓', { fontFamily: FONT, fontSize: '30px', color: '#485541', fontStyle: 'bold' }).setOrigin(0.5));
       }
       this.hot(q.id, () => open && go(this, { scene: 'room', launch: { roomId: q.room.id, mode: 'quick' } }));
       return t;

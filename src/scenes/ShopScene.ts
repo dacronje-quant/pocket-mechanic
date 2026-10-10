@@ -8,6 +8,9 @@
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { Kip } from '../art/Kip';
+import { coverImage, withArt } from '../art/generated';
+import { CM, drawPatina } from '../art/copperMoss';
+import { mulberry32 } from '../mechanism/rng';
 import { drawSmallObject } from '../art/objects';
 import { badge, Portrait } from '../art/portraits';
 import {
@@ -45,6 +48,8 @@ export class ShopScene extends MetaScene {
   private kip!: Kip;
   private busy = false;
   private doorC?: Phaser.GameObjects.Container;
+  private paintedShop = false;
+  private scenery: Phaser.GameObjects.Graphics[] = [];
 
   constructor() {
     super('shop');
@@ -53,6 +58,8 @@ export class ShopScene extends MetaScene {
   protected build(): void {
     this.busy = false;
     this.doorC = undefined;
+    this.paintedShop = false;
+    this.scenery = [];
     const p = profile();
     const night = windDownActive() || shopClosed();
 
@@ -63,7 +70,15 @@ export class ShopScene extends MetaScene {
       return;
     }
 
-    drawShopWall(this.add.graphics().setDepth(0), night);
+    const wall = this.add.graphics().setDepth(0);
+    drawShopWall(wall, night);
+    withArt(this, 'shop-hub', (key) => {
+      this.paintedShop = true;
+      const picture = coverImage(this, key, 0, 0, 1280, 720).setDepth(0.01).setName('painted:shop-hub');
+      if (night) picture.setTint(0x88928c);
+      wall.setVisible(false);
+      this.scenery.forEach((g) => g.active && g.setVisible(false));
+    });
     this.music('shop', Math.min(1, p.repairs.length / 8 + 0.25));
     if (shopClosed()) return this.closed();
 
@@ -84,9 +99,10 @@ export class ShopScene extends MetaScene {
     const bench = this.add.container(640, 540).setDepth(20);
     bench.add(this.add.graphics().setPosition(0, 0));
     drawWorkbench(bench.list[0] as Phaser.GameObjects.Graphics);
+    this.scenery.push(bench.list[0] as Phaser.GameObjects.Graphics);
     const job = this.nextJob();
     if (job && !windDownActive()) {
-      const obj = this.add.container(560, 500).setDepth(21);
+      const obj = this.add.container(560, 427).setDepth(21);
       const g = this.add.graphics();
       drawSmallObject(g, job.object, 0, -20, 0.7);
       obj.add(g);
@@ -95,7 +111,7 @@ export class ShopScene extends MetaScene {
       this.tweens.add({ targets: obj, angle: { from: -2, to: 2 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
 
-    this.kip = new Kip(this, 720, 534, p.look).setDepth(30);
+    this.kip = new Kip(this, 758, 426, p.look).setDepth(30).setScale(1.4);
     this.kip.minX = 450;
     this.kip.maxX = 830;
     this.kip.setInteractive(new Phaser.Geom.Rectangle(-5, -45, 80, 100), Phaser.Geom.Rectangle.Contains);
@@ -127,6 +143,8 @@ export class ShopScene extends MetaScene {
     const g = this.add.graphics();
     draw(g);
     c.add(g);
+    // The painted shop supplies these static props. Homes and display objects still evolve live.
+    if (area !== 'nook') this.scenery.push(g);
     const unlocked = areaOpen(p, area);
     // Wind-Down (GDD §26.2): quiet things only — no new repairs, Tune-Ups, bench or attic
     const winddownLocked = windDownActive() && (area === 'shelf' || area === 'bench' || area === 'attic');
@@ -149,6 +167,13 @@ export class ShopScene extends MetaScene {
     }
     if (winddownLocked && unlocked) g.setAlpha(0.7);
     c.setSize(w, h).setInteractive({ useHandCursor: true });
+    const touchGlow = this.add.graphics();
+    touchGlow.lineStyle(2, CM.brass, 0.75);
+    touchGlow.strokeRoundedRect(-w / 2 + 6, -h / 2 + 6, w - 12, h - 12, 14);
+    touchGlow.setAlpha(0);
+    c.add(touchGlow);
+    c.on('pointerover', () => touchGlow.setAlpha(0.6));
+    c.on('pointerout', () => touchGlow.setAlpha(0));
     const tap = () => {
       if (this.busy) return;
       this.tweens.add({ targets: c, scale: 1.08, duration: 90, yoyo: true });
@@ -184,6 +209,7 @@ export class ShopScene extends MetaScene {
     const c = this.add.container(118, 400).setDepth(10);
     const g = this.add.graphics();
     drawDoor(g, false);
+    this.scenery.push(g);
     c.add(g);
     c.setSize(170, 400).setInteractive({ useHandCursor: true });
     c.on('pointerup', () => {
@@ -201,12 +227,20 @@ export class ShopScene extends MetaScene {
     const g = c.getData('g') as Phaser.GameObjects.Graphics;
     sfx.dingDong();
     g.clear();
-    drawDoor(g, true);
+    if (this.paintedShop) {
+      g.setVisible(true).lineStyle(2.5, CM.brass, 0.85);
+      for (const r of [21, 31]) {
+        g.beginPath();
+        g.arc(0, -212, r, -2.6, -0.5);
+        g.strokePath();
+      }
+    } else drawDoor(g, true);
     this.tweens.add({ targets: c, angle: { from: -1.2, to: 1.2 }, duration: 80, yoyo: true, repeat: 5, onComplete: () => c.setAngle(0) });
     this.time.delayedCall(1400, () => {
       if (!g.active) return;
       g.clear();
-      drawDoor(g, false);
+      if (this.paintedShop) g.setVisible(false);
+      else drawDoor(g, false);
     });
   }
 
@@ -216,6 +250,7 @@ export class ShopScene extends MetaScene {
     const c = this.add.container(305, 230).setDepth(10);
     const g = this.add.graphics();
     drawCorkBoard(g, 200, 230);
+    this.scenery.push(g);
     c.add(g);
     const jobs = nextRepairs(p).slice(0, 3);
     if (!jobs.length) {
@@ -232,9 +267,9 @@ export class ShopScene extends MetaScene {
       const cg = this.add.graphics();
       cg.fillStyle(0x000000, 0.2);
       cg.fillRoundedRect(-82, -28, 168, 62, 8);
-      cg.fillStyle(0xfff6e2, 1);
+      cg.fillStyle(CM.paper, 1);
       cg.fillRoundedRect(-84, -31, 168, 62, 8);
-      cg.fillStyle(0xd64541, 1);
+      cg.fillStyle(CM.copper, 1);
       cg.fillCircle(0, -28, 5);
       drawSmallObject(cg, r.object, 46, 0, 0.42);
       cardC.add(cg);
@@ -259,18 +294,24 @@ export class ShopScene extends MetaScene {
 
   private shelf(): void {
     const p = profile();
-    this.spot('shelf', 650, 160, 420, 160, (g) => {
+    let boards!: Phaser.GameObjects.Graphics;
+    const c = this.spot('shelf', 650, 160, 420, 160, (g) => {
+      boards = g;
       drawShelfBoards(g, 420);
-      REPAIRS.forEach((r, i) => {
-        const x = -150 + (i % 4) * 100;
-        const y = i < 4 ? -50 : 50;
-        if (repairDone(p, r.id)) drawSmallObject(g, r.object, x, y - 26, 0.42);
-        else {
-          g.lineStyle(2, 0xfff6e2, 0.25);
-          g.strokeRoundedRect(x - 26, y - 50, 52, 46, 8);
-        }
-      });
     }, () => go(this, { scene: 'shelf' }), 'shelf');
+    // Repairs change the display. Keep them above either kind of static shelf,
+    // and below the spot's lock and touch outline.
+    const objects = this.add.graphics().setName('live:repaired-objects').setAlpha(boards.alpha);
+    REPAIRS.forEach((r, i) => {
+      const x = -150 + (i % 4) * 100;
+      const y = i < 4 ? -50 : 50;
+      if (repairDone(p, r.id)) drawSmallObject(objects, r.object, x, y - 26, 0.42);
+      else {
+        objects.lineStyle(1.5, CM.cream, 0.25);
+        objects.strokeRoundedRect(x - 26, y - 50, 52, 46, 8);
+      }
+    });
+    c.addAt(objects, c.list.indexOf(boards) + 1);
   }
 
   private pegboard(): void {
@@ -280,14 +321,74 @@ export class ShopScene extends MetaScene {
   private window(): void {
     const p = profile();
     const night = windDownActive();
-    const c = this.spot('window', 1060, 220, 360, 300, (g) => drawWindow(g, night, p.repairs.length), () => goScene(this, 'town'), 'window');
-    void c;
+    let frame!: Phaser.GameObjects.Graphics;
+    const c = this.spot('window', 1060, 220, 360, 300, (g) => {
+      frame = g;
+      drawWindow(g, night, 0);
+    }, () => goScene(this, 'town'), 'window');
+    // The painted window frame remains static; Brasswick lights up as repairs
+    // are returned, just as it does in the procedural shop.
+    const town = this.add.graphics().setName('live:window-town').setAlpha(frame.alpha);
+    this.drawWindowTown(town, night, p.repairs.length);
+    c.addAt(town, c.list.indexOf(frame) + 1);
+    withArt(this, 'shop-hub', () => {
+      if (!town.active) return;
+      // Preserve the painted seaside view. Returned repairs light its windows.
+      town.clear().setAlpha(1);
+      for (let i = 0; i < Math.min(8, p.repairs.length); i++) {
+        const x = -127 + i * 32;
+        const y = 38 + (i % 3) * 17;
+        town.fillStyle(CM.glow, 0.18).fillCircle(x, y, 11);
+        town.fillStyle(CM.glow, 0.75).fillRect(x - 2, y - 3, 4, 6);
+      }
+    });
+  }
+
+  private drawWindowTown(g: Phaser.GameObjects.Graphics, night: boolean, repaired: number): void {
+    g.fillGradientStyle(night ? CM.tealDark : CM.sky, night ? CM.tealDark : CM.sky, night ? CM.slate : CM.paper, night ? CM.slate : CM.paper, 1);
+    g.fillRect(-156, -116, 312, 232);
+    g.fillStyle(CM.paper, night ? 0.05 : 0.32);
+    g.fillEllipse(-50, -54, 180, 27);
+    g.fillEllipse(65, -78, 110, 25);
+    const rng = mulberry32(11);
+    for (let i = 0; i < 7; i++) {
+      const x = -150 + i * 44;
+      const h = 40 + rng() * 60;
+      g.fillStyle(night ? CM.slate : [CM.paperDark, CM.sky, CM.copperLight, CM.mossLight][i % 4], 1);
+      g.fillRect(x, 116 - h, 38, h);
+      g.fillStyle(night ? CM.tealDark : [CM.copperDark, CM.teal, CM.woodDark, CM.mossDark][i % 4], 1);
+      g.fillTriangle(x - 4, 116 - h, x + 19, 116 - h - 22, x + 42, 116 - h);
+      g.lineStyle(0.7, CM.ink, 0.55);
+      g.lineBetween(x - 4, 116 - h, x + 19, 116 - h - 22);
+      g.lineBetween(x + 19, 116 - h - 22, x + 42, 116 - h);
+      drawPatina(g, x + 1, 117 - h, 36, h - 2, i + 210, 0.7);
+      g.fillStyle(i < repaired ? CM.glow : CM.tealDark, 0.85);
+      g.fillRect(x + 12, 116 - h + 14, 12, 12);
+      g.lineStyle(0.6, CM.woodDark, 0.9);
+      g.lineBetween(x + 18, 116 - h + 14, x + 18, 116 - h + 26);
+      g.lineBetween(x + 12, 116 - h + 20, x + 24, 116 - h + 20);
+    }
+    g.fillStyle(CM.slate, 1);
+    g.fillRect(90, -100, 40, 216);
+    g.fillStyle(CM.tealDark, 1);
+    g.fillTriangle(85, -100, 110, -115, 135, -100);
+    g.fillStyle(CM.paper, 1);
+    g.fillCircle(110, -70, 14);
+    g.lineStyle(1, CM.inkSoft, 0.8);
+    g.lineBetween(110, -70, 110, -78);
+    g.lineBetween(110, -70, 116, -67);
+    drawPatina(g, 91, -99, 38, 213, 313, 0.7);
+    // These narrow mullions belong to the live viewport. The painted frame,
+    // sill, cushion and ivy outside its glass stay visible around it.
+    g.fillStyle(CM.wood, 1);
+    g.fillRect(-156, -6, 312, 10);
+    g.fillRect(-5, -116, 10, 232);
   }
 
   private drawCushion(g: Phaser.GameObjects.Graphics): void {
-    g.fillStyle(0x8e5cc4, 1);
+    g.fillStyle(CM.mossDark, 1);
     g.fillRoundedRect(-56, 6, 112, 34, 14);
-    g.fillStyle(0xb197fc, 1);
+    g.fillStyle(CM.mossLight, 1);
     g.fillRoundedRect(-50, 0, 100, 24, 12);
   }
 

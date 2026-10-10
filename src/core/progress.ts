@@ -1,3 +1,4 @@
+import { ADDED_ROOM_IDS } from '../content/rooms/variety';
 /**
  * Progress, rewards and unlocks (GDD §13, §19, §20). Pure functions over a
  * Profile so they are easy to test; callers persist afterwards.
@@ -43,7 +44,7 @@ export function awardGold(p: Profile, roomId: string, n: 1 | 2 | 3): boolean {
 
 /** Golden Gears needed to open a repair: well under what fixing the earlier rooms guarantees. */
 export function goldNeeded(r: RepairDef): number {
-  const before = REPAIRS.filter((q) => q.id < r.id).reduce((n, q) => n + q.rooms.length, 0);
+  const before = REPAIRS.filter((q) => q.id < r.id).reduce((n, q) => n + q.rooms.filter(id => !ADDED_ROOM_IDS.includes(id)).length, 0);
   return Math.floor(before * 0.5);
 }
 
@@ -59,6 +60,7 @@ export function nextRepairs(p: Profile): RepairDef[] {
 }
 
 export function nextRoomOf(p: Profile, r: RepairDef): string {
+  if (repairDone(p, r.id)) return r.rooms[r.rooms.length - 1];
   return r.rooms.find((id) => !roomFixed(p, id)) ?? r.rooms[r.rooms.length - 1];
 }
 

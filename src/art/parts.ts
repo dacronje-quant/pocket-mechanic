@@ -4,12 +4,13 @@
  */
 import Phaser from 'phaser';
 import { heart, star } from './Kip';
+import { CM, drawPatina } from './copperMoss';
 
-const BRASS = 0xd9a441;
-const DARK = 0x5e3f10;
-const STEEL = 0x9aa6b4;
-const COPPER = 0xc8703f;
-const WOOD = 0x8a5a33;
+const BRASS = CM.brass;
+const DARK = CM.ink;
+const STEEL = CM.tealLight;
+const COPPER = CM.copper;
+const WOOD = CM.wood;
 
 /** Many ids share a drawing. */
 const ALIAS: Record<string, string> = {
@@ -103,32 +104,83 @@ const ALIAS: Record<string, string> = {
 
 export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, y: number, s = 1): void {
   const key = ALIAS[id] ?? id;
+  const seed = [...key].reduce((n, c) => n * 31 + c.charCodeAt(0), 17) >>> 0;
   const C = (dx: number, dy: number, r: number, c: number, a = 1) => {
-    g.fillStyle(c, a);
-    g.fillCircle(x + dx * s, y + dy * s, r * s);
+    const cx = x + dx * s, cy = y + dy * s;
+    g.fillStyle(c, a); g.fillCircle(cx, cy, r * s);
+    if (a < 0.8 || r < 3) return;
+    g.lineStyle(Math.max(0.6, 1.05 * s), CM.ink, 0.85); g.strokeCircle(cx, cy, r * s);
+    if (r >= 9) {
+      g.lineStyle(0.8 * s, CM.cream, 0.6);
+      g.beginPath(); g.arc(cx - 0.5 * s, cy - 0.5 * s, (r - 1.6) * s, Math.PI, Math.PI * 1.75); g.strokePath();
+      for (let i = 0; i < 5; i++) {
+        const a = i * 2.1 + seed % 7;
+        const rr = (0.28 + i * 0.1) * r;
+        const px = cx + Math.cos(a) * rr * s, py = cy + Math.sin(a) * rr * s;
+        g.lineStyle(0.5 * s, CM.ink, 0.16); g.lineBetween(px, py, px + 3 * s, py - s);
+      }
+    }
   };
   const R = (dx: number, dy: number, w: number, h: number, c: number, r = 4) => {
-    g.fillStyle(c, 1);
-    g.fillRoundedRect(x + dx * s, y + dy * s, w * s, h * s, Math.min(r, (w / 2) * 0.99, (h / 2) * 0.99) * s);
+    const xx = x + dx * s, yy = y + dy * s;
+    const rr = Math.min(r, (w / 2) * 0.99, (h / 2) * 0.99) * s;
+    g.fillStyle(c, 1); g.fillRoundedRect(xx, yy, w * s, h * s, rr);
+    g.lineStyle(Math.max(0.65, 1.05 * s), CM.ink, 0.9); g.strokeRoundedRect(xx, yy, w * s, h * s, rr);
+    if (w > 12 && h > 10) {
+      g.lineStyle(0.65 * s, CM.cream, 0.4); g.lineBetween(xx + rr, yy + 1.5 * s, xx + w * s - rr, yy + 1.5 * s);
+      const ix = Math.max(3, r * 0.35), iy = Math.max(3, r * 0.5);
+      drawPatina(g, xx + ix * s, yy + iy * s, (w - ix * 2) * s, (h - iy * 2) * s, seed + dx * 7 + dy, 1.1);
+    }
+    if (w >= 34 && h >= 28) {
+      for (const rx of [xx + 5 * s, xx + (w - 5) * s]) {
+        g.fillStyle(CM.ink, 0.95); g.fillCircle(rx, yy + 5 * s, 1.7 * s);
+        g.fillStyle(CM.brass, 1); g.fillCircle(rx - 0.3 * s, yy + 4.7 * s, 1.1 * s);
+      }
+    }
   };
   const L = (x1: number, y1: number, x2: number, y2: number, w: number, c: number) => {
-    g.lineStyle(w * s, c, 1);
-    g.lineBetween(x + x1 * s, y + y1 * s, x + x2 * s, y + y2 * s);
+    if (w >= 4) {
+      g.lineStyle((w + 1.6) * s, CM.ink, 0.9); g.lineBetween(x + x1 * s, y + y1 * s, x + x2 * s, y + y2 * s);
+    }
+    g.lineStyle(w * s, c, 1); g.lineBetween(x + x1 * s, y + y1 * s, x + x2 * s, y + y2 * s);
+    if (w >= 5) {
+      g.lineStyle(0.8 * s, CM.cream, 0.35); g.lineBetween(x + (x1 - 1) * s, y + (y1 - 1) * s, x + (x2 - 1) * s, y + (y2 - 1) * s);
+    }
   };
   const T = (pts: number[], c: number) => {
-    g.fillStyle(c, 1);
     const v: Phaser.Math.Vector2[] = [];
     for (let i = 0; i < pts.length; i += 2) v.push(new Phaser.Math.Vector2(x + pts[i] * s, y + pts[i + 1] * s));
-    g.fillPoints(v, true);
+    g.fillStyle(c, 1); g.fillPoints(v, true);
+    g.lineStyle(1.1 * s, CM.ink, 0.9); g.strokePoints(v, true, true);
+    if (v.length > 1) { g.lineStyle(0.7 * s, CM.cream, 0.4); g.lineBetween(v[0].x, v[0].y - s, v[1].x, v[1].y - s); }
+  };
+  const E = (dx: number, dy: number, w: number, h: number, c: number) => {
+    const xx = x + dx * s, yy = y + dy * s;
+    g.fillStyle(c, 1); g.fillEllipse(xx, yy, w * s, h * s);
+    g.lineStyle(1.1 * s, CM.ink, 0.9); g.strokeEllipse(xx, yy, w * s, h * s);
+    g.fillStyle(CM.cream, 0.28); g.fillEllipse(xx - w * 0.12 * s, yy - h * 0.23 * s, w * 0.4 * s, h * 0.11 * s);
+    for (let i = 0; i < 4; i++) {
+      g.lineStyle(0.6 * s, CM.ink, 0.2);
+      const py = dy + (-0.18 + i * 0.11) * h;
+      g.lineBetween(x + (dx - w * 0.29) * s, y + py * s, x + (dx - w * 0.05) * s, y + (py - h * 0.04) * s);
+    }
   };
   const gearAt = (dx: number, dy: number, r: number, c: number, teeth = 10) => {
-    for (let i = 0; i < teeth; i++) {
-      const a = (i / teeth) * Math.PI * 2;
-      C(dx + Math.cos(a) * r, dy + Math.sin(a) * r, r * 0.22, c);
+    const pts: Phaser.Math.Vector2[] = [];
+    for (let i = 0; i < teeth * 4; i++) {
+      const a = i * Math.PI * 2 / (teeth * 4);
+      const rr = i % 4 === 1 || i % 4 === 2 ? r * 1.08 : r * 0.84;
+      pts.push(new Phaser.Math.Vector2(x + (dx + Math.cos(a) * rr) * s, y + (dy + Math.sin(a) * rr) * s));
     }
-    C(dx, dy, r * 0.92, c);
-    C(dx, dy, r * 0.35, DARK);
-    C(dx - r * 0.25, dy - r * 0.3, r * 0.25, 0xffffff, 0.25);
+    g.fillStyle(c, 1); g.fillPoints(pts, true);
+    g.lineStyle(1.1 * s, CM.ink, 0.95); g.strokePoints(pts, true, true);
+    C(dx, dy, r * 0.73, c);
+    for (let i = 0; i < 4; i++) {
+      const a = i * Math.PI / 2 + Math.PI / 4;
+      C(dx + Math.cos(a) * r * 0.49, dy + Math.sin(a) * r * 0.49, r * 0.14, CM.ink);
+    }
+    C(dx, dy, r * 0.29, CM.copperDark); C(dx, dy, r * 0.12, CM.ink);
+    C(dx + r * 0.75, dy, 1.8, CM.cream);
   };
   switch (key) {
     case 'gear':
@@ -144,12 +196,12 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       gearAt(28, 8, 16, COPPER, 8);
       break;
     case 'planets':
-      C(0, 0, 14, 0xffd76a);
+      C(0, 0, 14, CM.glow);
       g.lineStyle(2 * s, BRASS, 1);
       g.strokeCircle(x, y, 26 * s);
       g.strokeCircle(x, y, 38 * s);
-      C(26, 0, 6, 0x5fa8d3);
-      C(-27, -27, 7, 0xe05a47);
+      C(26, 0, 6, CM.slate);
+      C(-27, -27, 7, CM.copperDark);
       break;
     case 'escapement':
       gearAt(0, 10, 24, BRASS, 9);
@@ -158,29 +210,29 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
     case 'fan':
       for (let i = 0; i < 4; i++) {
         const a = (i / 4) * Math.PI * 2 + 0.4;
-        g.fillStyle(STEEL, 1);
-        g.fillEllipse(x + Math.cos(a) * 18 * s, y + Math.sin(a) * 18 * s, 30 * s, 14 * s);
+        E(Math.cos(a) * 18, Math.sin(a) * 18, 30, 14, STEEL);
       }
       C(0, 0, 7, DARK);
       break;
     case 'spring':
       for (let i = 0; i < 5; i++) {
-        g.lineStyle(4 * s, STEEL, 1);
+        g.lineStyle(5.5 * s, CM.ink, 0.9);
         g.strokeEllipse(x, y + (-24 + i * 12) * s, 40 * s, 12 * s);
+        g.lineStyle(3 * s, STEEL, 1);
+        g.strokeEllipse(x, y + (-24 + i * 12) * s, 40 * s, 12 * s);
+        g.lineStyle(0.65 * s, CM.cream, 0.75);
+        g.strokeEllipse(x - s, y + (-25 + i * 12) * s, 40 * s, 12 * s);
       }
       break;
     case 'key':
       R(-4, -6, 8, 34, BRASS, 3);
-      g.fillStyle(BRASS, 1);
-      g.fillEllipse(x - 14 * s, y - 16 * s, 24 * s, 32 * s);
-      g.fillEllipse(x + 14 * s, y - 16 * s, 24 * s, 32 * s);
+      E(-13, -16, 27, 34, BRASS); E(13, -16, 27, 34, BRASS);
+      E(-13, -17, 11, 18, CM.ink); E(13, -17, 11, 18, CM.ink);
       break;
     case 'weights':
       L(-14, -38, -14, 4, 3, 0x8f8a7a);
       L(14, -38, 14, -8, 3, 0x8f8a7a);
-      g.fillStyle(0x9a6b1f, 1);
-      g.fillEllipse(x - 14 * s, y + 20 * s, 20 * s, 40 * s);
-      g.fillEllipse(x + 14 * s, y + 8 * s, 20 * s, 40 * s);
+      E(-14, 20, 20, 40, CM.copperDark); E(14, 8, 20, 40, CM.copperDark);
       break;
     case 'lever':
       T([-6, 20, 6, 20, 0, 6], DARK);
@@ -195,18 +247,17 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       R(6, 16, 20, 18, 0x9a6b1f, 3);
       break;
     case 'cam':
-      g.fillStyle(BRASS, 1);
-      g.fillEllipse(x, y + 10 * s, 50 * s, 38 * s);
+      E(0, 10, 50, 38, BRASS);
       C(-8, 10, 5, DARK);
       R(-5, -40, 10, 32, STEEL, 2);
       break;
     case 'crank':
       C(-14, 10, 18, BRASS);
       L(-14, 10, 20, -20, 6, DARK);
-      C(20, -20, 7, 0xd64541);
+      C(20, -20, 7, CM.copperDark);
       break;
     case 'bellows':
-      T([-34, -18, 26, -24, 26, 24, -34, 18], 0x8a4a2a);
+      T([-34, -18, 26, -24, 26, 24, -34, 18], CM.woodDark);
       for (let i = 0; i < 4; i++) L(-24 + i * 14, -18, -24 + i * 14, 18, 2, 0x5a2a12);
       R(26, -6, 14, 12, BRASS, 2);
       break;
@@ -218,15 +269,15 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       C(0, 26, 6, DARK);
       break;
     case 'cylinder':
-      R(-36, -18, 72, 36, 0xc0c8d0, 14);
+      R(-36, -18, 72, 36, CM.sky, 14);
       for (let i = 0; i < 12; i++) C(-28 + (i % 6) * 11, -8 + Math.floor(i / 6) * 16, 2.5, 0x5a5a6a);
       break;
     case 'comb':
-      for (let i = 0; i < 7; i++) R(-34 + i * 10, -10, 7, 26 + i * 3, 0xc0c8d0, 2);
+      for (let i = 0; i < 7; i++) R(-34 + i * 10, -10, 7, 26 + i * 3, CM.sky, 2);
       R(-38, -18, 76, 10, STEEL, 2);
       break;
     case 'wave':
-      g.lineStyle(4 * s, 0x5fa8d3, 1);
+      g.lineStyle(4 * s, CM.slate, 1);
       g.beginPath();
       for (let i = -36; i <= 36; i += 3) g.lineTo(x + i * s, y + Math.sin(i / 6) * 16 * s);
       g.strokePath();
@@ -239,9 +290,9 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       L(-9, -22, 19, -28, 5, DARK);
       break;
     case 'dial':
-      C(0, 0, 32, 0x3d2412);
-      C(0, 0, 26, 0xf6ead0);
-      L(0, 0, 16, -14, 3, 0xd64541);
+      C(0, 0, 32, CM.woodDark);
+      C(0, 0, 26, CM.paper);
+      L(0, 0, 16, -14, 3, CM.copperDark);
       C(0, 0, 4, DARK);
       break;
     case 'eye':
@@ -250,16 +301,16 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       C(0, 0, 7, 0x0b2b0b);
       break;
     case 'battery':
-      R(-18, -30, 36, 60, 0x3b7dd8, 6);
+      R(-18, -30, 36, 60, CM.teal, 6);
       R(-8, -36, 16, 8, STEEL, 2);
       R(-12, -6, 24, 6, 0xffffff, 2);
       R(-3, -15, 6, 24, 0xffffff, 2);
       break;
     case 'plug':
-      R(-20, -10, 30, 24, 0x333333, 6);
+      R(-20, -10, 30, 24, CM.ink, 6);
       R(10, -6, 18, 4, STEEL, 1);
       R(10, 4, 18, 4, STEEL, 1);
-      L(-20, 2, -38, 20, 5, 0x333333);
+      L(-20, 2, -38, 20, 5, CM.ink);
       break;
     case 'bulb':
       C(0, -8, 26, 0xfff3b0, 0.35);
@@ -274,21 +325,21 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       L(-18, 18, 18, 18, 3, COPPER);
       break;
     case 'switch':
-      R(-24, 6, 48, 14, 0x333333, 4);
+      R(-24, 6, 48, 14, CM.ink, 4);
       L(-14, 6, 18, -22, 5, COPPER);
       C(-14, 6, 5, BRASS);
       break;
     case 'motor':
     case 'dynamo':
-      R(-28, -20, 46, 40, key === 'dynamo' ? 0x2e9b5f : 0x3b7dd8, 8);
+      R(-28, -20, 46, 40, key === 'dynamo' ? CM.moss : CM.teal, 8);
       R(18, -4, 18, 8, STEEL, 2);
-      g.lineStyle(3 * s, 0xffd43b, 1);
+      g.lineStyle(3 * s, CM.brass, 1);
       g.lineBetween(x - 10 * s, y - 10 * s, x - 2 * s, y);
       g.lineBetween(x - 2 * s, y, x - 12 * s, y + 4 * s);
       g.lineBetween(x - 12 * s, y + 4 * s, x - 2 * s, y + 14 * s);
       break;
     case 'fuse':
-      R(-30, -10, 60, 20, 0xf6ead0, 8);
+      R(-30, -10, 60, 20, CM.paper, 8);
       R(-36, -8, 10, 16, STEEL, 2);
       R(26, -8, 10, 16, STEEL, 2);
       L(-26, 0, 26, 0, 2, COPPER);
@@ -296,12 +347,12 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
     case 'tube':
       R(-14, -34, 28, 56, 0xffcf80, 12);
       C(0, -6, 10, 0xffb347);
-      R(-16, 20, 32, 12, 0x333333, 3);
+      R(-16, 20, 32, 12, CM.ink, 3);
       break;
     case 'speaker':
-      C(0, 0, 32, 0x3d2412);
-      C(0, 0, 24, 0x6e4527);
-      C(0, 0, 10, 0x2b1d14);
+      C(0, 0, 32, CM.woodDark);
+      C(0, 0, 24, CM.wood);
+      C(0, 0, 10, CM.ink);
       break;
     case 'mic':
       R(-10, -34, 20, 36, STEEL, 10);
@@ -323,7 +374,7 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       L(-40, 0, -12, 0, 3, 0xffffff);
       L(14, 4, 40, -6, 3, 0xff6b6b);
       L(14, 8, 40, 10, 3, 0x8ce99a);
-      L(14, 12, 40, 26, 3, 0x74c0fc);
+      L(14, 12, 40, 26, 3, CM.sky);
       break;
     case 'stars':
       g.fillStyle(0xfff3b0, 1);
@@ -333,7 +384,7 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       break;
     case 'valve':
       R(-38, -6, 76, 12, COPPER, 3);
-      C(0, -16, 18, 0xd64541);
+      C(0, -16, 18, CM.copperDark);
       C(0, -16, 6, DARK);
       L(-18, -16, 18, -16, 3, DARK);
       L(0, -34, 0, 2, 3, DARK);
@@ -341,11 +392,10 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
     case 'pipe':
       R(-38, -8, 46, 16, COPPER, 4);
       R(-8, -8, 16, 46, COPPER, 4);
-      R(-12, -12, 24, 24, 0xb5652e, 4);
+      R(-12, -12, 24, 24, CM.copperDark, 4);
       break;
     case 'kettle':
-      g.fillStyle(COPPER, 1);
-      g.fillEllipse(x, y + 8 * s, 56 * s, 44 * s);
+      E(0, 8, 56, 44, COPPER);
       T([22, 0, 40, -16, 26, 10], COPPER);
       R(-10, -22, 20, 8, DARK, 3);
       C(-36, -24, 8, 0xffffff, 0.7);
@@ -353,7 +403,7 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       break;
     case 'piston':
       R(-20, -10, 40, 40, STEEL, 4);
-      R(-6, -36, 12, 30, 0xc0c8d0, 2);
+      R(-6, -36, 12, 30, CM.sky, 2);
       R(-16, -42, 32, 8, DARK, 3);
       break;
     case 'whistle':
@@ -371,45 +421,44 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       C(0, 0, 6, DARK);
       break;
     case 'pump':
-      R(-16, -16, 32, 44, 0x2e9b5f, 6);
+      R(-16, -16, 32, 44, CM.moss, 6);
       L(0, -16, 0, -36, 4, DARK);
       L(-18, -36, 18, -36, 5, DARK);
       R(16, 0, 18, 8, COPPER, 2);
       break;
     case 'gate-and':
-      R(-30, -30, 60, 60, 0xd64541, 8);
-      C(-12, -6, 6, 0x111111);
-      C(12, -6, 6, 0x111111);
-      R(-14, -6, 4, 14, 0x111111, 1);
-      R(10, -6, 4, 14, 0x111111, 1);
+      R(-30, -30, 60, 60, CM.copperDark, 8);
+      C(-12, -6, 6, CM.ink);
+      C(12, -6, 6, CM.ink);
+      R(-14, -6, 4, 14, CM.ink, 1);
+      R(10, -6, 4, 14, CM.ink, 1);
       break;
     case 'gate-or':
-      L(-26, -28, 0, 4, 8, 0x3b7dd8);
-      L(26, -28, 0, 4, 8, 0x3b7dd8);
-      L(0, 4, 0, 30, 8, 0x3b7dd8);
-      C(-18, -20, 6, 0xffd43b);
+      L(-26, -28, 0, 4, 8, CM.teal);
+      L(26, -28, 0, 4, 8, CM.teal);
+      L(0, 4, 0, 30, 8, CM.teal);
+      C(-18, -20, 6, CM.brass);
       break;
     case 'gate-not':
       T([-6, 20, 6, 20, 0, 6], DARK);
-      L(-34, 16, 34, -10, 7, 0x2e9b5f);
-      C(-30, 6, 7, 0xffd43b);
+      L(-34, 16, 34, -10, 7, CM.moss);
+      C(-30, 6, 7, CM.brass);
       break;
     case 'gate-latch':
-      gearAt(0, 0, 22, 0x8e5cc4, 10);
+      gearAt(0, 0, 22, CM.slate, 10);
       T([10, -36, 26, -36, 16, -18], DARK);
       break;
     case 'card':
-      R(-26, -34, 52, 68, 0xf6ead0, 4);
-      for (let i = 0; i < 9; i++) C(-14 + (i % 3) * 14, -20 + Math.floor(i / 3) * 16, 3.5, (i * 7) % 3 === 0 ? 0x2b1d14 : 0xd9c7a0);
+      R(-26, -34, 52, 68, CM.paper, 4);
+      for (let i = 0; i < 9; i++) C(-14 + (i % 3) * 14, -20 + Math.floor(i / 3) * 16, 3.5, (i * 7) % 3 === 0 ? CM.ink : CM.paperDark);
       break;
     case 'button':
       R(-28, 8, 56, 16, 0x555555, 4);
-      g.fillStyle(0xe74c3c, 1);
-      g.fillEllipse(x, y + 4 * s, 40 * s, 22 * s);
+      E(0, 4, 40, 22, CM.copper);
       break;
     case 'marble':
       L(-36, -26, 30, 10, 6, WOOD);
-      C(-16, -24, 9, 0x74c0fc);
+      C(-16, -24, 9, CM.sky);
       C(-18, -26, 3, 0xffffff);
       break;
     case 'pendulum':
@@ -423,11 +472,11 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       C(7, -10, 5, BRASS);
       break;
     case 'hands':
-      C(0, 0, 32, 0xf6ead0);
+      C(0, 0, 32, CM.paper);
       g.lineStyle(3 * s, BRASS, 1);
       g.strokeCircle(x, y, 32 * s);
-      L(0, 0, 0, -24, 4, 0x2b1d14);
-      L(0, 0, 16, 6, 5, 0x2b1d14);
+      L(0, 0, 0, -24, 4, CM.ink);
+      L(0, 0, 16, 6, 5, CM.ink);
       break;
     case 'chain':
       for (let i = 0; i < 4; i++) {
@@ -436,70 +485,70 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       }
       break;
     case 'train':
-      R(-36, -16, 50, 28, 0x2b7a78, 6);
-      R(4, -30, 10, 16, 0x222222, 2);
-      R(14, -10, 22, 22, 0x2b7a78, 4);
-      C(-24, 16, 8, 0x222222);
-      C(0, 16, 8, 0x222222);
-      C(24, 16, 8, 0x222222);
+      R(-36, -16, 50, 28, CM.tealDark, 6);
+      R(4, -30, 10, 16, CM.ink, 2);
+      R(14, -10, 22, 22, CM.tealDark, 4);
+      C(-24, 16, 8, CM.ink);
+      C(0, 16, 8, CM.ink);
+      C(24, 16, 8, CM.ink);
       break;
     case 'track':
       for (let i = 0; i < 5; i++) R(-34 + i * 16, -14, 8, 28, WOOD, 2);
-      L(-40, -8, 40, -8, 4, 0x777777);
-      L(-40, 8, 40, 8, 4, 0x777777);
+      L(-40, -8, 40, -8, 4, CM.inkSoft);
+      L(-40, 8, 40, 8, 4, CM.inkSoft);
       break;
     case 'points':
-      L(-36, 20, 36, 20, 5, 0x777777);
-      L(-10, 20, 30, -18, 5, 0x777777);
-      R(-16, 26, 10, 10, 0xd64541, 2);
+      L(-36, 20, 36, 20, 5, CM.inkSoft);
+      L(-10, 20, 30, -18, 5, CM.inkSoft);
+      R(-16, 26, 10, 10, CM.copperDark, 2);
       break;
     case 'signal':
-      R(-4, -10, 8, 46, 0x333333, 2);
-      R(-14, -38, 28, 34, 0x222222, 6);
+      R(-4, -10, 8, 46, CM.ink, 2);
+      R(-14, -38, 28, 34, CM.ink, 6);
       C(0, -28, 6, 0xff6b6b);
       C(0, -14, 6, 0x51cf66);
       break;
     case 'buffer':
-      R(-30, -10, 60, 30, 0xd64541, 4);
-      C(-16, -16, 8, 0xffd43b);
-      C(16, -16, 8, 0xffd43b);
+      R(-30, -10, 60, 30, CM.copperDark, 4);
+      C(-16, -16, 8, CM.brass);
+      C(16, -16, 8, CM.brass);
       break;
     case 'hinge':
       R(-26, -20, 22, 40, STEEL, 3);
       R(4, -20, 22, 40, STEEL, 3);
-      R(-4, -24, 8, 48, 0x6c757d, 4);
+      R(-4, -24, 8, 48, CM.inkSoft, 4);
       break;
     case 'bearing':
       C(0, 0, 30, STEEL);
       C(0, 0, 14, 0xffffff);
-      for (let i = 0; i < 8; i++) C(Math.cos((i / 8) * 6.28) * 22, Math.sin((i / 8) * 6.28) * 22, 5, 0xe9ecef);
+      for (let i = 0; i < 8; i++) C(Math.cos((i / 8) * 6.28) * 22, Math.sin((i / 8) * 6.28) * 22, 5, CM.cream);
       break;
     case 'screw':
       T([-10, -30, 10, -30, 6, 30, -6, 30], STEEL);
-      for (let i = 0; i < 6; i++) L(-10, -24 + i * 9, 10, -20 + i * 9, 2, 0x6c757d);
+      for (let i = 0; i < 6; i++) L(-10, -24 + i * 9, 10, -20 + i * 9, 2, CM.inkSoft);
       R(-18, -38, 36, 10, STEEL, 3);
       break;
     case 'ramp':
       T([-38, 26, 38, 26, 38, -22], WOOD);
-      C(-8, 2, 8, 0x74c0fc);
+      C(-8, 2, 8, CM.sky);
       break;
     case 'wedge':
       T([-30, 26, 30, 26, 0, -30], STEEL);
       break;
     case 'wheel':
       C(0, 0, 30, WOOD);
-      C(0, 0, 22, 0xc49a6c);
+      C(0, 0, 22, CM.woodLight);
       L(-40, 0, 40, 0, 6, DARK);
       break;
     case 'candles':
       for (let i = 0; i < 3; i++) {
-        R(-26 + i * 20, -6, 12, 34, [0xff8fab, 0x74c0fc, 0xffd43b][i], 3);
+        R(-26 + i * 20, -6, 12, 34, [0xff8fab, CM.sky, CM.brass][i], 3);
         g.fillStyle(0xffa94d, 1);
         g.fillEllipse(x + (-20 + i * 20) * s, y - 14 * s, 8 * s, 14 * s);
       }
       break;
     case 'boat':
-      T([-34, 0, 34, 0, 24, 18, -24, 18], 0xe05a47);
+      T([-34, 0, 34, 0, 24, 18, -24, 18], CM.copperDark);
       T([0, -34, 0, -2, 22, -2], 0xffffff);
       break;
     case 'cups':
@@ -511,33 +560,30 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       }
       break;
     case 'bird':
-      g.fillStyle(0x8a5a33, 1);
-      g.fillEllipse(x, y + 4 * s, 50 * s, 36 * s);
-      C(18, -14, 12, 0x8a5a33);
+      E(0, 4, 50, 36, CM.wood);
+      C(18, -14, 12, CM.wood);
       T([28, -16, 28, -10, 40, -13], 0xe8a33d);
-      C(20, -16, 3, 0x111111);
+      C(20, -16, 3, CM.ink);
       break;
     case 'fox':
-      g.fillStyle(0xe67e22, 1);
-      g.fillEllipse(x, y + 10 * s, 30 * s, 40 * s);
-      C(0, -18, 14, 0xe67e22);
-      T([-12, -24, -6, -42, 0, -26], 0xe67e22);
-      T([12, -24, 6, -42, 0, -26], 0xe67e22);
+      E(0, 10, 30, 40, CM.copper);
+      C(0, -18, 14, CM.copper);
+      T([-12, -24, -6, -42, 0, -26], CM.copper);
+      T([12, -24, 6, -42, 0, -26], CM.copper);
       break;
     case 'monkey':
-      C(0, 0, 26, 0x8a5a33);
-      C(0, 6, 14, 0xc49a6c);
-      C(-26, -6, 8, 0x8a5a33);
-      C(26, -6, 8, 0x8a5a33);
+      C(0, 0, 26, CM.wood);
+      C(0, 6, 14, CM.woodLight);
+      C(-26, -6, 8, CM.wood);
+      C(26, -6, 8, CM.wood);
       break;
     case 'oilcan':
-      g.fillStyle(0xd64541, 1);
-      g.fillEllipse(x - 6 * s, y + 10 * s, 44 * s, 34 * s);
+      E(-6, 10, 44, 34, CM.copperDark);
       L(10, 0, 38, -26, 5, BRASS);
       R(-14, -16, 16, 10, DARK, 3);
       break;
     case 'magnet':
-      g.lineStyle(12 * s, 0xd64541, 1);
+      g.lineStyle(12 * s, CM.copperDark, 1);
       g.beginPath();
       g.arc(x, y - 4 * s, 20 * s, 0, Math.PI, false);
       g.strokePath();
@@ -551,8 +597,8 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       L(8, 8, 30, 30, 8, DARK);
       break;
     case 'boots':
-      R(-24, -24, 22, 34, 0x8a4a2a, 6);
-      R(4, -24, 22, 34, 0x8a4a2a, 6);
+      R(-24, -24, 22, 34, CM.woodDark, 6);
+      R(4, -24, 22, 34, CM.woodDark, 6);
       for (let i = 0; i < 2; i++) {
         g.lineStyle(3 * s, STEEL, 1);
         g.strokeEllipse(x + (-13 + i * 28) * s, y + 18 * s, 18 * s, 6 * s);
@@ -570,17 +616,17 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       R(-26, -30, 52, 10, WOOD, 3);
       R(-26, 20, 52, 10, WOOD, 3);
       R(-18, -20, 36, 40, COPPER, 4);
-      for (let i = 0; i < 5; i++) L(-18, -16 + i * 8, 18, -12 + i * 8, 2, 0xf0a77a);
+      for (let i = 0; i < 5; i++) L(-18, -16 + i * 8, 18, -12 + i * 8, 2, CM.copperLight);
       break;
     case 'wrench':
       L(-26, 26, 14, -14, 9, STEEL);
       C(20, -20, 14, STEEL);
       C(26, -26, 8, 0x000000, 0);
-      g.fillStyle(0x2b1d14, 1);
+      g.fillStyle(CM.ink, 1);
       g.fillRect(x + 18 * s, y - 34 * s, 10 * s, 16 * s);
       break;
     case 'pencil':
-      L(-28, 28, 22, -22, 10, 0xffd43b);
+      L(-28, 28, 22, -22, 10, CM.brass);
       T([22, -22, 34, -34, 28, -16], 0xf2c9a5);
       C(-28, 28, 5, 0xff8fab);
       break;
@@ -591,10 +637,10 @@ export function drawPart(g: Phaser.GameObjects.Graphics, id: string, x: number, 
       L(-12, -2, 12, -2, 5, STEEL);
       break;
     case 'nest':
-      g.fillStyle(0x8a5a33, 1);
-      g.fillEllipse(x, y + 10 * s, 70 * s, 34 * s);
+      E(0, 10, 70, 34, CM.wood);
+      for (let i = 0; i < 8; i++) L(-26 + i * 7, 20, -20 + i * 7, 0, 1, CM.woodDark);
       C(-14, 2, 6, 0xffd700);
-      C(8, 0, 5, 0xc0c8d0);
+      C(8, 0, 5, CM.sky);
       C(20, 6, 4, 0xff8787);
       break;
     case 'heart':

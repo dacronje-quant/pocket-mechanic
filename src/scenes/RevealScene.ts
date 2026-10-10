@@ -6,7 +6,6 @@
 import * as sfx from '../audio/sfx';
 import { setMusicProgress } from '../audio/music';
 import { drawStage } from '../art/backgrounds';
-import { paintedBackdrop } from '../art/generated';
 import { Kip } from '../art/Kip';
 import { MachineArt } from '../art/objects';
 import { Portrait } from '../art/portraits';
@@ -39,10 +38,9 @@ export class RevealScene extends MetaScene {
     persist();
 
     drawStage(this, 'shop').setDepth(0);
-    paintedBackdrop(this, 'stage-shop', 1);
     this.bubble.setY(110);
     const calm = settings().calm;
-    const machine = new MachineArt(this, 640, 330, r.object, 1.05).setDepth(10);
+    const machine = new MachineArt(this, 640, 460, r.object, 1.05).setDepth(10);
     const owner = new Portrait(this, 170, 340, r.owner, 0.8).setDepth(8);
     owner.setMood('worried');
     const nana = r.owner === 'nana' ? null : new Portrait(this, 1110, 340, 'nana', 0.8).setDepth(8);
@@ -51,15 +49,15 @@ export class RevealScene extends MetaScene {
 
     const stars = this.add.particles(0, 0, 'star', { lifespan: 1600, speed: { min: 100, max: 320 }, scale: { start: 1, end: 0 }, gravityY: 160, emitting: false }).setDepth(HUD - 5);
     const confetti = this.add
-      .particles(0, 0, 'confetti', { x: { min: 0, max: 1280 }, y: -10, lifespan: 4200, speedY: { min: 90, max: 220 }, speedX: { min: -50, max: 50 }, rotate: { min: 0, max: 360 }, tint: [0xff6b6b, 0xffd43b, 0x74c0fc, 0x8ce99a, 0xb197fc], emitting: false })
+      .particles(0, 0, 'confetti', { x: { min: 0, max: 1280 }, y: -10, lifespan: 4200, speedY: { min: 90, max: 220 }, speedX: { min: -50, max: 50 }, rotate: { min: 0, max: 360 }, tint: [0xba8668, 0xf1d391, 0x83a49a, 0xa0a477, 0x92a393], emitting: false })
       .setDepth(HUD - 5);
 
     // countdown as three lamps (reading-free)
-    const lamps = [0, 1, 2].map((i) => this.add.circle(580 + i * 60, 620, 18, 0x5a3a22).setStrokeStyle(4, 0xd9a441).setDepth(HUD - 2));
+    const lamps = [0, 1, 2].map((i) => this.add.circle(580 + i * 60, 620, 18, 0x5a3a22).setStrokeStyle(4, 0xbca16a).setDepth(HUD - 2));
     this.time.delayedCall(500, () => this.line('reveal.go'));
     lamps.forEach((l, i) =>
       this.time.delayedCall(1500 + i * 700, () => {
-        l.setFillStyle(0xffd43b);
+        l.setFillStyle(0xf1d391);
         sfx.tick(1 + i * 0.2);
         kip.polish();
       }),
@@ -81,7 +79,7 @@ export class RevealScene extends MetaScene {
       }
       this.time.delayedCall((len + 2.5) * 1000, () => this.finish());
     });
-    roundButton(this, 1180, 640, '▶', () => this.finish(), { r: 34, fontSize: 30, color: 0x8ce99a, say: 'Next' }).setDepth(HUD);
+    roundButton(this, 1180, 640, '▶', () => this.finish(), { r: 34, fontSize: 30, color: 0xa0a477, say: 'Next' }).setDepth(HUD);
     pm.next = () => this.finish();
   }
 

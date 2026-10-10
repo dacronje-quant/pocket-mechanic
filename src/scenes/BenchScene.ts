@@ -11,6 +11,8 @@ import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { speak } from '../audio/voice';
 import { drawRoomBackdrop } from '../art/backgrounds';
+import { CM, drawPatina } from '../art/copperMoss';
+import { drawerFinish, etchedPlate } from '../art/finish';
 import { drawPart } from '../art/parts';
 import { ensureGearTexture } from '../art/textures';
 import {
@@ -127,15 +129,16 @@ export class BenchScene extends MetaScene {
 
   private board(): void {
     const g = this.add.graphics().setDepth(2);
-    g.fillStyle(0x000000, 0.3);
-    g.fillRoundedRect(BENCH.x0 - 86, BENCH.y0 - 76, BENCH.step * (BENCH.cols - 1) + 180, BENCH.step * (BENCH.rows - 1) + 160, 18);
-    g.fillStyle(0xb98b55, 1);
-    g.fillRoundedRect(BENCH.x0 - 90, BENCH.y0 - 80, BENCH.step * (BENCH.cols - 1) + 180, BENCH.step * (BENCH.rows - 1) + 160, 18);
+    etchedPlate(g, BENCH.x0 - 90, BENCH.y0 - 80, BENCH.step * (BENCH.cols - 1) + 180, BENCH.step * (BENCH.rows - 1) + 160, CM.woodLight, 1, 745);
+    g.lineStyle(0.6, CM.ink, 0.11);
+    for (let yy = BENCH.y0 - 60; yy < BENCH.y0 + BENCH.step * (BENCH.rows - 1) + 65; yy += 18) {
+      g.lineBetween(BENCH.x0 - 75, yy, BENCH.x0 + BENCH.step * (BENCH.cols - 1) + 75, yy + 2);
+    }
     for (let i = 0; i < PEG_COUNT; i++) {
       const { x, y } = pegPos(i);
-      g.fillStyle(0x6e4527, 1);
+      g.fillStyle(0x554638, 1);
       g.fillCircle(x, y, 9);
-      g.fillStyle(0xd9a441, 1);
+      g.fillStyle(0xbca16a, 1);
       g.fillCircle(x, y, 5);
     }
   }
@@ -148,8 +151,9 @@ export class BenchScene extends MetaScene {
   private tray(): void {
     const p = profile();
     const g = this.add.graphics().setDepth(40);
-    g.fillStyle(0x3d2412, 0.95);
+    g.fillStyle(0x342f29, 0.95);
     g.fillRoundedRect(20, 588, 1240, 124, 20);
+    drawerFinish(g, 20, 588, 1240, 124);
     this.trayGears = this.add.container(0, 0).setDepth(41);
     this.trayGadgets = this.add.container(0, 0).setDepth(41);
     const sizes = this.trayGearSizes();
@@ -161,7 +165,7 @@ export class BenchScene extends MetaScene {
       img.setInteractive({ useHandCursor: true });
       img.on('pointerdown', (ptr: Phaser.Input.Pointer) => this.pickNewGear(teeth, ptr));
       this.trayGears.add(img);
-      if (p.style === 'engineer') this.trayGears.add(this.add.text(x, y + 34, String(teeth), { fontFamily: FONT, fontSize: '14px', color: '#fff3d0' }).setOrigin(0.5));
+      if (p.style === 'engineer') this.trayGears.add(this.add.text(x, y + 34, String(teeth), { fontFamily: FONT, fontSize: '14px', color: '#f4ebd5' }).setOrigin(0.5));
     });
     this.refreshGadgetTray();
   }
@@ -186,14 +190,17 @@ export class BenchScene extends MetaScene {
   private gadgetIcon(kind: GadgetKind, s: number): Phaser.GameObjects.Container {
     const c = this.add.container(0, 0);
     const g = this.add.graphics();
-    g.fillStyle(isSource(kind) ? 0x2e9b5f : 0x3463b5, 1);
+    g.fillStyle(isSource(kind) ? CM.mossDark : CM.tealDark, 1);
     g.fillCircle(0, 0, 70 * s);
-    g.fillStyle(0xfff6e2, 1);
+    g.fillStyle(0xf4ebd5, 1);
     g.fillCircle(0, 0, 60 * s);
+    g.lineStyle(1.3, CM.copperDark, 0.9);
+    g.strokeCircle(0, 0, 70 * s);
+    drawPatina(g, -38 * s, -38 * s, 76 * s, 76 * s, 982, 1.2);
     if (kind === 'flag') {
-      g.fillStyle(0x8a5a33, 1);
+      g.fillStyle(0x856c50, 1);
       g.fillRect(-16 * s, -40 * s, 6 * s, 80 * s);
-      g.fillStyle(0xd64541, 1);
+      g.fillStyle(0xad6b51, 1);
       g.fillTriangle(-10 * s, -40 * s, 40 * s, -24 * s, -10 * s, -8 * s);
     } else drawPart(g, GADGET_ART[kind], 0, 0, s * 0.9);
     c.add(g);
@@ -413,7 +420,7 @@ export class BenchScene extends MetaScene {
       const { x, y } = pegPos(gd.peg);
       const txt = r === 0 ? '·' : `${r > 0 ? '↻' : '↺'} ×${Math.abs(r) >= 1 ? +Math.abs(r).toFixed(2) : `1/${+(1 / Math.abs(r)).toFixed(1)}`}`;
       this.peekLabels.push(
-        this.add.text(x, y - 46, txt, { fontFamily: FONT, fontSize: '18px', color: '#fff3d0', backgroundColor: '#2b1d14cc', padding: { x: 6, y: 2 } }).setOrigin(0.5).setDepth(31),
+        this.add.text(x, y - 46, txt, { fontFamily: FONT, fontSize: '18px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 6, y: 2 } }).setOrigin(0.5).setDepth(31),
       );
     }
   }
@@ -508,10 +515,10 @@ export class BenchScene extends MetaScene {
       scrollGrid(this, 90, 150, 1100, 500, CARDS.length, { w: 183, h: 120, cols: 6 }, (i, x, y) => {
         const c = CARDS[i];
         const best = p.bench.cards[c.id];
-        const t = tile(this, x, y, 170, 108, () => this.loadCard(c), { caption: showWords() ? c.title : undefined, captionSize: 13, fill: best !== undefined ? 0xe8f7d8 : undefined });
-        t.add(this.add.text(-60, -30, String(i + 1), { fontFamily: SERIF, fontSize: '22px', color: '#7a5413', fontStyle: 'bold' }).setOrigin(0.5));
+        const t = tile(this, x, y, 170, 108, () => this.loadCard(c), { caption: showWords() ? c.title : undefined, captionSize: 13, fill: best !== undefined ? 0xd8dfc5 : undefined });
+        t.add(this.add.text(-60, -30, String(i + 1), { fontFamily: SERIF, fontSize: '22px', color: '#79503d', fontStyle: 'bold' }).setOrigin(0.5));
         c.gadgets.slice(0, 3).forEach((gd, k) => t.add(this.gadgetIcon(gd.kind, 0.2).setPosition(-10 + k * 30, -22)));
-        if (best !== undefined) t.add(this.add.text(64, -32, best <= c.par ? '★' : '✓', { fontFamily: FONT, fontSize: '22px', color: best <= c.par ? '#e0a800' : '#2e9b5f' }).setOrigin(0.5));
+        if (best !== undefined) t.add(this.add.text(64, -32, best <= c.par ? '★' : '✓', { fontFamily: FONT, fontSize: '22px', color: best <= c.par ? '#e0a800' : '#485541' }).setOrigin(0.5));
         this.hot(`card-${c.id}`, () => this.loadCard(c));
         return t;
       }).setDepth(HUD + 11),
@@ -540,7 +547,7 @@ export class BenchScene extends MetaScene {
     this.refreshGadgetTray();
     this.goalText?.destroy();
     this.goalText = this.add
-      .text(640, 569, showWords() ? c.say : '', { fontFamily: FONT, fontSize: '19px', color: '#fff3d0', backgroundColor: '#2b1d14cc', padding: { x: 14, y: 3 } })
+      .text(640, 569, showWords() ? c.say : '', { fontFamily: FONT, fontSize: '19px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 14, y: 3 } })
       .setOrigin(0.5)
       .setDepth(HUD);
     this.goalText.setInteractive().on('pointerup', () => void speak('nana', c.say, `card.${c.id}`));
@@ -577,7 +584,7 @@ export class BenchScene extends MetaScene {
         checkStamps(p);
         persist();
       }
-      add(this.add.text(640, 130, code.match(/.{1,4}/g)!.join(' '), { fontFamily: 'monospace', fontSize: '38px', color: '#3b260b', fontStyle: 'bold', backgroundColor: '#fff6e2', padding: { x: 18, y: 8 } }).setOrigin(0.5));
+      add(this.add.text(640, 130, code.match(/.{1,4}/g)!.join(' '), { fontFamily: 'monospace', fontSize: '38px', color: '#342f29', fontStyle: 'bold', backgroundColor: '#f4ebd5', padding: { x: 18, y: 8 } }).setOrigin(0.5));
       this.line('bench.code');
     }
     const pad = keypad(this, 600, 290, CODE_ALPHABET, 40, () => undefined, HUD + 11);
@@ -599,7 +606,7 @@ export class BenchScene extends MetaScene {
         this.refreshGadgetTray();
         sfx.sparkle();
         this.refresh();
-      }, { r: 36, fontSize: 30, color: 0x8ce99a, say: 'Build it' }),
+      }, { r: 36, fontSize: 30, color: 0xa0a477, say: 'Build it' }),
     );
   }
 

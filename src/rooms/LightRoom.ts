@@ -5,6 +5,8 @@
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
+import { CM, drawPatina } from '../art/copperMoss';
+import { etchedPlate } from '../art/finish';
 import { star } from '../art/Kip';
 import { traceLight, type Color, type LightKind, type LightResult, type LightTile } from '../mechanism/light';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
@@ -45,12 +47,14 @@ export class LightRoom extends RoomBase<'light'> {
     this.ox = 640 - (g0.cols * this.S) / 2;
     this.oy = 112 + (430 - g0.rows * this.S) / 2;
     const board = this.add.graphics().setDepth(D.back + 1);
-    board.fillStyle(0x000000, 0.3);
-    board.fillRoundedRect(this.ox - 12, this.oy - 12, g0.cols * this.S + 24, g0.rows * this.S + 24, 18);
+    etchedPlate(board, this.ox - 14, this.oy - 14, g0.cols * this.S + 28, g0.rows * this.S + 28, CM.tealDark, 1, 878);
     for (let y = 0; y < g0.rows; y++) for (let x = 0; x < g0.cols; x++) {
-      board.fillStyle((x + y) % 2 ? 0x16224a : 0x1b2a58, 0.9);
+      board.fillStyle((x + y) % 2 ? 0x344f4b : 0x3e5c56, 0.9);
       board.fillRect(this.ox + x * this.S, this.oy + y * this.S, this.S, this.S);
+      board.lineStyle(0.8, CM.cream, 0.08);
+      board.strokeRect(this.ox + x * this.S + 2, this.oy + y * this.S + 2, this.S - 4, this.S - 4);
     }
+    drawPatina(board, this.ox, this.oy, g0.cols * this.S, g0.rows * this.S, 166, 0.75);
     this.raysG = this.add.graphics().setDepth(D.mech).setBlendMode(Phaser.BlendModes.ADD);
     this.tilesG = this.add.graphics().setDepth(D.mech + 1);
     g0.cells.forEach((t, i) => {
@@ -222,7 +226,7 @@ export class LightRoom extends RoomBase<'light'> {
       const c = this.center(i);
       if (t.kind === '_' || (t.slot && this.optics.some((o) => o.cell === i))) {
         if (t.kind === '_') {
-          g.lineStyle(3, 0xfff4c8, 0.45);
+          g.lineStyle(3, 0xf4ebd5, 0.45);
           g.strokeRoundedRect(c.x - this.S / 2 + 8, c.y - this.S / 2 + 8, this.S - 16, this.S - 16, 10);
         }
         return;
@@ -275,14 +279,14 @@ export class LightRoom extends RoomBase<'light'> {
       case 'N':
         g.fillStyle(0xb2f2ff, 0.65);
         g.fillEllipse(x, y, S * 0.24, S * 0.78);
-        g.lineStyle(3, 0xd9a441, 1);
+        g.lineStyle(3, 0xbca16a, 1);
         g.strokeEllipse(x, y, S * 0.24, S * 0.78);
         break;
       case 'F': {
         const col = BEAM[t.color ?? 'r'];
         g.fillStyle(col, 0.6);
         g.fillRoundedRect(x - S * 0.12, y - h * 0.75, S * 0.24, S * 0.75, 6);
-        g.lineStyle(3, 0x5e3f10, 1);
+        g.lineStyle(3, 0x554638, 1);
         g.strokeRoundedRect(x - S * 0.12, y - h * 0.75, S * 0.24, S * 0.75, 6);
         this.colorMark(g, t.color ?? 'r', x, y, 7);
         break;
@@ -290,7 +294,7 @@ export class LightRoom extends RoomBase<'light'> {
       case 'D': {
         const ok = cell >= 0 && this.res?.satisfied.has(cell);
         const bloom = ok ? 1 : 0;
-        const col = t.color ? BEAM[t.color] : 0xffd76a;
+        const col = t.color ? BEAM[t.color] : 0xf1d391;
         g.fillStyle(0x2e5e3a, 1);
         g.fillRect(x - 3, y, 6, h * 0.8);
         for (let k = 0; k < 6; k++) {
@@ -298,9 +302,9 @@ export class LightRoom extends RoomBase<'light'> {
           g.fillStyle(col, ok ? 1 : 0.35);
           g.fillEllipse(x + Math.cos(a) * S * (0.12 + bloom * 0.1), y + Math.sin(a) * S * (0.12 + bloom * 0.1), S * (0.14 + bloom * 0.08), S * (0.14 + bloom * 0.08));
         }
-        g.fillStyle(ok ? 0xfff3b0 : 0x6c757d, 1);
+        g.fillStyle(ok ? 0xfff3b0 : 0x60736d, 1);
         g.fillCircle(x, y, S * 0.11);
-        if (t.color) this.colorMark(g, t.color, x, y, 6, 0x2b1d14);
+        if (t.color) this.colorMark(g, t.color, x, y, 6, 0x342f29);
         if (t.focused) {
           g.lineStyle(2, 0xffffff, 0.8);
           g.strokeCircle(x, y, S * 0.38);
@@ -340,7 +344,7 @@ export class LightRoom extends RoomBase<'light'> {
     this.state.cells.forEach((t, i) => {
       if (!t || t.kind !== '_' || !t.sol?.kind) return;
       const c = this.center(i);
-      g.lineStyle(4, 0xfff4c8, alpha);
+      g.lineStyle(4, 0xf4ebd5, alpha);
       if (t.sol.kind === 'R') {
         const s = (t.sol.rot ?? 0) % 2 === 0 ? 1 : -1;
         g.lineBetween(c.x - this.S * 0.35, c.y + this.S * 0.35 * s, c.x + this.S * 0.35, c.y - this.S * 0.35 * s);

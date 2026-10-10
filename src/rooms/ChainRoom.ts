@@ -7,6 +7,8 @@
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { drawPart } from '../art/parts';
+import { CM } from '../art/copperMoss';
+import { rivet } from '../art/finish';
 import { LINK_PARTS, runChain, type ChainRun, type Signal } from '../mechanism/chain';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
 import { FONT, roundButton } from '../ui/widgets';
@@ -86,13 +88,13 @@ export class ChainRoom extends RoomBase<'chain'> {
         drop: (t) => this.drop(v, t),
       });
     });
-    roundButton(this, 1180, 600, '▶', () => this.start(), { r: 48, fontSize: 44, color: 0x8ce99a, say: 'Run!' }).setDepth(D.hud);
+    roundButton(this, 1180, 600, '▶', () => this.start(), { r: 48, fontSize: 44, color: 0xa0a477, say: 'Run!' }).setDepth(D.hud);
     if (this.style.numbers) {
       // a little legend of signal kinds
       const sigs = [...new Set(this.def.links.map((l) => (l.part ? LINK_PARTS[l.part] : undefined)).flatMap((p) => [p?.in, p?.out]).filter(Boolean))] as Signal[];
       sigs.forEach((s, i) => {
         this.add
-          .text(240 + i * 110, 120, `${SIGNAL_GLYPH[s]} ${s}`, { fontFamily: FONT, fontSize: '16px', color: '#fff3d0', backgroundColor: '#2b1d14cc', padding: { x: 6, y: 3 } })
+          .text(240 + i * 110, 120, `${SIGNAL_GLYPH[s]} ${s}`, { fontFamily: FONT, fontSize: '16px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 6, y: 3 } })
           .setOrigin(0.5)
           .setDepth(D.hud - 1);
       });
@@ -105,20 +107,26 @@ export class ChainRoom extends RoomBase<'chain'> {
     const p = LINK_PARTS[id];
     g.fillStyle(0x000000, 0.25);
     g.fillRoundedRect(x - s / 2 + 3, y - s / 2 + 5, s, s, 14);
-    g.fillStyle(drawer ? 0xf3e2bd : 0xfff6e2, 1);
+    g.fillStyle(drawer ? 0xe9dcc0 : 0xf4ebd5, 1);
     g.fillRoundedRect(x - s / 2, y - s / 2, s, s, 14);
+    g.lineStyle(1.8, CM.copperDark, 0.95);
+    g.strokeRoundedRect(x - s / 2, y - s / 2, s, s, 14);
+    g.lineStyle(0.7, CM.ink, 0.18);
+    for (let k = 0; k < 5; k++) g.lineBetween(x - s / 2 + 9 + k * 8, y + s / 2 - 7, x - s / 2 + 14 + k * 8, y + s / 2 - 15);
+    rivet(g, x - s / 2 + 9, y - s / 2 + 9, 2);
+    rivet(g, x + s / 2 - 9, y + s / 2 - 9, 2);
     drawPart(g, id, x, y - 4, s / 120);
     if (p?.in) this.port(g, x - s / 2, y, p.in);
     if (p?.out) this.port(g, x + s / 2, y, p.out);
   }
 
   private port(g: Phaser.GameObjects.Graphics, x: number, y: number, sig: Signal): void {
-    g.fillStyle(0x2b1d14, 1);
+    g.fillStyle(0x342f29, 1);
     g.fillCircle(x, y, 13);
     g.fillStyle(SIGNAL_COLOR[sig], 1);
     g.fillCircle(x, y, 10);
     // shape code (reads without colour)
-    g.fillStyle(0x2b1d14, 0.8);
+    g.fillStyle(0x342f29, 0.8);
     const i = (['turn', 'push', 'pull', 'spark', 'steam', 'water', 'light', 'marble', 'sound'] as Signal[]).indexOf(sig);
     if (i % 3 === 0) g.fillCircle(x, y, 3.5);
     else if (i % 3 === 1) g.fillRect(x - 3.5, y - 3.5, 7, 7);
@@ -246,7 +254,7 @@ export class ChainRoom extends RoomBase<'chain'> {
     for (let i = 0; i + 1 < this.pos.length; i++) {
       const a = this.pos[i];
       const b = this.pos[i + 1];
-      sg.lineStyle(10, 0x2b1d14, 0.6);
+      sg.lineStyle(10, 0x342f29, 0.6);
       sg.lineBetween(a.x, a.y, b.x, b.y);
       sg.lineStyle(5, 0xb88a2c, 1);
       sg.lineBetween(a.x, a.y, b.x, b.y);
@@ -258,12 +266,12 @@ export class ChainRoom extends RoomBase<'chain'> {
       const ox = w > 0 ? Math.sin(this.t * 40) * 4 : 0;
       if (l.part) this.drawCard(ig, l.part, p.x + ox, p.y);
       else if (!this.parts.some((q) => q.at === i)) {
-        ig.lineStyle(4, 0xfff4c8, 0.6);
+        ig.lineStyle(4, 0xf4ebd5, 0.6);
         ig.strokeRoundedRect(p.x - this.card / 2, p.y - this.card / 2, this.card, this.card, 14);
       }
       if (i === this.def.links.length - 1) {
         // the goal glows when the chain completes
-        ig.lineStyle(4, 0xffd76a, 0.5 + Math.sin(this.t * 3) * 0.3);
+        ig.lineStyle(4, 0xf1d391, 0.5 + Math.sin(this.t * 3) * 0.3);
         ig.strokeRoundedRect(p.x - this.card / 2 - 6, p.y - this.card / 2 - 6, this.card + 12, this.card + 12, 18);
       }
     });
@@ -300,7 +308,7 @@ export class ChainRoom extends RoomBase<'chain'> {
     }
     if (this.fixed) {
       for (const p of this.pos) {
-        og.fillStyle(0xffd76a, 0.12 + Math.sin(this.t * 4 + p.x) * 0.06);
+        og.fillStyle(0xf1d391, 0.12 + Math.sin(this.t * 4 + p.x) * 0.06);
         og.fillCircle(p.x, p.y, this.card * 0.7);
       }
     }
@@ -320,7 +328,7 @@ export class ChainRoom extends RoomBase<'chain'> {
   protected drawGhosts(g: Phaser.GameObjects.Graphics, alpha: number): void {
     this.def.links.forEach((l, i) => {
       if (!l.slot || this.state[i]) return;
-      g.fillStyle(0xfff4c8, alpha * 0.4);
+      g.fillStyle(0xf4ebd5, alpha * 0.4);
       g.fillRoundedRect(this.pos[i].x - this.card / 2, this.pos[i].y - this.card / 2, this.card, this.card, 14);
     });
   }
@@ -333,7 +341,7 @@ export class ChainRoom extends RoomBase<'chain'> {
     }
     if (!r.ok) {
       const p = this.pos[r.reached];
-      g.fillStyle(0xffc928, 0.3 + pulse * 0.4);
+      g.fillStyle(0xd3a278, 0.3 + pulse * 0.4);
       g.fillCircle(p.x, p.y, 30 + pulse * 14);
     }
   }

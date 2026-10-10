@@ -5,9 +5,14 @@ inside the broken treasures people bring to Nana Odette's repair shop and fixes 
 inside: gears, levers, springs, pendulums, music cylinders, tracks, circuits, pipes, logic gates
 and light. Nothing can fail or break for good; wrong parts wiggle back or do something funny.
 
-Built with **Phaser 3 + TypeScript + Vite**, deployed to **GitHub Pages**, installable on Android as
+Built with **Phaser 3 + TypeScript + Vite**, published from `main/docs` to **GitHub Pages**, installable on Android as
 an app (PWA) and playable offline. The design is [`docs/GDD.md`](docs/GDD.md); the working plan and
 status are in [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md).
+
+The approved **Copper & Moss** art direction uses pencilled illustrations, worn copper and teal,
+trailing greenery and parchment UI. Painted assets sit behind live characters and puzzles;
+procedural art supports missing or uncached images. See [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md)
+for the visual guide and [`docs/BUILD_PLAN.md` §8](docs/BUILD_PLAN.md#8-status) for art-pass status.
 
 ## What's in the game
 
@@ -15,12 +20,15 @@ status are in [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md).
   the twins' birthday train, Captain Marigold's radio, the Grand Tea Machine, Big Bertie, Miss
   Juniper's star orrery and the Brasswick clock tower), Magnus the magpie's mystery, the Tick-Tock
   Festival and the credits.
-- **57 rooms** — 49 rooms and 8 Big Fix chain reactions, built from 15 room kinds on pure,
+- **61 rooms** — 53 rooms and 8 Big Fix chain reactions, built from 25 room kinds on pure,
   unit-tested mechanism engines (gear graph with compound shafts, pipe/circuit/track flow with real
   nodal analysis, light beams, logic gates and latches, punch-card programs, cams, levers and
-  pulleys, pendulums, tuning, chain reactions, pinned music cylinders).
-- **Three Play Styles** — 🪛 Little Tinker (reading-free, huge snap, everything but one step
-  pre-built), 🔧 Fixer, 📐 Engineer (numbers, ratios, hints only on request). They change the rules,
+  pulleys, pendulums, tuning, chain reactions, pinned music cylinders), plus shadow boards,
+  sliding photos, symmetry, parcel packing, valve sorting, fuse sudoku, water jugs, marble tilt,
+  layered constellation slides and spot-the-difference blueprints. See
+  [`docs/PUZZLE_VARIETY.md`](docs/PUZZLE_VARIETY.md) for placements and age challenges.
+- **Three Play Styles** — 🪛 Little Tinker (reading-free, generous snap and simple visual
+  challenges; older mechanisms often start mostly built), 🔧 Fixer, 📐 Engineer (numbers, ratios, hints only on request). They change the rules,
   not just the numbers, and can be switched at any time.
 - **The shop hub** — door and Job Board, Display Shelf (Playground and Tune-Ups with Copper → Brass
   medals), Parts Drawers (Part-o-pedia with "How It Really Works" and "Spot It at Home!"), Kip's
@@ -28,7 +36,7 @@ status are in [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md).
   stamps), Paint & Polish (10 cosmetic slots, polish mini-game, saved looks, Tess's corner), the
   Window Seat (Brasswick comes back to life as you fix things), the Invention Bench, the Quick
   Fixes basket and the Attic.
-- **24 Quick Fixes** and **the Mystery Attic** — 23 antique machines with three generated rooms each
+- **30 Quick Fixes** (the original 24 plus six preserved story puzzles) and **the Mystery Attic** — 23 antique machines with three generated rooms each
   (deterministic, solvable by construction) and the Mystery Box.
 - **The Invention Bench** — free build on the same gear engine, 30 Contraption Cards, Contraption
   Codes to share a machine by typing a short code on another device (no internet), saved machines,
@@ -47,7 +55,12 @@ device, every `localStorage` access is guarded, and the game still runs when sto
 
 ## Run it
 
-Needs [Node.js](https://nodejs.org) 20 or newer.
+Needs [Node.js](https://nodejs.org) 22.12 or newer.
+
+On Windows, double-click [`Launch-Copper-Moss.bat`](Launch-Copper-Moss.bat). It installs missing
+dependencies, checks and builds the game, then opens the local preview at `http://127.0.0.1:5188/`.
+Keep its terminal open while playing. The local preview uses its own browser origin, so your
+existing game's local profiles remain on their original address.
 
 ```bash
 npm install
@@ -62,42 +75,79 @@ Wi-Fi, open the *Network* address `npm run dev` prints.
 | `npm test` | Engine tests, every room's authored solution in all three Play Styles, the Attic generators, story/journey/progress and the voice-line catalogue |
 | `npm run build` | Type-check and build to `dist/` |
 | `npm run build:pages` | Build into `docs/play/` for "Deploy from a branch → main → /docs" (commit the result) |
+| `npm run check:pages` | Verify the published game code, all art and all audio match the source build |
+| `npm run check:audio` | Decode the production recordings and verify recorded/device-speech catalogue coverage |
+| `npm run check:offline` | Check fresh first-visit offline startup and all ten new puzzle kinds (Playwright required) |
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run playthrough` | Headless Chromium plays the whole story from an empty save (see below) |
-| `npm run assets` | Generate voices, music and painted art with Gemini (optional, see below) |
+| `npm run assets` | Generate optional painted art with Gemini |
 
 Debug routes (handy while building): `?room=2-3&style=engineer` opens a room directly,
 `?scene=bench` opens a scene. `window.pm` exposes the current room's `solve()` for automated tests;
 it never changes how the game plays.
 
-## Voices, music and painted art (Gemini, optional)
+## Voices, music and sound effects (ElevenLabs)
 
-Everything in the game is drawn and synthesised in code, so it is complete without any asset
-files. `scripts/generate-assets.mjs` can add, on top:
+Production audio is pre-generated locally and shipped as static files. The game never
+calls ElevenLabs or receives an API key. The selected guide is **Nana A** from the
+audition; Magnus uses candidate A. Other speaking roles have fixed cast assignments
+in `scripts/elevenlabs-cast.json`. Fictional young roles use existing adult performers.
+Kip and Tess retain their configurable beeps, and musical puzzles keep precise
+synthesized notes, tuning tones and timing.
 
-- **Voices** — every spoken line (story, rooms, hints, Part-o-pedia, menus: ~870 recordings) with
-  Gemini text-to-speech, one fixed prebuilt voice and delivery style per character
-  (`src/content/voices.ts`). Kip and Tess always beep.
-- **Music** — one 30-second instrumental loop per object theme with Lyria. The player crossfades
-  the loop into itself and plays it through a filter that opens up as rooms are fixed, so you still
-  *hear* your progress.
-- **Painted art** — story backdrops, the title picture, a postcard from each repaired object's home
-  and Attic history plates with Gemini's image model ("Nano Banana"). The code-drawn characters and
-  machines stay on top, so the art style stays consistent.
+- **Voices**: preserved recordings for story, hints, rooms, Part-o-pedia, Attic,
+  treasures, cards and spoken button labels. Identical words from the same actor share
+  one file. Pudding gets a recorded cat meow. New puzzle instructions have separate ids
+  for each age mode and use device speech until those recordings exist, so replaced
+  rooms never play their former puzzle instructions.
+- **Music**: 14 gentle instrumental themes. The approved workshop audition is reused.
+  Themes crossfade on repeat and become clearer as repairs progress; Wind-Down keeps
+  them quieter and warmer.
+- **Mechanical effects**: 44 cues, including three variations of the refined brass
+  gear click. Approved bell, steam, spring, clock and ratchet sounds are reused.
+  Short clock ticks and ratchet clicks are cut from the approved recordings so
+  puzzle actions retain their original timing. Soft Clockwork lowers volume, rounds
+  attacks and filters the recorded effects.
 
-```bash
-GEMINI_API_KEY=… npm run assets                 # everything that's missing
-GEMINI_API_KEY=… npm run assets -- voices --only r1   # just some voice lines
-npm run assets -- --dry-run                      # what would be made
+Put `ELEVENLABS_API_KEY` in the ignored root `.env`. Install ffmpeg and make it
+available on PATH, or set `FFMPEG_PATH` to the executable. The Windows working setup
+also finds `.tools/ffmpeg/ffmpeg.exe`. Use Node 20.12 or newer.
+
+```powershell
+npm run assets:audio -- --dry-run       # inspect the full plan without spending credits
+npm run assets:audio                   # resume all missing production audio
+npm run assets:audio -- voices         # only missing speech
+npm run assets:audio -- music          # only missing themes
+npm run assets:audio -- sfx            # only missing effects
+npm run audition:serve                 # listen to the separate audition on the LAN
 ```
 
-The key is read from the environment only, sent in a request header, and never printed or written
-anywhere. Commit the generated files under `public/audio` and `public/art`, never the key — and
-listen to / look at everything before committing, because this is a children's game. Missing files
-simply fall back to code-made art, synthesised music and the device's own speech. Video (Veo) is not
-used: cutscenes are animated in code, which keeps the offline app small. Models can be changed with
-`GEMINI_TTS_MODEL`, `GEMINI_MUSIC_MODEL` and `GEMINI_IMAGE_MODEL`; `ffmpeg` (if installed) compresses
-the results.
+Generation preserves existing output and saves completed files immediately. Source
+responses are kept in ignored `.asset-work/elevenlabs` so an interrupted conversion
+can resume without another generation charge. Unknown outcomes are not automatically
+retried. Generated audio is normalized and compressed; `public/audio/manifest.json`
+contains only files that exist. Decoded voices and music have bounded memory caches.
+The production service worker downloads the audio catalogue in the background for
+future offline play. Missing/cold files always retain immediate safe fallbacks.
+
+The original audition player is in `auditions/elevenlabs/index.html`. New recordings
+still benefit from listening review; automated decoding verifies file integrity,
+not pronunciation or artistic quality.
+
+## Painted art (Gemini, optional)
+
+The game layers recovered and generated illustrations with live puzzle geometry,
+characters, animation and controls. Missing art has a procedural fallback. The legacy
+Gemini script can optionally add other painted assets under `public/art`:
+
+```powershell
+npm run assets -- images --dry-run
+# Supply GEMINI_API_KEY in the environment, then:
+npm run assets -- images
+```
+
+Keep keys out of commits, browser code and logs. Missing art falls back to the
+code-drawn game. Video is not used; cutscenes are animated in code.
 
 ## Automated playthrough
 
@@ -147,15 +197,21 @@ src/
   mechanism/         pure, deterministic engines (no Phaser) + tests
   rules/             Play Style rules: effective rooms, initial/solution/solved per room kind
   content/           rooms (r1–r8), Quick Fixes, Attic generators, story, voices, voice-line
-                     catalogue, Part-o-pedia, cosmetics, stamps, songs, Contraption Cards
+                     catalogue, variety age variants, Part-o-pedia, cosmetics, stamps, songs, Contraption Cards
   core/              saves & profiles, progress & rewards, the repair journey, session timers
   rooms/             RoomBase + one scene per room kind
   scenes/            title, shop hub, story, Test Run, rewards, festival, shelf, town,
                      Part-o-pedia, Paint & Polish, Nook, Invention Bench, Attic, Quick Fixes, grown-ups
   art/               code-drawn Kip/Tess, portraits, machines, parts, shop, backdrops; optional
                      generated pictures
-  audio/             Web Audio engine, synthesised SFX and adaptive music, voice player
+  audio/             Web Audio engine, recorded effects and adaptive music, voice player
   ui/                buttons, cards, speech bubble, parental gate, keypads, scroll grids
-scripts/             generate-assets.mjs (Gemini), playthrough.mjs (Playwright)
+scripts/             generate-elevenlabs.mjs (audio), generate-assets.mjs (art), playthrough.mjs
 public/              PWA manifest, service worker, icons, generated audio/art + manifests
 ```
+
+## Publishing the integrated game
+
+GitHub Pages is configured for **Deploy from a branch → main → /docs**. Run `npm run build`, `npm run build:pages` and `npm run check:pages`, then include `docs/play/` in the merge to main. The validation workflow runs tests and both builds and rejects stale published files. It does not start a competing deployment; GitHub publishes the committed `/docs` folder.
+
+The audio generator and separate audition tools remain available. Audition recordings and player files stay in the local ignored `auditions/` folder; production recordings are bundled in `public/audio/` and `docs/play/audio/`.

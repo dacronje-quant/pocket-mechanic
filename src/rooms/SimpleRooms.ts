@@ -7,6 +7,10 @@ import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { speak } from '../audio/voice';
 import { drawPart } from '../art/parts';
+import { CM, drawPatina, drawTimber } from '../art/copperMoss';
+import { withArt } from '../art/generated';
+import { atlasFrame } from '../art/sprites';
+import { etchedPlate } from '../art/finish';
 import { Portrait } from '../art/portraits';
 import type { HuntItem, NestDeco } from '../content/types';
 import { LINES } from '../content/story';
@@ -34,7 +38,7 @@ export class HuntRoom extends RoomBase<'hunt'> {
       this.items.push(ig);
       const cov = this.add.container(c.x, c.y).setDepth(D.mech + 2);
       const g = this.add.graphics();
-      const col = c.art === 'cushion' ? [0xc2255c, 0xe64980, 0xf783ac][i % 3] : c.art === 'box' ? 0x8a5a33 : c.art === 'spool' ? 0xc0c8d0 : 0x6e4527;
+      const col = c.art === 'cushion' ? [0x927064, 0x78815a, 0x83a49a][i % 3] : c.art === 'box' ? CM.wood : c.art === 'spool' ? 0x9aaba4 : CM.woodDark;
       g.fillStyle(0x000000, 0.3);
       g.fillEllipse(4, 10, 150, 90);
       g.fillStyle(col, 1);
@@ -47,14 +51,15 @@ export class HuntRoom extends RoomBase<'hunt'> {
         g.lineBetween(10, 0, 60, 0);
       } else if (c.art === 'spool') {
         g.fillRect(-40, -46, 80, 92);
-        g.fillStyle(0x8a5a33, 1);
+        g.fillStyle(0x856c50, 1);
         g.fillRect(-55, -52, 110, 14);
         g.fillRect(-55, 38, 110, 14);
       } else {
         g.fillRoundedRect(-70, -45, 140, 90, 10);
-        g.lineStyle(3, 0x3d2412, 1);
+        g.lineStyle(3, 0x342f29, 1);
         g.strokeRoundedRect(-70, -45, 140, 90, 10);
       }
+      drawPatina(g, -45, -28, 90, 56, i + 436, 1.8);
       cov.add(g);
       cov.setSize(160, 100);
       cov.setInteractive({ useHandCursor: true });
@@ -67,9 +72,9 @@ export class HuntRoom extends RoomBase<'hunt'> {
     const map: Partial<Record<HuntItem, string>> = { crank: 'crank', gear: 'gear', spring: 'spring', boots: 'boots', key: 'key', button: 'button', photo: 'heart', feather: 'bird' };
     if (item === 'bits') {
       for (let k = 0; k < 5; k++) {
-        g.fillStyle(0xc9d1d9, 1);
+        g.fillStyle(0xa9b7ad, 1);
         g.fillCircle(x - 30 + k * 15, y + (k % 2) * 8, 7);
-        g.fillStyle(0x6c757d, 1);
+        g.fillStyle(0x60736d, 1);
         g.fillCircle(x - 30 + k * 15, y + (k % 2) * 8, 3);
       }
       return;
@@ -121,7 +126,7 @@ export class HuntRoom extends RoomBase<'hunt'> {
     if (this.style.id !== 'tinker') return;
     this.def.covers.forEach((c, i) => {
       if (!c.target || this.state.has(i)) return;
-      g.fillStyle(0xfff4c8, alpha * 0.4);
+      g.fillStyle(0xf4ebd5, alpha * 0.4);
       g.fillEllipse(c.x, c.y, 180, 110);
     });
   }
@@ -138,7 +143,7 @@ export class HuntRoom extends RoomBase<'hunt'> {
 // ───────────────────────────── busy board ─────────────────────────────
 
 export class BusyRoom extends RoomBase<'busy'> {
-  private gadgets: Array<{ g: Phaser.GameObjects.Graphics; on: number; a: number }> = [];
+  private gadgets: Array<{ g: Phaser.GameObjects.Graphics; on: number; a: number; image?: Phaser.GameObjects.Image; index: number }> = [];
 
   constructor() {
     super('room-busy');
@@ -147,16 +152,24 @@ export class BusyRoom extends RoomBase<'busy'> {
   protected build(): void {
     this.gadgets = [];
     const board = this.add.graphics().setDepth(D.back + 1);
-    board.fillStyle(0x000000, 0.3);
-    board.fillRoundedRect(196, 130, 900, 400, 30);
-    board.fillStyle(0xf2e6c8, 1);
-    board.fillRoundedRect(190, 124, 900, 400, 30);
-    board.lineStyle(10, 0xd64541, 1);
-    board.strokeRoundedRect(190, 124, 900, 400, 30);
+    etchedPlate(board, 190, 124, 900, 400, CM.woodDark, 1, 827);
+    for (let i = 0; i < 5; i++) drawTimber(board, 205, 138 + i * 74, 870, 74, 827 + i, i % 2 ? CM.wood : CM.woodLight);
+    withArt(this, 'busy-board', (key) => {
+      if (!board.active || !board.scene) return;
+      this.add.image(640, 324, key, atlasFrame(this, key, 0, 1, 1, true)).setDisplaySize(930, 424).setDepth(D.back + 1).setName('busy:painted-board');
+      board.setVisible(false);
+    });
     this.def.gadgets.forEach((gd, i) => {
       const g = this.add.graphics().setDepth(D.mech);
-      const v = { g, on: 0, a: 0 };
+      const index = ['button','switch','dial','horn','crank','lights','bell','lever','spinner'].indexOf(gd.art);
+      const v: typeof this.gadgets[number] = { g, on: 0, a: 0, index };
       this.gadgets.push(v);
+      withArt(this, 'busy-gadgets', (key) => {
+        if (!g.active || !g.scene || index < 0) return;
+        v.image = this.add.image(gd.x, gd.y, key, atlasFrame(this, key, index, 3, 6, true)).setDepth(D.mech).setName(`busy:${gd.art}`);
+        const scale = 126 / Math.max(v.image.width, v.image.height); v.image.setScale(scale).setData('restScale', scale);
+        g.setVisible(false);
+      });
       const z = this.add.zone(gd.x, gd.y, 140, 140).setInteractive({ useHandCursor: true }).setDepth(D.mech + 1);
       z.on('pointerup', () => this.press(i));
     });
@@ -211,7 +224,16 @@ export class BusyRoom extends RoomBase<'busy'> {
       v.on = Math.max(0, v.on - dt);
       const g = v.g;
       g.clear();
+      if (v.image) {
+        const image = v.image;
+        image.setFrame(atlasFrame(this, image.texture.key, v.index + (v.on > 0 ? 9 : 0), 3, 6, true));
+        image.setScale(image.getData('restScale') * (v.on > 0 ? 1 + Math.sin(v.on * 16) * 0.035 : 1));
+        if (gd.art === 'spinner' && v.on > 0) image.angle += dt * 180;
+        return;
+      }
       const { x, y } = gd;
+      // Painted enamel colors are decorative here; every gadget still has its own shape.
+      const col = ({ [0xe74c3c]: 0xbb785b, [0x3498db]: 0x648995, [0xf1c40f]: 0xc2a168, [0x2ecc71]: 0x8a9b69, [0x9b59b6]: 0x917d96, [0xe67e22]: 0xb77b56, [0x1abc9c]: 0x669891, [0xf39c12]: 0xc2a168 } as Record<number, number>)[gd.color] ?? gd.color;
       const lit = v.on > 0;
       const done = this.state.has(i);
       g.fillStyle(0x000000, 0.2);
@@ -224,54 +246,54 @@ export class BusyRoom extends RoomBase<'busy'> {
       }
       switch (gd.art) {
         case 'button':
-          g.fillStyle(gd.color, 1);
+          g.fillStyle(col, 1);
           g.fillCircle(x, y + (lit ? 4 : 0), 38);
           g.fillStyle(0xffffff, 0.35);
           g.fillCircle(x - 10, y - 12 + (lit ? 4 : 0), 12);
           break;
         case 'switch':
-          g.fillStyle(0x9aa6b4, 1);
+          g.fillStyle(0x82938c, 1);
           g.fillRoundedRect(x - 20, y - 36, 40, 72, 10);
-          g.fillStyle(gd.color, 1);
+          g.fillStyle(col, 1);
           g.fillRoundedRect(x - 12, lit ? y - 30 : y, 24, 30, 6);
           break;
         case 'dial':
-          g.fillStyle(gd.color, 1);
+          g.fillStyle(col, 1);
           g.fillCircle(x, y, 40);
           g.lineStyle(6, 0x3d2b25, 1);
           g.lineBetween(x, y, x + Math.cos(v.a) * 32, y + Math.sin(v.a) * 32);
           break;
         case 'horn':
-          g.fillStyle(gd.color, 1);
+          g.fillStyle(col, 1);
           g.fillTriangle(x - 40, y, x + 30, y - 34 - (lit ? 6 : 0), x + 30, y + 34 + (lit ? 6 : 0));
           break;
         case 'crank':
-          g.fillStyle(gd.color, 1);
+          g.fillStyle(col, 1);
           g.fillCircle(x, y, 20);
-          g.lineStyle(10, gd.color, 1);
+          g.lineStyle(10, col, 1);
           g.lineBetween(x, y, x + Math.cos(v.a + v.on * 6) * 40, y + Math.sin(v.a + v.on * 6) * 40);
           break;
         case 'lights':
           for (let k = 0; k < 4; k++) {
-            g.fillStyle([0xffd43b, 0x74c0fc, 0x8ce99a, 0xff8787][k], lit && Math.floor(v.on * 10 + k) % 2 ? 1 : 0.3);
+            g.fillStyle([CM.glow, CM.tealLight, CM.mossLight, CM.copperLight][k], lit && Math.floor(v.on * 10 + k) % 2 ? 1 : 0.3);
             g.fillCircle(x - 30 + (k % 2) * 60, y - 22 + Math.floor(k / 2) * 44, 16);
           }
           break;
         case 'bell':
-          g.fillStyle(gd.color, 1);
+          g.fillStyle(col, 1);
           g.fillTriangle(x - 34 + (lit ? Math.sin(v.on * 30) * 6 : 0), y + 26, x + 34 + (lit ? Math.sin(v.on * 30) * 6 : 0), y + 26, x, y - 34);
           g.fillCircle(x, y - 16, 22);
           break;
         case 'lever':
-          g.lineStyle(12, 0x9aa6b4, 1);
+          g.lineStyle(12, 0x82938c, 1);
           g.lineBetween(x, y + 20, x + (lit ? 30 : -30), y - 30);
-          g.fillStyle(gd.color, 1);
+          g.fillStyle(col, 1);
           g.fillCircle(x + (lit ? 30 : -30), y - 30, 16);
           break;
         case 'spinner':
           for (let k = 0; k < 4; k++) {
             const a = v.a + k * (Math.PI / 2) + this.time.now / (lit ? 60 : 900);
-            g.fillStyle([gd.color, 0xffd43b, 0xff8787, 0x8ce99a][k], 1);
+            g.fillStyle([col, CM.glow, CM.copperLight, CM.mossLight][k], 1);
             g.fillTriangle(x, y, x + Math.cos(a) * 44, y + Math.sin(a) * 44, x + Math.cos(a + 0.6) * 30, y + Math.sin(a + 0.6) * 30);
           }
           break;
@@ -400,7 +422,7 @@ export class NestRoom extends RoomBase<'nest'> {
     // the new nest slowly spins when decorated
     g.fillStyle(0x5a3a22, 1);
     g.fillEllipse(640, 400, 620, 180);
-    g.lineStyle(4, 0x8a5a33, 1);
+    g.lineStyle(4, 0x856c50, 1);
     for (let k = 0; k < 24; k++) {
       const a = (k / 24) * Math.PI * 2 + this.t * 0.05 * Object.keys(this.state).length;
       g.lineBetween(640 + Math.cos(a) * 200, 400 + Math.sin(a) * 60, 640 + Math.cos(a + 0.5) * 300, 400 + Math.sin(a + 0.5) * 85);
@@ -412,7 +434,7 @@ export class NestRoom extends RoomBase<'nest'> {
     }
     for (const [k, s] of this.def.slots.entries()) {
       if (this.state[k]) continue;
-      g.lineStyle(3, 0xfff4c8, 0.35);
+      g.lineStyle(3, 0xf4ebd5, 0.35);
       g.strokeCircle(s.x, s.y, 30);
     }
     void dt;
@@ -437,7 +459,7 @@ export class NestRoom extends RoomBase<'nest'> {
 export function drawDeco(g: Phaser.GameObjects.Graphics, deco: NestDeco, x: number, y: number): void {
   const map: Partial<Record<NestDeco, string>> = { gear: 'gear', spring: 'spring', bulb: 'bulb', bell: 'bell', mirror: 'mirror', button: 'button', musicbox: 'cylinder', key: 'key', star: 'stars' };
   if (deco === 'ribbon') {
-    g.fillStyle(0xe64980, 1);
+    g.fillStyle(0xa57168, 1);
     g.fillTriangle(x, y, x - 26, y - 16, x - 26, y + 16);
     g.fillTriangle(x, y, x + 26, y - 16, x + 26, y + 16);
     g.fillCircle(x, y, 6);
@@ -448,7 +470,7 @@ export function drawDeco(g: Phaser.GameObjects.Graphics, deco: NestDeco, x: numb
       g.fillTriangle(x, y, x + Math.cos(a) * 30, y + Math.sin(a) * 30, x + Math.cos(a + 0.8) * 22, y + Math.sin(a + 0.8) * 22);
     }
   } else if (deco === 'spoon') {
-    g.fillStyle(0xc9d1d9, 1);
+    g.fillStyle(0xa9b7ad, 1);
     g.fillEllipse(x, y - 14, 18, 26);
     g.fillRect(x - 3, y - 4, 6, 30);
   } else drawPart(g, map[deco] ?? 'gear', x, y, 0.55);

@@ -12,6 +12,8 @@ import { MusicRoom } from '../rooms/MusicRoom';
 import { OilRoom } from '../rooms/OilRoom';
 import { PendulumRoom } from '../rooms/PendulumRoom';
 import { BusyRoom, HuntRoom, NestRoom } from '../rooms/SimpleRooms';
+import { ShadowRoom, SlideRoom, SymmetryRoom, PackingRoom, TiltRoom } from '../rooms/SpatialPuzzleRooms';
+import { SortingRoom, SudokuRoom, JugsRoom, LayersRoom, DifferenceRoom } from '../rooms/ReasoningPuzzleRooms';
 import { TuneRoom } from '../rooms/TuneRoom';
 import { AtticScene } from './AtticScene';
 import { BenchScene } from './BenchScene';
@@ -45,6 +47,8 @@ export const ROOM_SCENES: Array<typeof Phaser.Scene> = [
   HuntRoom,
   BusyRoom,
   NestRoom,
+  ShadowRoom, SlideRoom, SymmetryRoom, PackingRoom, TiltRoom,
+  SortingRoom, SudokuRoom, JugsRoom, LayersRoom, DifferenceRoom,
 ];
 
 export const META_SCENES: Array<typeof Phaser.Scene> = [

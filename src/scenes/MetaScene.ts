@@ -9,13 +9,15 @@ import { playMusic, type THEMES } from '../audio/music';
 import { setSoft } from '../audio/sfx';
 import { setVoiceChip, speak } from '../audio/voice';
 import { ensureBasics, ensureGearTexture } from '../art/textures';
+import { beginArtScene } from '../art/generated';
 import { LINES } from '../content/story';
 import { goldTotal } from '../core/progress';
 import { profile, settings } from '../core/save';
 import { tickPlayTime, windDownActive } from '../core/session';
 import { pm } from '../debug';
 import { goFullscreen } from '../platform';
-import { FONT, roundButton, SERIF, showWords, SpeechBubble } from '../ui/widgets';
+import { card, FONT, roundButton, SERIF, showWords, SpeechBubble } from '../ui/widgets';
+import { CM, CM_CSS } from '../art/copperMoss';
 import { go, resetLeaving } from './router';
 
 export const HUD = 900;
@@ -26,6 +28,7 @@ export abstract class MetaScene extends Phaser.Scene {
   protected abstract build(data: Record<string, unknown>): void;
 
   create(data: Record<string, unknown> = {}): void {
+    beginArtScene(this);
     const s = settings();
     ensureBasics(this);
     setLevels({ muted: s.muted, music: s.music, sfx: s.sfx, voice: s.voice });
@@ -43,8 +46,8 @@ export abstract class MetaScene extends Phaser.Scene {
     });
     this.bubble = new SpeechBubble(this, 640, 640, 760).setDepth(HUD + 20);
     this.build(data ?? {});
-    if (windDownActive()) this.add.rectangle(0, 0, 1280, 720, 0xff9e57, 0.1).setOrigin(0).setDepth(HUD - 1);
-    this.cameras.main.fadeIn(260, 26, 18, 12);
+    if (windDownActive()) this.add.rectangle(0, 0, 1280, 720, CM.copperLight, 0.1).setOrigin(0).setDepth(HUD - 1);
+    this.cameras.main.fadeIn(260, 52, 47, 41);
     this.time.addEvent({ delay: 5000, loop: true, callback: tickPlayTime });
   }
 
@@ -70,23 +73,27 @@ export abstract class MetaScene extends Phaser.Scene {
 
   protected heading(text: string, y = 52): Phaser.GameObjects.Text | null {
     if (!showWords()) return null;
-    return this.add
-      .text(640, y, text, { fontFamily: SERIF, fontSize: '40px', color: '#ffd76a', fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 8 })
+    const label = this.add
+      .text(640, y, text, { fontFamily: SERIF, fontSize: '40px', color: CM_CSS.ink, fontStyle: 'bold' })
       .setOrigin(0.5)
       .setDepth(HUD);
+    if (label.width > 704) label.setFontSize(Math.floor(40 * 704 / label.width));
+    card(this, 640, y, label.width + 64, 66).setDepth(HUD - 0.5);
+    return label;
   }
 
   /** Golden Gears and Shiny Bits, top right. */
   protected counters(x = 1220): void {
     const p = profile();
+    card(this, x - 76, 52, 248, 64).setDepth(HUD - 0.5);
     const gold = this.add.image(x - 150, 52, ensureGearTexture(this, 12, 'gold')).setDepth(HUD).setScale(0.8);
     this.add
-      .text(gold.x + 26, 52, String(goldTotal(p)), { fontFamily: FONT, fontSize: '26px', color: '#ffe48a', fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 6 })
+      .text(gold.x + 26, 52, String(goldTotal(p)), { fontFamily: FONT, fontSize: '26px', color: CM_CSS.ink, fontStyle: 'bold' })
       .setOrigin(0, 0.5)
       .setDepth(HUD);
     const bit = this.add.image(x - 40, 52, 'bit').setDepth(HUD).setScale(1.8);
     this.shinyText = this.add
-      .text(bit.x + 20, 52, String(p.shiny), { fontFamily: FONT, fontSize: '26px', color: '#e8f1ff', fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 6 })
+      .text(bit.x + 20, 52, String(p.shiny), { fontFamily: FONT, fontSize: '26px', color: CM_CSS.ink, fontStyle: 'bold' })
       .setOrigin(0, 0.5)
       .setDepth(HUD);
   }

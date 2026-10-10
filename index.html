@@ -8,7 +8,7 @@
     />
     <title>Pocket Mechanic</title>
     <meta name="description" content="Fix broken treasures from the inside out." />
-    <meta name="theme-color" content="#2b1d14" />
+    <meta name="theme-color" content="#344f4b" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="./manifest.webmanifest" />
@@ -19,7 +19,8 @@
       body {
         margin: 0;
         height: 100%;
-        background: #1a120c;
+        background: #342f29;
+        background-image: radial-gradient(ellipse at center, #554638 0%, #342f29 78%);
         overflow: hidden;
         touch-action: none;
         overscroll-behavior: none; /* no pull-to-refresh / bounce stealing drags */
@@ -39,17 +40,22 @@
         position: fixed;
         inset: 0;
         z-index: 10;
-        background: #2b1d14;
-        color: #ffd76a;
-        font: bold 26px "Trebuchet MS", system-ui, sans-serif;
+        background: #e9dcc0;
+        background-image:
+          radial-gradient(ellipse at 22% 16%, rgba(160, 164, 119, 0.22), transparent 42%),
+          radial-gradient(ellipse at 85% 92%, rgba(183, 123, 86, 0.18), transparent 48%);
+        color: #342f29;
+        font: bold 26px Georgia, "Times New Roman", serif;
         text-align: center;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 18px;
+        box-shadow: inset 0 0 0 9px #79503d, inset 0 0 0 12px #b77b56, inset 0 0 0 16px #537a72;
       }
       #rotate .phone {
         font-size: 72px;
+        filter: sepia(0.5) saturate(0.45);
         animation: turn 1.8s ease-in-out infinite;
       }
       @keyframes turn {
@@ -61,13 +67,14 @@
         width: 88px;
         height: 88px;
         border-radius: 50%;
-        background: #8ce99a;
-        color: #2b1d14;
+        background: #a0a477;
+        color: #342f29;
+        border: 5px solid #79503d;
         font-size: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
+        box-shadow: 0 5px 0 rgba(52, 47, 41, 0.3), inset 0 0 0 2px #d3a278;
       }
       @media (orientation: portrait) and (pointer: coarse) {
         #rotate { display: flex; }

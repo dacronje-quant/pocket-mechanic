@@ -7,6 +7,8 @@
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { drawRoomBackdrop } from '../art/backgrounds';
+import { CM, drawLeafSprig, drawTimber } from '../art/copperMoss';
+import { rivet } from '../art/finish';
 import { MachineArt } from '../art/objects';
 import { drawPart } from '../art/parts';
 import { ensureGearTexture } from '../art/textures';
@@ -20,7 +22,7 @@ import { blocker, card, FONT, roundButton, SERIF, showWords, tile } from '../ui/
 import { HUD, MetaScene } from './MetaScene';
 import { go } from './router';
 
-const MEDAL_COL = [0x9a8a72, 0xb87333, 0xc0c0c0, 0xffd700, 0xe0ab48];
+const MEDAL_COL = [0x9a8a72, 0xb87333, 0xc0c0c0, 0xffd700, 0xbca16a];
 
 export class ShelfScene extends MetaScene {
   private panel: Phaser.GameObjects.GameObject[] = [];
@@ -43,10 +45,11 @@ export class ShelfScene extends MetaScene {
     for (const y of [360, 640]) {
       g.fillStyle(0x000000, 0.3);
       g.fillRect(64, y + 6, 1160, 22);
-      g.fillStyle(0x4a2d18, 1);
-      g.fillRect(60, y, 1160, 22);
-      g.fillStyle(0x6e4527, 1);
-      g.fillRect(60, y, 1160, 6);
+      drawTimber(g, 60, y, 1160, 22, y, CM.woodDark);
+      g.lineStyle(2, CM.copperLight, 0.6);
+      g.lineBetween(63, y + 3, 1217, y + 3);
+      for (const x of [75, 350, 640, 930, 1205]) rivet(g, x, y + 12, 3);
+      drawLeafSprig(g, 1205, y + 6, 66, y, 0.9);
     }
     REPAIRS.forEach((r, i) => {
       const x = 205 + (i % 4) * 290;
@@ -69,12 +72,12 @@ export class ShelfScene extends MetaScene {
     // medals won in this repair's Tune-Ups
     const medals = r.rooms.map((id) => p.rooms[id]?.medal ?? 0);
     const best = Math.max(...medals);
-    if (best > 0) this.add.circle(x + 100, y - 210, 16, MEDAL_COL[best]).setStrokeStyle(3, 0x2b1d14).setDepth(6);
+    if (best > 0) this.add.circle(x + 100, y - 210, 16, MEDAL_COL[best]).setStrokeStyle(3, 0x342f29).setDepth(6);
     // who in the family fixed it (shared shelf, GDD §21.3)
     const fixers = save.profiles.filter((q) => q.repairs.includes(r.id));
     fixers.slice(0, 6).forEach((q, k) => {
       this.add
-        .text(x - 90 + k * 36, y + 11, q.initials || '•', { fontFamily: SERIF, fontSize: '15px', color: '#3b260b', fontStyle: 'bold', backgroundColor: '#fff6e2', padding: { x: 4, y: 1 } })
+        .text(x - 90 + k * 36, y + 11, q.initials || '•', { fontFamily: SERIF, fontSize: '15px', color: '#342f29', fontStyle: 'bold', backgroundColor: '#f4ebd5', padding: { x: 4, y: 1 } })
         .setOrigin(0.5)
         .setDepth(6);
     });
@@ -82,7 +85,7 @@ export class ShelfScene extends MetaScene {
 
   private emptySlot(x: number, y: number): void {
     const g = this.add.graphics().setDepth(4);
-    g.lineStyle(3, 0xfff6e2, 0.25);
+    g.lineStyle(3, 0xf4ebd5, 0.25);
     g.strokeRoundedRect(x - 90, y - 190, 180, 180, 18);
     const z = this.add.zone(x, y - 100, 180, 180).setInteractive().setDepth(4);
     z.on('pointerup', () => this.line('shelf.empty'));
@@ -104,7 +107,7 @@ export class ShelfScene extends MetaScene {
     };
     add(blocker(this, depth, 0.65, () => this.close()));
     add(card(this, 640, 380, 1180, 520));
-    if (showWords()) add(this.add.text(640, 160, r.title, { fontFamily: SERIF, fontSize: '30px', color: '#3b260b', fontStyle: 'bold' }).setOrigin(0.5));
+    if (showWords()) add(this.add.text(640, 160, r.title, { fontFamily: SERIF, fontSize: '30px', color: '#342f29', fontStyle: 'bold' }).setOrigin(0.5));
     // medal criteria up front (GDD §20.2): moves, time, no hints or peeking
     const crit = add(this.add.container(640, 205));
     [
@@ -113,7 +116,7 @@ export class ShelfScene extends MetaScene {
       ['🙈', 'no hints, no peeking'],
     ].forEach(([icon, label], i) => {
       crit.add(this.add.text((i - 1) * 230 - 30, 0, icon, { fontFamily: FONT, fontSize: '28px' }).setOrigin(0.5));
-      if (showWords()) crit.add(this.add.text((i - 1) * 230 - 8, 0, label, { fontFamily: FONT, fontSize: '18px', color: '#5e3f10' }).setOrigin(0, 0.5));
+      if (showWords()) crit.add(this.add.text((i - 1) * 230 - 8, 0, label, { fontFamily: FONT, fontSize: '18px', color: '#665d50' }).setOrigin(0, 0.5));
     });
     add(roundButton(this, 1200, 140, '✕', () => this.close(), { r: 26, fontSize: 22, say: 'Close' }));
     r.rooms.forEach((id, i) => {
@@ -130,9 +133,9 @@ export class ShelfScene extends MetaScene {
         t.add(this.add.image(-36 + (k - 1) * 36, 10, ensureGearTexture(this, 12, rec?.gold.includes(k) ? 'gold' : 'ghost')).setScale(0.45));
       }
       const medal = rec?.medal ?? 0;
-      if (medal) t.add(this.add.circle(52, -76, 13, MEDAL_COL[medal]).setStrokeStyle(3, 0x2b1d14));
+      if (medal) t.add(this.add.circle(52, -76, 13, MEDAL_COL[medal]).setStrokeStyle(3, 0x342f29));
       const launch = (mode: RoomMode) => go(this, { scene: 'room', launch: { roomId: id, mode } });
-      add(roundButton(this, x - 36, 530, '▶', () => launch('playground'), { r: 28, fontSize: 24, color: 0x8ce99a, say: 'Play' }));
+      add(roundButton(this, x - 36, 530, '▶', () => launch('playground'), { r: 28, fontSize: 24, color: 0xa0a477, say: 'Play' }));
       add(roundButton(this, x + 36, 530, '⏱', () => launch('tuneup'), { r: 28, fontSize: 24, say: 'Tune-Up' }));
       this.hot(`play-${id}`, () => launch('playground'));
       this.hot(`tune-${id}`, () => launch('tuneup'));

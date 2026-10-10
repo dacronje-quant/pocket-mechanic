@@ -6,7 +6,8 @@
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { drawRoomBackdrop, sunbeams } from '../art/backgrounds';
-import { paintedBackdrop } from '../art/generated';
+import { paintedBackdrop, withArt } from '../art/generated';
+import { CM, CM_CSS } from '../art/copperMoss';
 import { Kip } from '../art/Kip';
 import { ensureGearTexture } from '../art/textures';
 import { DEFAULT_LOOK, type KipLook } from '../content/cosmetics';
@@ -37,21 +38,28 @@ export class TitleScene extends MetaScene {
     drawRoomBackdrop(this, 'shop', 700).setDepth(0);
     sunbeams(this, 0xffe2a0, 0.05).setDepth(1);
     paintedBackdrop(this, 'title', 2);
-    // big slow gears behind the name
+    // Quiet, slow clockwork along the edge of the hand-lettered title.
     [
-      [200, 150, 40, 0.06],
-      [1090, 170, 30, -0.08],
-      [330, 250, 16, -0.15],
+      [246, 142, 12, 0.04],
+      [775, 295, 10, -0.05],
     ].forEach(([x, y, teeth, speed]) => {
-      const gimg = this.add.image(x, y, ensureGearTexture(this, teeth, 'brass')).setDepth(3).setAlpha(0.75);
+      const gimg = this.add.image(x, y, ensureGearTexture(this, teeth, 'brass')).setDepth(3).setAlpha(0.3).setScale(0.6);
       this.tweens.add({ targets: gimg, angle: speed > 0 ? 360 : -360, duration: Math.abs(1 / speed) * 2400, repeat: -1 });
     });
-    title(this, 640, 118, 'Pocket Mechanic', 78).setDepth(5);
-    this.add
-      .text(640, 186, 'The Clockwork Repair Shop', { fontFamily: SERIF, fontSize: '30px', color: '#fff3d0', fontStyle: 'italic', stroke: '#2b1d14', strokeThickness: 6 })
+    const name = title(this, 500, 192, 'Pocket\nMechanic', 88).setDepth(5).setColor(CM_CSS.ink).setStroke(CM_CSS.paper, 2);
+    const subtitle = this.add
+      .text(500, 318, 'The Clockwork Repair Shop', { fontFamily: SERIF, fontSize: '26px', color: CM_CSS.ink, fontStyle: 'bold', stroke: CM_CSS.paper, strokeThickness: 2 })
       .setOrigin(0.5)
       .setDepth(5);
-    const kip = new Kip(this, 1140, 690, DEFAULT_LOOK).setDepth(6).setScale(2);
+    withArt(this, 'title-logo', (key) => {
+      const logo = this.add.image(500, 214, key).setDepth(5);
+      const scale = Math.min(600 / logo.width, 290 / logo.height);
+      logo.setScale(scale);
+      name.setVisible(false);
+      subtitle.setVisible(false);
+    });
+    this.add.text(500, 367, "Who's fixing today?", { fontFamily: SERIF, fontSize: '26px', color: CM_CSS.ink, fontStyle: 'bold', stroke: CM_CSS.paper, strokeThickness: 2 }).setOrigin(0.5).setDepth(5);
+    const kip = new Kip(this, 930, 598, DEFAULT_LOOK).setDepth(6).setScale(3);
     kip.setInteractive(new Phaser.Geom.Rectangle(-5, -45, 80, 100), Phaser.Geom.Rectangle.Contains);
     kip.on('pointerup', () => {
       sfx.beeps('hello', 'voice-classic');
@@ -64,32 +72,40 @@ export class TitleScene extends MetaScene {
     roundButton(this, 60, 660, '⚙', () => parentalGate(this, () => goScene(this, 'grownups', { back: 'title' })), { r: 30, fontSize: 26, say: 'For grown-ups' }).setDepth(HUD);
     this.hot('new', () => this.newProfile());
     this.time.delayedCall(700, () => this.line('title.who'));
-    // first launch: open the new-fixer panel by itself, unless a tap on + already did
-    if (!save.profiles.length) this.time.delayedCall(400, () => !this.panel.length && this.newProfile());
+    // First launch begins on the illustrated title page. The large + opens colour selection.
   }
 
   private profiles(): void {
     const list = save.profiles;
     const n = list.length + (list.length < MAX_PROFILES ? 1 : 0);
-    const w = 160;
-    const x0 = 640 - ((n - 1) * (w + 20)) / 2;
+    const compact = n > 3;
+    if (compact) this.bubble.setPosition(640, 50);
+    const w = compact ? 150 : 200;
+    const h = compact ? 154 : 190;
+    const position = (i: number) => {
+      if (!compact) return { x: 500 - ((n - 1) * (w + 18)) / 2 + i * (w + 18), y: 515 };
+      const row = Math.floor(i / 4);
+      const count = Math.min(4, n - row * 4);
+      return { x: 500 - ((count - 1) * (w + 16)) / 2 + (i % 4) * (w + 16), y: 459 + row * 171 };
+    };
     list.forEach((p, i) => {
-      const x = x0 + i * (w + 20);
-      const t = tile(this, x, 420, w, 190, () => this.choose(p.id), { selected: p.id === save.active }).setDepth(10);
-      const mini = new Kip(this, 0, 44, p.look).setScale(1.25);
+      const { x, y } = position(i);
+      const t = tile(this, x, y, w, h, () => this.choose(p.id), { selected: p.id === save.active }).setDepth(10);
+      const mini = new Kip(this, 0, compact ? 24 : 30, p.look).setScale(compact ? 0.9 : 1.35);
       t.add(mini);
       t.add(
         this.add
-          .text(0, 66, p.initials || '·', { fontFamily: SERIF, fontSize: '30px', color: '#3b260b', fontStyle: 'bold', backgroundColor: '#fff6e2', padding: { x: 10, y: 2 } })
+          .text(0, compact ? 43 : 53, p.initials || '·', { fontFamily: SERIF, fontSize: compact ? '24px' : '30px', color: CM_CSS.ink, fontStyle: 'bold', backgroundColor: CM_CSS.paper, padding: { x: 10, y: 2 } })
           .setOrigin(0.5),
       );
-      t.add(this.add.text(52, -68, PLAY_STYLES[p.style].icon, { fontFamily: FONT, fontSize: '26px' }).setOrigin(0.5));
+      t.add(this.add.text(w / 2 - 28, -h / 2 + 30, PLAY_STYLES[p.style].icon, { fontFamily: FONT, fontSize: '22px' }).setOrigin(0.5));
       this.hot(`profile${i}`, () => this.choose(p.id));
     });
     if (list.length < MAX_PROFILES) {
-      const x = x0 + list.length * (w + 20);
-      const t = tile(this, x, 420, w, 190, () => this.newProfile(), { fill: 0xe8f7d8 }).setDepth(10);
-      t.add(this.add.text(0, -8, '+', { fontFamily: FONT, fontSize: '96px', color: '#3b7d3b', fontStyle: 'bold' }).setOrigin(0.5));
+      const { x, y } = position(list.length);
+      const t = tile(this, x, y, w, h, () => this.newProfile(), { fill: CM.paper }).setDepth(10);
+      t.add(this.add.text(0, -14, '+', { fontFamily: SERIF, fontSize: compact ? '70px' : '96px', color: CM_CSS.mossDark, fontStyle: 'bold' }).setOrigin(0.5));
+      t.add(this.add.text(0, compact ? 42 : 48, 'New fixer', { fontFamily: SERIF, fontSize: compact ? '21px' : '25px', color: CM_CSS.ink, fontStyle: 'bold' }).setOrigin(0.5));
     }
   }
 

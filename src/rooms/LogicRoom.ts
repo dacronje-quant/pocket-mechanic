@@ -5,6 +5,8 @@
  * Symbols appear only as small labels in Engineer mode.
  */
 import Phaser from 'phaser';
+import { CM } from '../art/copperMoss';
+import { rivet } from '../art/finish';
 import * as sfx from '../audio/sfx';
 import { allCases, evalExpr, evaluate, type GateType } from '../mechanism/logic';
 import type { LogicRoomNode } from '../content/types';
@@ -12,7 +14,7 @@ import { logicSolved } from '../rules';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
 import { FONT, roundButton } from '../ui/widgets';
 
-const GATE_COLORS: Record<GateType, number> = { AND: 0xd64541, OR: 0x3b7dd8, NOT: 0x2e9b5f, LATCH: 0x8e5cc4 };
+const GATE_COLORS: Record<GateType, number> = { AND: 0xbb785b, OR: 0x648995, NOT: 0x8a9b69, LATCH: 0x917d96 };
 const GATE_WORDS: Record<GateType, string> = { AND: 'BOTH', OR: 'EITHER', NOT: 'FLIP', LATCH: 'REMEMBER' };
 
 interface GatePart {
@@ -64,7 +66,7 @@ export class LogicRoom extends RoomBase<'logic'> {
       const g = this.add.graphics();
       this.drawGate(g, gate, 0, 0, false, 0);
       obj.add(g);
-      if (this.style.numbers) obj.add(this.add.text(0, 44, gate, { fontFamily: FONT, fontSize: '15px', color: '#fff3d0', fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 4 }).setOrigin(0.5));
+      if (this.style.numbers) obj.add(this.add.text(0, 44, gate, { fontFamily: FONT, fontSize: '15px', color: '#f4ebd5', fontStyle: 'bold', stroke: '#342f29', strokeThickness: 4 }).setOrigin(0.5));
       obj.setSize(110, 110);
       const part: GatePart = { gate, obj, home: spots[i], node: null };
       this.parts.push(part);
@@ -80,18 +82,18 @@ export class LogicRoom extends RoomBase<'logic'> {
     // the rule, for readers (Fixer/Engineer)
     if (this.style.id !== 'tinker' && this.def.goal.kind === 'truth') {
       this.add
-        .text(640, 520, `Rule: ${friendly(this.def.goal.expr, this.def.nodes)}`, { fontFamily: FONT, fontSize: '20px', color: '#fff3d0', backgroundColor: '#2b1d14dd', padding: { x: 14, y: 6 } })
+        .text(640, 520, `Rule: ${friendly(this.def.goal.expr, this.def.nodes)}`, { fontFamily: FONT, fontSize: '20px', color: '#f4ebd5', backgroundColor: '#342f29dd', padding: { x: 14, y: 6 } })
         .setOrigin(0.5)
         .setDepth(D.hud - 2);
     }
     if (this.def.goal.kind !== 'reach') {
-      roundButton(this, 1180, 600, '▶', () => this.startTest(), { r: 48, fontSize: 44, color: 0x8ce99a, say: 'Test it!' }).setDepth(D.hud);
+      roundButton(this, 1180, 600, '▶', () => this.startTest(), { r: 48, fontSize: 44, color: 0xa0a477, say: 'Test it!' }).setDepth(D.hud);
     }
     for (const n of this.def.nodes) {
       if (n.label && this.style.id !== 'tinker') {
         this.labels.push(
           this.add
-            .text(n.x, n.y + 62, n.label, { fontFamily: FONT, fontSize: '16px', color: '#fff3d0', fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 4 })
+            .text(n.x, n.y + 62, n.label, { fontFamily: FONT, fontSize: '16px', color: '#f4ebd5', fontStyle: 'bold', stroke: '#342f29', strokeThickness: 4 })
             .setOrigin(0.5)
             .setDepth(D.mech + 3),
         );
@@ -266,6 +268,10 @@ export class LogicRoom extends RoomBase<'logic'> {
     g.fillRoundedRect(x - 46, y - 40, 96, 90, 14);
     g.fillStyle(0x3d2b25, 1);
     g.fillRoundedRect(x - 48, y - 44, 96, 88, 14);
+    g.lineStyle(1.8, CM.copper, 0.95);
+    g.strokeRoundedRect(x - 48, y - 44, 96, 88, 14);
+    rivet(g, x - 39, y - 35, 2.3);
+    rivet(g, x + 39, y + 35, 2.3);
     switch (gate) {
       case 'AND': {
         // the "Both" door: two keyholes, opens when both get a marble
@@ -292,7 +298,7 @@ export class LogicRoom extends RoomBase<'logic'> {
         break;
       case 'NOT': {
         const tilt = on ? -0.4 : 0.4;
-        g.fillStyle(0x5e3f10, 1);
+        g.fillStyle(0x554638, 1);
         g.fillTriangle(x - 10, y + 30, x + 10, y + 30, x, y + 10);
         g.lineStyle(10, col, 1);
         g.lineBetween(x - 38 * Math.cos(tilt), y + 10 - 38 * Math.sin(tilt), x + 38 * Math.cos(tilt), y + 10 + 38 * Math.sin(tilt));
@@ -305,7 +311,7 @@ export class LogicRoom extends RoomBase<'logic'> {
           g.fillCircle(x + Math.cos(a) * 26, y + Math.sin(a) * 26, 7);
         }
         g.fillCircle(x, y, 24);
-        g.fillStyle(0x2b1d14, 1);
+        g.fillStyle(0x342f29, 1);
         g.fillTriangle(x + 18, y - 40, x + 34, y - 40, x + 24, y - 22);
         g.fillStyle(on ? 0xffd43b : 0x5a3a6a, 1);
         g.fillCircle(x, y, 9);
@@ -326,13 +332,13 @@ export class LogicRoom extends RoomBase<'logic'> {
         case 'lever':
           g.fillStyle(0x333333, 1);
           g.fillRoundedRect(x - 26, y + 6, 52, 18, 6);
-          g.lineStyle(9, 0xc0c8d0, 1);
+          g.lineStyle(9, 0x9aaba4, 1);
           g.lineBetween(x, y + 12, x + (on ? 24 : -24), y - 26);
           g.fillStyle(on ? 0x8ce99a : 0xff6b6b, 1);
           g.fillCircle(x + (on ? 24 : -24), y - 26, 11);
           break;
         case 'plate':
-          g.fillStyle(on ? 0x8ce99a : 0x9aa6b4, 1);
+          g.fillStyle(on ? 0x8ce99a : 0x82938c, 1);
           g.fillRoundedRect(x - 32, y + (on ? 4 : -6), 64, 18, 6);
           if (on) {
             g.fillStyle(0xffd43b, 1);
@@ -352,7 +358,7 @@ export class LogicRoom extends RoomBase<'logic'> {
           g.fillCircle(x, y, 10);
           break;
         case 'bell':
-          g.fillStyle(0xd9a441, 1);
+          g.fillStyle(0xbca16a, 1);
           g.fillTriangle(x - 26, y + 18, x + 26, y + 18, x, y - 26);
           g.fillCircle(x, y - 10, 16);
           if (on) {
@@ -361,9 +367,9 @@ export class LogicRoom extends RoomBase<'logic'> {
           }
           break;
         case 'radio':
-          g.fillStyle(0x6e4527, 1);
+          g.fillStyle(0x554638, 1);
           g.fillRoundedRect(x - 30, y - 22, 60, 44, 10);
-          g.fillStyle(on ? 0xffb347 : 0xf6ead0, 1);
+          g.fillStyle(on ? 0xffb347 : 0xe9dcc0, 1);
           g.fillCircle(x - 10, y, 10);
           break;
         default:
@@ -376,7 +382,7 @@ export class LogicRoom extends RoomBase<'logic'> {
       if (n.slot) {
         const filled = this.state.gates[n.id];
         if (!filled) {
-          g.lineStyle(4, 0xfff4c8, 0.6);
+          g.lineStyle(4, 0xf4ebd5, 0.6);
           g.strokeRoundedRect(x - 48, y - 44, 96, 88, 14);
         }
         return;
@@ -392,7 +398,7 @@ export class LogicRoom extends RoomBase<'logic'> {
         g.fillStyle(0x3d2b25, 1);
         g.fillRoundedRect(x - 56, y - 64, 112, 124, 14);
         const open = on ? 44 : 0;
-        g.fillStyle(0xd64541, 1);
+        g.fillStyle(0xad6b51, 1);
         g.fillRect(x - 46, y - 54, 46 - open, 108);
         g.fillRect(x + open, y - 54, 46 - open, 108);
         if (on) {
@@ -406,9 +412,9 @@ export class LogicRoom extends RoomBase<'logic'> {
           g.fillStyle(0xfff3b0, 0.25);
           g.fillCircle(x, y - 10, 70);
         }
-        g.fillStyle(on ? 0xfff3b0 : 0x6c757d, 1);
+        g.fillStyle(on ? 0xfff3b0 : 0x60736d, 1);
         g.fillCircle(x, y - 10, 32);
-        g.fillStyle(0x9aa6b4, 1);
+        g.fillStyle(0x82938c, 1);
         g.fillRect(x - 14, y + 22, 28, 20);
         break;
       case 'sign':
@@ -420,7 +426,7 @@ export class LogicRoom extends RoomBase<'logic'> {
         }
         break;
       case 'bertie':
-        g.fillStyle(0xd64541, 1);
+        g.fillStyle(0xad6b51, 1);
         g.fillRoundedRect(x - 50, y - 50, 100, 90, 18);
         g.fillStyle(0xf2e6c8, 1);
         g.fillCircle(x - 20, y - 14, 14);
@@ -448,13 +454,13 @@ export class LogicRoom extends RoomBase<'logic'> {
       }
       case 'bell': {
         const sw = on ? Math.sin(this.t * 10) * 0.3 : 0;
-        g.fillStyle(0xd9a441, 1);
+        g.fillStyle(0xbca16a, 1);
         g.fillTriangle(x - 40 + sw * 30, y + 30, x + 40 + sw * 30, y + 30, x + sw * 10, y - 40);
         g.fillCircle(x + sw * 10, y - 20, 26);
         break;
       }
       default:
-        g.fillStyle(on ? 0x8ce99a : 0x6c757d, 1);
+        g.fillStyle(on ? 0x8ce99a : 0x60736d, 1);
         g.fillCircle(x, y, 40);
     }
   }
@@ -490,7 +496,7 @@ export class LogicRoom extends RoomBase<'logic'> {
         const from = this.node(src);
         const pts = this.wirePath(from, n, k, ins.length);
         const on = !!this.values[src];
-        wg.lineStyle(16, 0x2b1d14, 0.7);
+        wg.lineStyle(16, 0x342f29, 0.7);
         wg.strokePoints(pts.map((p) => new Phaser.Math.Vector2(p.x, p.y)));
         wg.lineStyle(10, on ? 0xc8923a : 0x7a6a5a, 1);
         wg.strokePoints(pts.map((p) => new Phaser.Math.Vector2(p.x, p.y)));

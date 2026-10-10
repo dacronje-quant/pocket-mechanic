@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
-import { cosmeticById, DEFAULT_LOOK, type KipLook } from '../content/cosmetics';
+import { cosmeticById, DEFAULT_LOOK, TESS_LOOK, type KipLook } from '../content/cosmetics';
+import { CM } from './copperMoss';
+import { withArt } from './generated';
+import { atlasFrame, kipFinishTexture } from './sprites';
 
 /**
- * Kip, the thumb-sized wind-up automaton (GDD §5), drawn from shapes and
+ * Kip, the thumb-sized wind-up automaton (GDD §5), etched in copper and moss and
  * rebuilt from a KipLook (key, plate, finish, eyes, bulb, hat, feet, trail —
  * GDD §18). `variant: 'tess'` draws Kip's copper sister with her periscope
  * antenna and skirt-like gear rim.
@@ -14,6 +17,14 @@ export class Kip extends Phaser.GameObjects.Container {
   private eyesG: Phaser.GameObjects.Graphics;
   private bulb: Phaser.GameObjects.Graphics;
   private shell: Phaser.GameObjects.Graphics;
+  private plateG: Phaser.GameObjects.Graphics;
+  private shellArt?: Phaser.GameObjects.Image;
+  private dimensional?: Phaser.GameObjects.Image;
+  private dimensionalKey?: string;
+  private hands!: Phaser.GameObjects.Graphics;
+  private shadow!: Phaser.GameObjects.Graphics;
+  private poseUntil = 0;
+  private pose = 0;
   private hatG: Phaser.GameObjects.Graphics;
   private plateText: Phaser.GameObjects.Text;
   private torso: Phaser.GameObjects.Container;
@@ -44,23 +55,53 @@ export class Kip extends Phaser.GameObjects.Container {
     this.legL.setPosition(-10, -8);
     this.legR.setPosition(10, -8);
     this.torso = scene.add.container(0, -30);
-    this.keyG = scene.add.graphics().setPosition(0, -30);
+    this.keyG = scene.add.graphics().setPosition(-27, -10);
     this.bulb = scene.add.graphics();
     this.shell = scene.add.graphics();
+    this.plateG = scene.add.graphics();
     this.eyesG = scene.add.graphics();
     this.pupils = scene.add.graphics();
     this.lids = scene.add.graphics();
     this.hatG = scene.add.graphics();
-    this.plateText = scene.add.text(0, 16, '', { fontFamily: 'Georgia, serif', fontSize: '9px', color: '#3b260b', fontStyle: 'bold' }).setOrigin(0.5);
+    this.plateText = scene.add.text(0, 16, '', { fontFamily: 'Georgia, serif', fontSize: '9px', color: '#40352a', fontStyle: 'bold' }).setOrigin(0.5);
     const hands = scene.add.graphics();
-    hands.fillStyle(0x8a5f17, 1);
-    hands.fillCircle(-27, 8, 6);
-    hands.fillCircle(27, 8, 6);
-    this.torso.add([this.keyG, this.bulb, this.shell, this.plateText, this.eyesG, this.pupils, this.lids, this.hatG, hands]);
+    this.hands = hands;
+    for (const side of [-1, 1]) {
+      hands.lineStyle(3, CM.inkSoft, 1);
+      hands.lineBetween(side * 21, 3, side * 29, 9);
+      hands.lineStyle(1.2, CM.brass, 1);
+      for (let i = 0; i < 3; i++) hands.strokeEllipse(side * (22 + i * 2), 4 + i * 1.5, 3, 7);
+      hands.fillStyle(CM.ink, 1);
+      hands.fillEllipse(side * 29, 10, 12, 14);
+      hands.fillStyle(CM.brass, 1);
+      hands.fillEllipse(side * 29 - 1, 9, 10, 12);
+      hands.fillStyle(CM.copperDark, 1);
+      hands.fillTriangle(side * 29, 9, side * 31, 17, side * 28, 17);
+      hands.fillStyle(CM.cream, 0.65);
+      hands.fillEllipse(side * 29 - 2, 6, 3, 5);
+    }
+    this.torso.add([this.keyG, this.bulb, this.shell, this.plateG, this.plateText, this.eyesG, this.pupils, this.lids, this.hatG, hands]);
     this.add([this.legL, this.legR, this.torso]);
+    this.shadow = scene.add.graphics();
+    this.shadow.fillStyle(0x171a17, 0.16).fillEllipse(0, 3, 60, 13);
+    this.shadow.fillStyle(0x171a17, 0.22).fillEllipse(0, 2, 43, 7);
+    this.addAt(this.shadow, 0);
     this.setSize(70, 90);
     scene.add.existing(this);
     this.redraw();
+    withArt(scene, 'copper-kip-shell', (key) => {
+      if (!this.active || !this.scene) return;
+      this.shellArt = scene.add.image(0, 0, key).setDisplaySize(58, 58);
+      this.torso.addAt(this.shellArt, 3);
+      this.updateShellArt();
+    });
+    withArt(scene, this.variant === 'tess' ? 'tess-dimensional' : 'kip-dimensional', (key) => {
+      if (!this.active || !this.scene) return;
+      this.dimensionalKey = key;
+      this.dimensional = scene.add.image(0, 32, key, atlasFrame(scene, key, 0, 4, 2)).setOrigin(0.5, 1).setDisplaySize(94, 94).setName(`${this.variant}:dimensional`);
+      this.torso.addAt(this.dimensional, 0);
+      this.updateShellArt();
+    });
     // Keep the handle: a looping timer that outlives a destroyed Kip used to throw on
     // `this.scene` (undefined after destroy), which killed Phaser's game loop.
     this.blinkTimer = scene.time.addEvent({ delay: 3200 + Math.random() * 800, loop: true, callback: () => this.blink() });
@@ -82,43 +123,68 @@ export class Kip extends Phaser.GameObjects.Container {
   private redraw(): void {
     const L = this.look;
     const fin = cosmeticById(L.finish);
-    const face = fin?.color ?? (this.variant === 'tess' ? 0xc8703f : 0xd9a441);
-    const dark = fin?.color2 ?? 0x8a5f17;
+    const face = fin?.color ?? CM.copper;
+    const dark = fin?.color2 ?? CM.copperDark;
     const light = Phaser.Display.Color.ValueToColor(face).lighten(25).color;
 
     // legs & feet
-    for (const leg of [this.legL, this.legR]) {
+    for (const [index, leg] of [this.legL, this.legR].entries()) {
       leg.clear();
-      leg.fillStyle(0x6b4a1c, 1);
-      leg.fillRect(-3, 0, 6, 18);
+      leg.fillStyle(CM.ink, 1);
+      leg.fillRect(-2, -2, 4, 18);
+      leg.fillStyle(CM.brass, 1);
+      leg.fillEllipse(0, 0, 10, 5);
+      leg.lineStyle(2.5, CM.inkSoft, 1);
+      for (let i = 0; i < 4; i++) leg.strokeEllipse(0, 3 + i * 3, 9, 3.5);
+      leg.lineStyle(1.1, CM.cream, 0.9);
+      for (let i = 0; i < 4; i++) leg.lineBetween(-4, 2 + i * 3, 3.5, 4 + i * 3);
       const f = L.feet;
       if (f === 'feet-wheels') {
-        leg.fillStyle(0x2b2b33, 1);
+        leg.fillStyle(CM.ink, 1);
         leg.fillCircle(0, 19, 6);
-        leg.fillStyle(0xc9d1d9, 1);
+        leg.lineStyle(1.5, CM.brass, 1);
+        leg.strokeCircle(0, 19, 4);
+        leg.fillStyle(CM.cream, 1);
         leg.fillCircle(0, 19, 2.5);
       } else if (f === 'feet-clogs') {
-        leg.fillStyle(0xc49a6c, 1);
+        leg.fillStyle(CM.woodLight, 1);
         leg.fillRoundedRect(-8, 14, 16, 8, 4);
+        leg.lineStyle(0.8, CM.woodDark, 1);
+        leg.lineBetween(-6, 18, 6, 17);
+        leg.lineBetween(-4, 20, 7, 19);
       } else if (f === 'feet-rocket') {
-        leg.fillStyle(0xe03131, 1);
+        leg.fillStyle(CM.copperDark, 1);
         leg.fillRoundedRect(-7, 12, 14, 10, 3);
-        leg.fillStyle(0xffd43b, 1);
+        leg.fillStyle(CM.copperLight, 1);
+        leg.fillRect(-5, 13, 10, 4);
+        leg.fillStyle(CM.glow, 1);
         leg.fillTriangle(-4, 22, 4, 22, 0, 28);
       } else {
-        leg.lineStyle(2, 0xc0c8d0, 1);
-        for (let i = 0; i < 3; i++) leg.strokeEllipse(0, 8 + i * 4, 9, 3);
-        leg.fillStyle(0x3f2a10, 1);
-        leg.fillEllipse(-1, 19, 14, 6);
+        // A repaired teal shoe and an old copper shoe make Kip recognisable at a glance.
+        leg.fillStyle(CM.ink, 1);
+        leg.fillEllipse(-1, 19, 17, 10);
+        leg.fillStyle(index === 0 ? face : CM.teal, 1);
+        leg.fillEllipse(-1, 17, 15, 9);
+        leg.fillStyle(CM.brass, 1);
+        leg.fillEllipse(-1, 21, 16, 3);
+        leg.fillStyle(CM.cream, 0.6);
+        leg.fillEllipse(-3, 15, 4, 2);
+        leg.fillStyle(CM.ink, 0.8);
+        leg.fillCircle(3, 19, 0.8);
+        leg.fillCircle(-6, 19, 0.8);
       }
     }
 
     // winding key
     const k = this.keyG;
     k.clear();
-    const kc = this.col(L.key, 0xe7bb55);
-    k.fillStyle(0xb88a2c, 1);
-    k.fillRect(-3, -4, 6, 10);
+    const kc = this.col(L.key, CM.brass);
+    k.fillStyle(CM.ink, 1);
+    k.fillRoundedRect(-4, -7, 15, 13, 4);
+    k.fillStyle(CM.copperDark, 1);
+    k.fillRoundedRect(-3, -5, 12, 10, 3);
+    k.lineStyle(1, CM.brass, 1);
+    k.lineBetween(3, -4, 3, 4);
     k.fillStyle(kc, 1);
     switch (L.key) {
       case 'key-heart':
@@ -181,53 +247,101 @@ export class Kip extends Phaser.GameObjects.Container {
           heart(k, -11, 0, 12);
           heart(k, 11, 0, 12);
         } else {
-          k.fillEllipse(-11, 0, 16, 22);
-          k.fillEllipse(11, 0, 16, 22);
-          k.fillStyle(0x7a5413, 1);
-          k.fillCircle(-11, 0, 4);
-          k.fillCircle(11, 0, 4);
+          // Open double-loop brass handle; no painted-in holes, so the scene shows through.
+          k.lineStyle(6, CM.ink, 1);
+          k.strokeEllipse(-7, -10, 15, 21);
+          k.strokeEllipse(-7, 10, 15, 21);
+          k.lineStyle(4.5, kc, 1);
+          k.strokeEllipse(-7, -10, 15, 21);
+          k.strokeEllipse(-7, 10, 15, 21);
+          k.lineStyle(0.7, CM.cream, 0.8);
+          k.strokeEllipse(-7.6, -10.6, 15, 21);
+          k.strokeEllipse(-7.6, 9.4, 15, 21);
+          k.fillStyle(CM.copperDark, 0.65);
+          for (let i = 0; i < 7; i++) k.fillCircle(-14 + (i % 2) * 14, -17 + i * 5.5, 0.75);
         }
     }
 
     // antenna + bulb / topper
     const b = this.bulb;
     b.clear();
-    b.lineStyle(3, 0x7a5413, 1);
+    b.lineStyle(3, CM.ink, 1);
     if (this.variant === 'tess') {
       b.lineBetween(-8, -22, -8, -44);
       b.lineBetween(-8, -44, 2, -44);
-      b.fillStyle(0x7a5413, 1);
+      b.fillStyle(CM.brass, 1);
       b.fillRect(0, -49, 8, 10);
-      b.fillStyle(0xbfe3f5, 1);
+      b.fillStyle(CM.sky, 1);
       b.fillRect(6, -47, 3, 6);
     } else {
-      b.lineBetween(8, -22, 14, -40);
+      b.beginPath();
+      b.moveTo(8, -22);
+      b.lineTo(9, -29);
+      b.lineTo(6, -33);
+      b.lineTo(13, -37);
+      b.lineTo(14, -42);
+      b.strokePath();
+      b.lineStyle(1, CM.brass, 1);
+      b.lineBetween(8.5, -25, 9.5, -29);
+      b.lineBetween(7.5, -33, 14, -38);
     }
     const bx = this.variant === 'tess' ? -8 : 14;
     const by = this.variant === 'tess' ? -52 : -42;
-    const bc = this.col(L.bulb, 0xffe98a);
+    const bc = this.col(L.bulb, CM.glow);
     drawTopper(b, L.bulb, bx, by, bc);
 
-    // shell
+    // Pocket-watch case: a copper rim, an old enamel repair, a softly lit faceplate.
     const s = this.shell;
     s.clear();
-    s.fillStyle(dark, 1);
+    s.fillStyle(CM.ink, 1);
     s.fillCircle(0, 2, 27);
     s.fillStyle(face, 1);
-    s.fillCircle(0, 0, 25);
+    s.fillCircle(0, 0, 25.5);
+    s.fillStyle(CM.copperLight, 0.24);
+    s.fillEllipse(-6, -8, 33, 29);
+    s.fillStyle(CM.teal, 1);
+    s.fillPoints([
+      new Phaser.Math.Vector2(-24, -9), new Phaser.Math.Vector2(-18, -19),
+      new Phaser.Math.Vector2(-8, -23), new Phaser.Math.Vector2(-5, -16),
+      new Phaser.Math.Vector2(-12, -5), new Phaser.Math.Vector2(-15, 13),
+      new Phaser.Math.Vector2(-24, 8),
+    ], true);
+    s.lineStyle(0.8, CM.tealDark, 1);
+    s.lineBetween(-8, -22, -5, -16);
+    s.lineBetween(-5, -16, -12, -5);
+    s.lineBetween(-12, -5, -15, 13);
+    const front = L.finish === 'finish-brass' ? CM.brass : light;
+    s.fillStyle(dark, 1);
+    s.fillCircle(3, -1, 21.2);
+    s.fillStyle(front, 1);
+    s.fillCircle(3, -1, 20);
     if (L.finish === 'finish-candy') {
       s.fillStyle(0xffffff, 0.8);
       for (let i = -3; i <= 3; i++) s.fillRect(i * 8 - 2, -24, 4, 48);
       s.fillStyle(face, 0);
     }
-    s.fillStyle(light, 0.55);
-    s.fillCircle(-6, -8, 15);
-    s.fillStyle(face, 1);
-    s.fillCircle(-2, -3, 12);
-    s.lineStyle(2, dark, 1);
-    s.strokeCircle(0, 0, 25);
-    s.fillStyle(dark, 1);
-    s.fillRect(-4, -31, 8, 7);
+    etchedEllipse(s, 0, 0, 25, 25, 19, 70);
+    s.lineStyle(0.85, CM.inkSoft, 0.9);
+    s.strokeCircle(0, 0, 25.5);
+    s.lineStyle(0.8, CM.cream, 0.6);
+    s.beginPath();
+    s.arc(-0.5, -0.5, 24, Math.PI * 1.15, Math.PI * 1.7);
+    s.strokePath();
+    for (let i = 0; i < 9; i++) {
+      const a = i * Math.PI * 2 / 9 + 0.15;
+      const rx = Math.cos(a) * 22;
+      const ry = Math.sin(a) * 22;
+      s.fillStyle(CM.ink, 1);
+      s.fillCircle(rx, ry, 1.5);
+      s.fillStyle(CM.brass, 1);
+      s.fillCircle(rx - 0.3, ry - 0.35, 1);
+      s.lineStyle(0.6, CM.inkSoft, 1);
+      s.lineBetween(rx - 0.6, ry - 0.3, rx + 0.5, ry + 0.3);
+    }
+    s.fillStyle(CM.inkSoft, 1);
+    s.fillRoundedRect(4, -28, 10, 5, 2);
+    s.fillStyle(CM.brass, 1);
+    s.fillEllipse(9, -28, 9, 3);
     if (this.variant === 'tess') {
       // skirt-like gear rim
       s.fillStyle(dark, 1);
@@ -236,13 +350,15 @@ export class Kip extends Phaser.GameObjects.Container {
         s.fillCircle(Math.cos(a) * 26, Math.sin(a) * 26, 3.5);
       }
     }
-    this.drawPlate(s, L, dark);
+    this.plateG.clear();
+    this.drawPlate(this.plateG, L, dark);
+    this.updateShellArt();
 
     // eyes
     const e = this.eyesG;
     e.clear();
-    const glass = this.col(L.eyes, 0xeaf6ff);
-    e.fillStyle(0x3b2a12, 1);
+    const glass = this.col(L.eyes, CM.cream);
+    e.fillStyle(CM.ink, 1);
     if (L.eyes === 'eyes-heart') {
       heart(e, -9, -3, 19);
       heart(e, 9, -3, 19);
@@ -262,18 +378,32 @@ export class Kip extends Phaser.GameObjects.Container {
       e.fillCircle(-9, -3, 7);
       e.fillCircle(9, -3, 7);
     } else {
-      const r2 = L.eyes === 'eyes-monocle' ? 11 : 9;
-      e.fillCircle(-9, -3, 9);
+      const r2 = L.eyes === 'eyes-monocle' ? 11 : 10;
+      e.fillCircle(-9, -3, 10);
       e.fillCircle(9, -3, r2);
+      e.fillStyle(CM.brass, 1);
+      e.fillCircle(-9.25, -3.25, 9.1);
+      e.fillCircle(8.75, -3.25, r2 - 0.9);
+      e.fillStyle(CM.inkSoft, 1);
+      e.fillCircle(-9, -3, 8.1);
+      e.fillCircle(9, -3, r2 - 1.9);
       e.fillStyle(glass, 1);
-      e.fillCircle(-9, -3, 7);
-      e.fillCircle(9, -3, r2 - 2);
+      e.fillCircle(-9, -3, 7.4);
+      e.fillCircle(9, -3, r2 - 2.6);
+      e.fillStyle(CM.sky, 0.26);
+      e.fillEllipse(-9, 0, 12, 7);
+      e.fillEllipse(9, 0, 12, 7);
       if (L.eyes === 'eyes-monocle') {
         e.lineStyle(1.5, 0xffd700, 1);
         e.strokeCircle(9, -3, r2);
         e.lineBetween(18, 0, 22, 18);
       }
     }
+    // Kip communicates with eyes and a tiny engraved smile, even without speech.
+    e.lineStyle(1, CM.inkSoft, 1);
+    e.beginPath();
+    e.arc(0, 8, 4.5, Math.PI * 0.17, Math.PI * 0.83);
+    e.strokePath();
     this.drawPupils();
 
     // hat
@@ -348,6 +478,32 @@ export class Kip extends Phaser.GameObjects.Container {
 
     // trail
     this.setupTrail(L.trail);
+  }
+
+  private updateShellArt(): void {
+    if (this.dimensional && this.dimensionalKey) {
+      const L = this.look;
+      const baseLook = this.variant === 'tess' ? TESS_LOOK : DEFAULT_LOOK;
+      const key = kipFinishTexture(this.scene, this.dimensionalKey, L.finish, cosmeticById(L.finish)?.color ?? CM.copper, baseLook.finish);
+      this.dimensional.setTexture(key, atlasFrame(this.scene, key, this.pose, 4, 2)).setDisplaySize(94, 94);
+      this.shell.setVisible(false); this.shellArt?.setVisible(false); this.hands.setVisible(false);
+      this.legL.setVisible(L.feet !== DEFAULT_LOOK.feet); this.legR.setVisible(L.feet !== DEFAULT_LOOK.feet);
+      this.keyG.setVisible(L.key !== baseLook.key);
+      this.bulb.setVisible(L.bulb !== DEFAULT_LOOK.bulb);
+      this.eyesG.setVisible(L.eyes !== DEFAULT_LOOK.eyes); this.pupils.setVisible(L.eyes !== DEFAULT_LOOK.eyes); this.lids.setVisible(false);
+      this.plateG.setVisible(L.plate !== DEFAULT_LOOK.plate); this.plateText.setVisible(L.plate !== DEFAULT_LOOK.plate);
+      this.eyesG.y = this.pupils.y = -14; this.plateG.y = this.plateText.y = -4;
+      this.eyesG.x = this.pupils.x = 12;
+      this.eyesG.setScale(1.12); this.pupils.setScale(1.12);
+      this.plateG.x = this.plateText.x = 12;
+      this.hatG.setPosition(12, -12);
+      return;
+    }
+    // The painted case shares the live rig: lenses, lids, key, hands and feet still animate.
+    // Other finishes remain physically redrawn so earned customisation keeps its colours.
+    const useArt = !!this.shellArt && this.variant === 'kip' && this.look.finish === 'finish-brass';
+    this.shell.setVisible(!useArt);
+    this.shellArt?.setVisible(useArt);
   }
 
   private drawPlate(s: Phaser.GameObjects.Graphics, L: KipLook, dark: number): void {
@@ -432,12 +588,18 @@ export class Kip extends Phaser.GameObjects.Container {
   private drawPupils(): void {
     const dx = this.pupilDx;
     this.pupils.clear();
-    this.pupils.fillStyle(0x1b2a3a, 1);
-    this.pupils.fillCircle(-9 + dx, -3, 3.4);
-    this.pupils.fillCircle(9 + dx, -3, 3.4);
-    this.pupils.fillStyle(0xffffff, 1);
-    this.pupils.fillCircle(-10 + dx, -5, 1.2);
-    this.pupils.fillCircle(8 + dx, -5, 1.2);
+    this.pupils.fillStyle(CM.tealDark, 1);
+    this.pupils.fillCircle(-9 + dx, -2.6, 4.7);
+    this.pupils.fillCircle(9 + dx, -2.6, 4.7);
+    this.pupils.fillStyle(CM.ink, 1);
+    this.pupils.fillCircle(-9 + dx, -3, 3.5);
+    this.pupils.fillCircle(9 + dx, -3, 3.5);
+    this.pupils.fillStyle(CM.cream, 1);
+    this.pupils.fillCircle(-10.8 + dx, -5.3, 1.8);
+    this.pupils.fillCircle(7.2 + dx, -5.3, 1.8);
+    this.pupils.fillStyle(CM.cream, 0.45);
+    this.pupils.fillCircle(-7 + dx, -0.5, 0.7);
+    this.pupils.fillCircle(11 + dx, -0.5, 0.7);
   }
 
   lookToward(x: number): void {
@@ -447,6 +609,7 @@ export class Kip extends Phaser.GameObjects.Container {
 
   blink(): void {
     if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
+    if (this.dimensional) { this.pose = 1; this.poseUntil = this.t + 0.18; return; }
     const lids = this.lids;
     let step = 0;
     const L = this.look;
@@ -499,6 +662,7 @@ export class Kip extends Phaser.GameObjects.Container {
   /** Happy hop + spin (the "Wind-Up Wiggle"). */
   celebrate(): void {
     if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
+    this.pose = 4; this.poseUntil = this.t + 1.6;
     this.busy = true;
     this.walkTween?.stop();
     this.keySpeed = 8;
@@ -554,6 +718,7 @@ export class Kip extends Phaser.GameObjects.Container {
   nap(on: boolean): void {
     if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
     this.busy = on;
+    this.pose = on ? 6 : 0; this.poseUntil = on ? Number.POSITIVE_INFINITY : 0;
     this.scene.tweens.add({ targets: this.torso, y: on ? -20 : -30, angle: on ? -8 : 0, duration: 400 });
     this.keySpeed = on ? 0.2 : 0.6;
   }
@@ -563,6 +728,11 @@ export class Kip extends Phaser.GameObjects.Container {
     this.keyG.rotation += this.keySpeed * (delta / 1000) * 2;
     this.keyG.scaleX = Math.cos(this.t * this.keySpeed * 2);
     const walking = this.walkTween?.isPlaying() ?? false;
+    if (this.dimensional) {
+      if (this.t > this.poseUntil) this.pose = walking ? 2 + Math.floor(this.t * 8) % 2 : Math.abs(this.pupilDx) > 1 ? 7 : 0;
+      this.dimensional.setFrame(atlasFrame(this.scene, this.dimensional.texture.key, this.pose, 4, 2));
+      this.shadow.setScale(walking ? 0.9 : 1).setAlpha(this.busy ? 0.6 : 1);
+    }
     const swing = walking ? Math.sin(this.t * 18) * 0.5 : 0;
     this.legL.rotation = swing;
     this.legR.rotation = -swing;
@@ -693,8 +863,41 @@ export function drawTopper(b: Phaser.GameObjects.Graphics, id: string, x: number
       b.fillTriangle(x - 3, y + 8, x + 3, y + 8, x, y + 14);
       break;
     default:
+      b.fillStyle(CM.inkSoft, 1);
+      b.fillRoundedRect(x - 3.2, y + 3, 6.4, 6, 1);
+      b.lineStyle(0.7, CM.brass, 1);
+      b.lineBetween(x - 3, y + 5, x + 3, y + 5);
+      b.lineBetween(x - 3, y + 7, x + 3, y + 7);
+      b.fillStyle(color, 0.85);
       b.fillCircle(x, y, 6);
-      b.fillStyle(0xffffff, 0.7);
-      b.fillCircle(x - 2, y - 2, 2);
+      b.lineStyle(0.6, CM.brass, 0.8);
+      b.strokeCircle(x, y, 6);
+      b.lineStyle(0.7, CM.cream, 1);
+      b.lineBetween(x - 2, y + 2, x - 1, y - 1);
+      b.lineBetween(x - 1, y - 1, x + 1, y + 1);
+      b.lineBetween(x + 1, y + 1, x + 2, y - 2);
+      b.fillStyle(CM.cream, 0.8);
+      b.fillEllipse(x - 2, y - 2, 2, 4);
+  }
+}
+
+/** Deterministic pencil flecks restricted to a curved surface. */
+function etchedEllipse(g: Phaser.GameObjects.Graphics, x: number, y: number, rx: number, ry: number, seed: number, count: number): void {
+  let n = seed >>> 0;
+  const random = () => {
+    n = (Math.imul(n, 1664525) + 1013904223) >>> 0;
+    return n / 4294967296;
+  };
+  for (let i = 0; i < count; i++) {
+    const a = random() * Math.PI * 2;
+    const r = Math.sqrt(random()) * 0.94;
+    const px = x + Math.cos(a) * rx * r;
+    const py = y + Math.sin(a) * ry * r;
+    g.fillStyle(i % 3 === 0 ? CM.cream : CM.copperDark, i % 3 === 0 ? 0.3 : 0.24);
+    g.fillCircle(px, py, 0.35 + random() * 0.45);
+    if (i % 4 === 0) {
+      g.lineStyle(0.45, CM.inkSoft, 0.22);
+      g.lineBetween(px, py, px + 1.2, py - 1.2);
+    }
   }
 }

@@ -5,7 +5,6 @@
  */
 import * as sfx from '../audio/sfx';
 import { drawStage } from '../art/backgrounds';
-import { paintedBackdrop } from '../art/generated';
 import { Kip } from '../art/Kip';
 import { MachineArt } from '../art/objects';
 import { badge } from '../art/portraits';
@@ -57,7 +56,6 @@ export class FestivalScene extends MetaScene {
 
     drawStage(this, 'festival').setDepth(0);
     this.bubble.setY(120);
-    paintedBackdrop(this, 'stage-festival', 1);
     this.music('festival');
     this.bunting();
 
@@ -80,7 +78,7 @@ export class FestivalScene extends MetaScene {
     this.time.addEvent({ delay: 1800, loop: true, callback: () => kip.active && kip.celebrate() });
 
     // fireworks: soft, slow bursts (fewer in Calm Visuals, never flashing)
-    const fw = this.add.particles(0, 0, 'star', { lifespan: 1500, speed: { min: 60, max: 220 }, scale: { start: 0.8, end: 0 }, gravityY: 90, tint: [0xff6b6b, 0xffd43b, 0x74c0fc, 0x8ce99a, 0xb197fc], emitting: false }).setDepth(3);
+    const fw = this.add.particles(0, 0, 'star', { lifespan: 1500, speed: { min: 60, max: 220 }, scale: { start: 0.8, end: 0 }, gravityY: 90, tint: [0xba8668, 0xf1d391, 0x83a49a, 0xa0a477, 0x92a393], emitting: false }).setDepth(3);
     this.time.addEvent({
       delay: calm ? 2400 : 900,
       loop: true,
@@ -91,13 +89,13 @@ export class FestivalScene extends MetaScene {
     });
     this.time.delayedCall(600, () => this.line('festival.hello'));
     this.time.delayedCall(9000, () => this.credits());
-    roundButton(this, 1180, 640, '▶', () => this.finish(), { r: 40, fontSize: 36, color: 0x8ce99a, say: 'Next' }).setDepth(HUD);
+    roundButton(this, 1180, 640, '▶', () => this.finish(), { r: 40, fontSize: 36, color: 0xa0a477, say: 'Next' }).setDepth(HUD);
     pm.next = () => this.finish();
   }
 
   private bunting(): void {
     const g = this.add.graphics().setDepth(2);
-    const cols = [0xff6b6b, 0xffd43b, 0x74c0fc, 0x8ce99a, 0xb197fc];
+    const cols = [0xba8668, 0xf1d391, 0x83a49a, 0xa0a477, 0x92a393];
     g.lineStyle(2, 0x5a3a22, 1);
     g.lineBetween(0, 40, 1280, 40);
     for (let i = 0; i < 32; i++) {
@@ -122,7 +120,7 @@ export class FestivalScene extends MetaScene {
     this.tweens.add({ targets: shade, fillAlpha: 0.55, duration: 800 });
     if (showWords()) {
       const text = this.add
-        .text(640, 760, CREDITS.join('\n'), { fontFamily: SERIF, fontSize: '30px', color: '#fff3d0', align: 'center', lineSpacing: 10, stroke: '#2b1d14', strokeThickness: 5 })
+        .text(640, 760, CREDITS.join('\n'), { fontFamily: SERIF, fontSize: '30px', color: '#f4ebd5', align: 'center', lineSpacing: 10, stroke: '#342f29', strokeThickness: 5 })
         .setOrigin(0.5, 0)
         .setDepth(HUD - 9);
       this.tweens.add({ targets: text, y: -text.height - 40, duration: 26000, ease: 'Linear', onComplete: () => this.finish() });
@@ -134,7 +132,7 @@ export class FestivalScene extends MetaScene {
       });
       this.time.delayedCall(PARADE.length * 1300 + 5500, () => this.finish());
     }
-    if (showWords()) this.add.text(640, 690, 'tap ▶ to go home', { fontFamily: FONT, fontSize: '18px', color: '#fff3d0' }).setOrigin(0.5).setDepth(HUD);
+    if (showWords()) this.add.text(640, 690, 'tap ▶ to go home', { fontFamily: FONT, fontSize: '18px', color: '#f4ebd5' }).setOrigin(0.5).setDepth(HUD);
   }
 
   private finish(): void {
