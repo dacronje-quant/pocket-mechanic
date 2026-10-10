@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",
+    "build:pages": "tsc --noEmit && vite build --outDir docs/play --emptyOutDir",
     "preview": "vite preview --host",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

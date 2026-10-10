@@ -74,6 +74,7 @@ Wi-Fi, open the *Network* address `npm run dev` prints.
 |---|---|
 | `npm test` | Engine tests, every room's authored solution in all three Play Styles, the Attic generators, story/journey/progress and the voice-line catalogue |
 | `npm run build` | Type-check and build to `dist/` |
+| `npm run build:pages` | Build into `docs/play/` for "Deploy from a branch → main → /docs" (commit the result) |
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run playthrough` | Headless Chromium plays the whole story from an empty save (see below) |
 | `npm run assets` | Generate optional painted art with Gemini |
