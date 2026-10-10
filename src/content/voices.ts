@@ -1,6 +1,6 @@
 /**
  * Character voices. `gemini` is the prebuilt voice and delivery style used by
- * scripts/generate-audio.mjs; `pitch`/`rate` shape the device-speech fallback.
+ * scripts/generate-assets.mjs; `pitch`/`rate` shape the device-speech fallback.
  * Kip and Tess never talk — they beep (GDD §5).
  */
 import type { CharId } from './types';

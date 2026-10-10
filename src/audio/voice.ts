@@ -1,6 +1,6 @@
 /**
  * Voices (GDD §23.3). A line plays its generated voice file when the build has
- * one (public/audio/voice, made by scripts/generate-audio.mjs); otherwise the
+ * one (public/audio/voice, made by scripts/generate-assets.mjs); otherwise the
  * device's own speech reads it in the character's pitch and pace. Kip and
  * Tess only ever beep. Every call resolves when the line has finished, so the
  * story can wait for it.
