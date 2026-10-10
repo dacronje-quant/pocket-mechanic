@@ -27,44 +27,49 @@
     },
     "rosa": {
       "name": "Rosa",
-      "voiceId": "cgSgspJ2msm6clMCkdW9",
-      "performer": "Jessica",
-      "description": "Existing adult performer for a fictional storybook character.",
+      "voiceId": "t2cSgRBlUbN8d62P8PrP",
+      "description": "A female adult voice performer in her early twenties, with a naturally light clear soprano speaking register. Bright, curious, friendly and affectionate; an open smiling sound and lively conversational rhythm. Gentle British English, clearly pronounced words, expressive small reactions and an unhurried pace. A natural adult performance for a fictional storybook character. Clean dry studio speech, no music or sound effects.",
+      "castingRevision": "portrait-2026-10-11",
+      "direction": "Bright, curious and affectionate; lighter conversational delivery instead of a polished narrator.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
-        "speed": 0.95,
+        "speed": 0.97,
         "use_speaker_boost": true
       }
     },
     "ada": {
       "name": "Ada",
-      "voiceId": "FGY2WhTYpPnrIDTdsKH5",
-      "performer": "Laura",
-      "description": "Existing adult performer for a fictional storybook character.",
+      "voiceId": "V2yjGWA5nvu0x5A32jbZ",
+      "description": "A female adult voice performer in her early twenties, with a naturally clear upper mezzo-soprano register. Lively, decisive, sunny and spirited, with crisp playful emphasis and a confident smile. Gentle British English, expressive conversational rhythm, clear words and measured pace. A natural adult performance for a fictional storybook character. Never shrill, stern or sales-like. Clean dry studio speech, no music or sound effects.",
+      "castingRevision": "portrait-2026-10-11",
+      "direction": "Lively and decisive, with crisp playful emphasis; distinct from Rosa.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
-        "speed": 0.95,
+        "speed": 0.97,
         "use_speaker_boost": true
       }
     },
     "theo": {
       "name": "Theo",
-      "voiceId": "bIHbv24MWmeRgasZH58o",
-      "performer": "Will",
-      "description": "Existing adult performer for a fictional storybook character.",
+      "voiceId": "yKWqPPlNPbFKuasBIAi9",
+      "description": "An adult male British voice in his early twenties, a naturally delicate high tenor with soft androgynous resonance. A light, airy, smooth conversational timbre, very little chest resonance, gentle clear vowels and an easy friendly smile. Playful enthusiasm delivered softly, expressive melodic inflection and clear unhurried words. Clearly a natural adult male performer, relaxed and approachable. Avoid a deep masculine announcer, bass, gravel or exaggerated theatrical projection. Clean dry studio speech, no music or effects.",
+      "castingRevision": "feedback-2026-10-11",
+      "direction": "Much lighter and softer male tone, with delicate androgynous resonance; retain playful enthusiasm.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
-        "speed": 0.95,
+        "speed": 0.98,
         "use_speaker_boost": true
       }
     },
     "marigold": {
       "name": "Captain Marigold",
-      "voiceId": "xnma2BQZtceO93H6dfgJ",
-      "description": "A fictional character voice for a warm children's clockwork storybook: a gruff but kind retired lighthouse keeper; steady and secretly sentimental. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "voiceId": "eg1fPCWCZArwD4EeoB83",
+      "description": "An older woman in her late sixties, a retired harbour captain and lighthouse keeper. British English with a warm gently weathered lower female speaking register, a little natural rasp and a reassuring smile. Steady, practical, kind and quietly authoritative; she cares deeply about bringing everyone safely home. Clear consonants, measured conversational pacing, never harsh or intimidating. Clean dry studio speech, no music or effects.",
+      "castingRevision": "portrait-2026-10-11",
+      "direction": "Older female, steady and reassuring, with a little weathered warmth.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
@@ -74,12 +79,14 @@
     },
     "fisher": {
       "name": "The Fishers",
-      "voiceId": "tgoalZ7LJYYStZMONxqw",
-      "description": "A fictional character voice for a warm children's clockwork storybook: a cheerful, grateful fisherman. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "voiceId": "porHRRqbiaUSsuRjYusz",
+      "description": "A male British fisherman in his late fifties, with a deep resonant bass-baritone voice, a gently gravelly sea-weathered texture and a hearty affectionate smile. A natural coastal West Country English lilt, warm rugged vowels, relaxed sailor rhythm and cheerful gratitude. Clear unhurried words, sturdy easygoing confidence and good humour. Distinctly deep and nautical, never a polished presenter, exaggerated pirate, threatening growl or shouted performance. Clean dry studio speech, no music or effects.",
+      "castingRevision": "feedback-2026-10-11",
+      "direction": "Deep male sailor voice, weathered and hearty with warm gratitude; intelligible rather than a pirate caricature.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
-        "speed": 1,
+        "speed": 0.94,
         "use_speaker_boost": true
       }
     },
@@ -97,8 +104,10 @@
     },
     "pepperwhistle": {
       "name": "Mrs. Pepperwhistle",
-      "voiceId": "QEjs4giAKXTbIiFM4Vh2",
-      "description": "A fictional character voice for a warm children's clockwork storybook: a tall, theatrical cafe owner; grand, dramatic and delighted. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "voiceId": "0MTGrLGDYYfvuticrUJO",
+      "description": "A female British woman in her fifties with an unmistakably feminine warm mezzo-soprano speaking voice. A theatrical cafe proprietor with curls and a feathered hat, grand, dramatic, expressive and delighted. Rich rounded female vowels, animated musical intonation and an affectionate smile; dignified warmth with amused little flourishes. Clear measured conversation, no male baritone resonance, shouting or shrillness. Clean dry studio speech, no music or effects.",
+      "castingRevision": "feedback-2026-10-11",
+      "direction": "Explicitly female, mature, theatrical and delighted; replace the male-sounding performance.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
@@ -108,30 +117,37 @@
     },
     "pockets": {
       "name": "Professor Pockets",
-      "voiceId": "QsXe00gGhV7tumbNMYUw",
-      "description": "A fictional character voice for a warm children's clockwork storybook: an eccentric, excitable fairground showman. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "voiceId": "F1mUKoPj2YUSheBrrQ1p",
+      "description": "An elderly British man in his seventies, an eccentric kind fairground inventor with a light warm tenor voice. Whimsical, delighted and animated, with a gently papery age texture, curious rising intonation and a little amused chuckle. Clear words and measured conversational pacing; welcoming and playful, never booming or threatening. A natural fictional storybook performance. Clean dry studio speech, no music or effects.",
+      "castingRevision": "portrait-2026-10-11",
+      "direction": "Older male, whimsical and animated; gentle rather than booming.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
-        "speed": 1,
+        "speed": 0.96,
         "use_speaker_boost": true
       }
     },
     "bertie": {
       "name": "Big Bertie",
-      "voiceId": "tmUZTlv4eLSqYRL5VBsM",
-      "description": "A fictional character voice for a warm children's clockwork storybook: a booming, joyful fairground robot who loves to dance. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "voiceId": "vDwKwxvjcFATiwjwXEdm",
+      "description": "A friendly fictional male clockwork robot with an unmistakably synthetic mechanical speaking voice. Deep rounded robot resonance, metallic buzzy electronic timbre, precise evenly spaced syllables and subtly stepped musical intonation. A joyful gentle dancing automaton, pleasantly comical and welcoming. Every word clearly intelligible at an unhurried pace. Clearly robotic rather than an ordinary human announcer; no frightening harsh distortion, shouting, sound effects or background music. Clean isolated speech.",
+      "castingRevision": "feedback-2026-10-11",
+      "direction": "Clearly mechanical robot voice, metallic synthetic resonance, precise rhythmic syllables; cheerful and easy to understand.",
+      "voiceProcessing": "clockwork-robot-v1",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
-        "speed": 0.9,
+        "speed": 0.91,
         "use_speaker_boost": true
       }
     },
     "juniper": {
       "name": "Miss Juniper",
-      "voiceId": "4jysc9E1QgAlrcNcKZAd",
-      "description": "A fictional character voice for a warm children's clockwork storybook: a gentle, dreamy schoolteacher who loves the stars; soft and calm. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "voiceId": "DfqRmpjb3m6qVifxN9v6",
+      "description": "A mature British woman in her late forties, a thoughtful schoolteacher who loves astronomy. A warm settled female mezzo speaking register with natural adult depth, gentle rounded vowels and a calm assured manner. Soft, dreamy, kind and reflective; clear diction, relaxed musical phrasing and an unhurried conversational pace. Experienced and quietly reassuring, never girlish, breathless, stern or theatrical. Clean dry studio speech, no music or effects.",
+      "castingRevision": "feedback-2026-10-11",
+      "direction": "Mature adult female teacher, calm, thoughtful and gently assured; remove the youthful sound.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
@@ -141,13 +157,14 @@
     },
     "odette": {
       "name": "Young Odette",
-      "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
-      "performer": "Alice",
-      "description": "Existing adult performer for a fictional storybook character.",
+      "voiceId": "o56ZDR8DV40lTd70IJmt",
+      "description": "A female adult voice performer in her early twenties, with a naturally light lyrical soprano voice. Bright, earnest, thoughtful and curious, with a warm sincere smile and gentle confidence. British English; clear words, a natural conversational rhythm and an unhurried pace. A natural adult performance for a fictional storybook character. Avoid mature school-lecturer formality, breathless excitement and a husky grandmother tone. Clean dry studio speech, no music or sound effects.",
+      "castingRevision": "portrait-2026-10-11",
+      "direction": "Bright, earnest and curious; lighter than Nana and the former mature educator.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
-        "speed": 0.95,
+        "speed": 0.96,
         "use_speaker_boost": true
       }
     },
@@ -164,13 +181,14 @@
     },
     "pip": {
       "name": "Pip",
-      "voiceId": "hpp4J3VqNfWAUOO0d1Us",
-      "performer": "Bella",
-      "description": "Existing adult performer for a fictional storybook character.",
+      "voiceId": "sx0BEp7D2oVbEVFNrtIg",
+      "description": "A male adult voice performer in his early twenties, with a naturally high light tenor speaking register and soft rounded vowels. Gentle, cheerful and slightly bashful, with a friendly smile and warm understated amusement. British English, a soft conversational voice and short clear unhurried phrases. A natural adult performance for a fictional storybook character. No booming chest resonance, corporate narration or forced rasp. Clean dry studio speech, no music or sound effects.",
+      "castingRevision": "portrait-2026-10-11",
+      "direction": "Light, soft, cheerful male performance; replace the mature female narrator.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
-        "speed": 0.95,
+        "speed": 0.96,
         "use_speaker_boost": true
       }
     },
@@ -187,20 +205,23 @@
     },
     "mateo": {
       "name": "Mateo",
-      "voiceId": "TX3LPaxmHKxFdv7VOQHJ",
-      "performer": "Liam",
-      "description": "Existing adult performer for a fictional storybook character.",
+      "voiceId": "1ILMZBfZrQQ253MJKT6E",
+      "description": "An adult male British voice performer in his early twenties, with a naturally very light airy upper-tenor register and a soft delicate conversational sound. A smooth gentle timbre with minimal chest resonance, an open smile and spontaneous warm amusement. Short playful phrases with little melodic rises, easy lively expression and clear words. A natural adult male performance, never a mature radio presenter, booming baritone, rough bass or forceful masculine projection. Clean dry studio speech, no music or effects.",
+      "castingRevision": "feedback-2026-10-11",
+      "direction": "Airy, delicate male tone with playful short phrases and spontaneous amusement; minimise chest resonance.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
-        "speed": 0.95,
+        "speed": 0.99,
         "use_speaker_boost": true
       }
     },
     "lindqvist": {
       "name": "Mr. Lindqvist",
-      "voiceId": "z5Pzqx6ovzo3XUPJ05SM",
-      "description": "A fictional character voice for a warm children's clockwork storybook: a precise piano teacher who is secretly silly. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "voiceId": "3zUIrU7WccTtXJckmihm",
+      "description": "An elderly British man in his late sixties, a precise gentle piano teacher with spectacles and a bow tie. A warm clear light baritone voice with subtle natural age texture. Careful diction, musical phrasing and quietly amused kindness; dignified but secretly playful. Unhurried conversation, never a stern lecture or grand announcer voice. Clean dry studio speech, no music or effects.",
+      "castingRevision": "portrait-2026-10-11",
+      "direction": "Older male, precise but warm, with understated amusement.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,
@@ -210,8 +231,10 @@
     },
     "odum": {
       "name": "Mrs. Odum",
-      "voiceId": "Ww5NheFT4AqROhVqq3lR",
-      "description": "A fictional character voice for a warm children's clockwork storybook: a down-to-earth farmer who loves the weather. British English, clear diction, natural and warm, measured pace suitable for young children, distinctive and expressive but never threatening or shrill. Clean studio speech, no music or background effects.",
+      "voiceId": "Mjy1QqvbQHFpBK3eqE0T",
+      "description": "An older British woman in her late sixties, a cheerful practical farmer and gardener. Warm, down-to-earth and matter-of-fact, with a naturally mature female voice, a little soft age texture and a relaxed affectionate smile. Clear diction and an unhurried conversational pace. Confident but never stern; delighted by rain and growing things. Clean dry studio speech, no music or effects.",
+      "castingRevision": "portrait-2026-10-11",
+      "direction": "Older female, practical and warm, with calm matter-of-fact delivery.",
       "settings": {
         "stability": 0.5,
         "similarity_boost": 0.8,

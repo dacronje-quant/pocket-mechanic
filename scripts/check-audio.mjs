@@ -2,6 +2,7 @@
 /** Verify catalogue coverage and decode each unique production recording. */
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,8 +29,15 @@ function scan(dir) {
 scan(join(ROOT, 'src'));
 const lines = allVoiceLines([...labels]).filter(line => !VOICES[line.who]?.beeps);
 const failures = [];
-const deviceSpeechIds = lines.filter(line => line.deviceFallback && !manifest.voice[line.id]).map(line => line.id);
-for (const line of lines) if (!manifest.voice[line.id] && !line.deviceFallback) failures.push(`Missing voice: ${line.id}`);
+const deviceSpeechIds = lines.filter(line => !manifest.voice[line.id]).map(line => line.id);
+for (const line of lines) {
+  if (!manifest.voice[line.id]) { failures.push(`Missing voice: ${line.id}`); continue; }
+  if (line.who === 'pudding') continue; // recorded animal foley, not synthesized dialogue
+  const actor = cast.characters[line.who];
+  if (!actor) { failures.push(`Missing actor: ${line.who}`); continue; }
+  const hash = createHash('sha256').update(JSON.stringify({ model: cast.model, actor, text: line.text })).digest('hex').slice(0, 20);
+  if (manifest.voice[line.id] !== `voice/${hash}.mp3`) failures.push(`Stale voice or words: ${line.id}`);
+}
 for (const id of Object.keys(THEMES)) if (!manifest.music[id]) failures.push(`Missing music: ${id}`);
 for (const sound of SOUNDS) if (manifest.sfx[sound.id]?.length !== (sound.variants || 1)) failures.push(`Missing effect variations: ${sound.id}`);
 if (cast.characters.nana?.audition !== 'nana-a') failures.push('Nana A is not the selected production actor.');
