@@ -1,5 +1,5 @@
 /**
- * Tile-grid rooms (GDD Â§8.6â€“8.8): pipes & steam, wires & circuits, and toy
+ * Tile-grid rooms (GDD §8.6–8.8): pipes & steam, wires & circuits, and toy
  * train tracks share one grid. Drop drawer pieces into gaps, tap pieces to
  * turn them, tap valves, switches and points. Water and sparks flow live;
  * trains run when you press Go.
@@ -115,7 +115,7 @@ export class FlowRoom extends RoomBase<'flow'> {
       });
     });
     if (this.def.family === 'tracks') {
-      roundButton(this, 1180, 600, 'â–¶', () => this.runTrains(), { r: 48, fontSize: 44, color: 0xa0a477, say: 'Go!' }).setDepth(D.hud);
+      roundButton(this, 1180, 600, '▶', () => this.runTrains(), { r: 48, fontSize: 44, color: 0xa0a477, say: 'Go!' }).setDepth(D.hud);
     }
   }
 
@@ -132,7 +132,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     return out;
   }
 
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ state changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ───────────── state changes ─────────────
 
   private syncSlots(): void {
     this.state.cells.forEach((t, i) => {
@@ -195,7 +195,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     this.drawPart(p);
     this.tweens.killTweensOf(p.obj);
     // If the helper turned the piece, show it turning from the way it looked in the hand
-    // (each quarter turn is +90Â°), instead of jumping.
+    // (each quarter turn is +90°), instead of jumping.
     const turned = (p.rot - prevRot + 4) % 4;
     p.obj.setAngle(-turned * 90);
     this.tweens.add({ targets: p.obj, x: t.x, y: t.y, scale: 1, duration: 110, ease: 'Back.easeOut' });
@@ -295,7 +295,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     this.drawTiles();
   }
 
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ trains â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ───────────── trains ─────────────
 
   private runTrains(): void {
     if (this.running || this.fixed) return;
@@ -402,7 +402,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     g.fillCircle(lamp.x, lamp.y, 4 * s);
   }
 
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ drawing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ───────────── drawing ─────────────
 
   private drawPart(p: Part): void {
     p.g.clear();
@@ -710,7 +710,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     }
   }
 
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ hints, ghosts, peek â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ───────────── hints, ghosts, peek ─────────────
 
   private connSame(a: Tile, b: { kind?: TileKind; rot?: number }): boolean {
     const probe: Tile = { ...a, kind: b.kind ?? a.kind, rot: b.rot ?? a.rot };
@@ -782,7 +782,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     return this.state.cells.filter((t) => t?.sol).length + (this.def.family === 'tracks' ? 1 : 0);
   }
 
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ per frame â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ───────────── per frame ─────────────
 
   protected tick(dt: number): void {
     this.flowT += dt;
