@@ -43,12 +43,25 @@ export class HuntRoom extends RoomBase<'hunt'> {
       g.fillEllipse(4, 10, 150, 90);
       g.fillStyle(col, 1);
       if (c.art === 'cushion') {
-        g.fillRoundedRect(-75, -40, 150, 80, 34);
-        g.fillStyle(0xffffff, 0.25);
-        g.fillCircle(0, 0, 6);
-        g.lineStyle(3, 0x000000, 0.15);
-        g.lineBetween(-60, 0, -10, 0);
-        g.lineBetween(10, 0, 60, 0);
+        // a plump velvet cushion: piped edge, a sheen on top, a tufted button and corner tassels
+        const dark = Phaser.Display.Color.IntegerToColor(col).darken(25).color;
+        g.fillStyle(dark, 1);
+        g.fillRoundedRect(-78, -42, 156, 86, 38);
+        g.fillStyle(col, 1);
+        g.fillRoundedRect(-72, -38, 144, 76, 34);
+        g.fillStyle(0xffffff, 0.18);
+        g.fillEllipse(-14, -18, 100, 22);
+        g.lineStyle(3, dark, 0.7);
+        for (const [dx, dy] of [[-44, -24], [44, -24], [-44, 24], [44, 24], [-56, 0], [56, 0]]) g.lineBetween(0, 0, dx * 0.7, dy * 0.7);
+        g.fillStyle(dark, 1);
+        g.fillCircle(0, 0, 9);
+        g.fillStyle(0xf1d391, 1);
+        g.fillCircle(0, 0, 5);
+        for (const [tx, ty] of [[-70, -32], [70, -32], [-70, 32], [70, 32]]) {
+          g.fillStyle(0xd9b45f, 1);
+          g.fillCircle(tx, ty, 6);
+          g.fillTriangle(tx - 5, ty + 2, tx + 5, ty + 2, tx + (tx < 0 ? -6 : 6), ty + 16);
+        }
       } else if (c.art === 'spool') {
         g.fillRect(-40, -46, 80, 92);
         g.fillStyle(0x856c50, 1);
@@ -64,6 +77,8 @@ export class HuntRoom extends RoomBase<'hunt'> {
       cov.setSize(160, 100);
       cov.setInteractive({ useHandCursor: true });
       cov.on('pointerup', () => this.lift(i));
+      // covers breathe gently, inviting a tap
+      if (c.art === 'cushion') this.tweens.add({ targets: cov, scaleY: 1.04, scaleX: 0.98, duration: 900 + (i % 3) * 140, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: i * 120 });
       this.covers.push(cov);
     });
   }

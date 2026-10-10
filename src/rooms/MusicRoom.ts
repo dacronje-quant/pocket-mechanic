@@ -42,16 +42,42 @@ export class MusicRoom extends RoomBase<'music'> {
     this.ring = new Array(notes).fill(0);
     this.head = 0;
     this.lastStep = -1;
+    // the pinned cylinder: a brass drum lying on its side, shaded so it reads as round, with end caps
     const back = this.add.graphics().setDepth(D.back + 1);
+    const bx = this.x0 - 20;
+    const by = this.y0 - 20;
+    const bw = steps * this.cw + 40;
+    const bh = notes * this.ch + 40;
     back.fillStyle(0x000000, 0.3);
-    back.fillRoundedRect(this.x0 - 24, this.y0 - 18, steps * this.cw + 48, notes * this.ch + 36, 30);
-    back.fillStyle(0x9aaba4, 1);
-    back.fillRoundedRect(this.x0 - 20, this.y0 - 20, steps * this.cw + 40, notes * this.ch + 36, 28);
-    back.fillStyle(0xe9ecef, 1);
-    back.fillRoundedRect(this.x0 - 14, this.y0 - 14, steps * this.cw + 28, notes * this.ch * 0.45, 20);
+    back.fillRoundedRect(bx + 4, by + 8, bw, bh, 24);
+    const bands = 14;
+    for (let k = 0; k < bands; k++) {
+      // light across the middle, darker towards the top and bottom edges
+      const f = (k + 0.5) / bands;
+      const light = Math.max(0.15, Math.cos((f - 0.38) * Math.PI)) ** 1.5;
+      const c = Phaser.Display.Color.Interpolate.ColorWithColor(
+        Phaser.Display.Color.ValueToColor(0x7a5a24),
+        Phaser.Display.Color.ValueToColor(0xe8cf8a),
+        100,
+        Math.round(Math.max(0, light) * 100),
+      );
+      back.fillStyle(Phaser.Display.Color.GetColor(c.r, c.g, c.b), 1);
+      back.fillRect(bx, by + (k * bh) / bands, bw, bh / bands + 1);
+    }
+    back.fillStyle(0xfff3d0, 0.35);
+    back.fillRect(bx, by + bh * 0.3, bw, 6);
+    // end caps
+    for (const ex of [bx, bx + bw]) {
+      back.fillStyle(0x5e4520, 1);
+      back.fillEllipse(ex, by + bh / 2, 34, bh + 8);
+      back.fillStyle(0xbca16a, 1);
+      back.fillEllipse(ex, by + bh / 2, 22, bh - 10);
+      back.fillStyle(0x554638, 1);
+      back.fillCircle(ex, by + bh / 2, 8);
+    }
     back.lineStyle(2, CM.copperDark, 0.8);
-    back.strokeRoundedRect(this.x0 - 20, this.y0 - 20, steps * this.cw + 40, notes * this.ch + 36, 28);
-    drawPatina(back, this.x0 - 12, this.y0 - 12, steps * this.cw + 24, notes * this.ch + 20, 294, 1.2);
+    back.strokeRect(bx, by, bw, bh);
+    drawPatina(back, this.x0 - 12, this.y0 - 12, steps * this.cw + 24, notes * this.ch + 20, 294, 0.8);
     rivet(back, this.x0 - 7, this.y0 - 7);
     rivet(back, this.x0 + steps * this.cw + 7, this.y0 + notes * this.ch + 3);
     this.gridG = this.add.graphics().setDepth(D.mech);
@@ -135,7 +161,11 @@ export class MusicRoom extends RoomBase<'music'> {
           g.fillCircle(x + 2, y + 2, this.ch * 0.12);
         } else {
           const wanted = glow && this.melody.has(k);
-          g.fillStyle(wanted ? 0xf1d391 : 0x60736d, wanted ? 0.5 + Math.sin(this.time.now / 200) * 0.3 : 0.55);
+          if (wanted) {
+            g.fillStyle(0xfff3b0, 0.25 + Math.sin(this.time.now / 200) * 0.15);
+            g.fillCircle(x, y, this.ch * 0.36);
+          }
+          g.fillStyle(wanted ? 0xfff3b0 : 0x3d2b1e, wanted ? 0.6 + Math.sin(this.time.now / 200) * 0.3 : 0.55);
           g.fillCircle(x, y, this.ch * (wanted ? 0.2 : 0.09));
         }
       }
@@ -199,8 +229,13 @@ export class MusicRoom extends RoomBase<'music'> {
     if (this.style.id === 'tinker') return;
     for (const [s, n] of this.def.melody) {
       if (this.state.has(pinKey(s, n))) continue;
-      g.lineStyle(3, 0xf4ebd5, alpha);
-      g.strokeCircle(this.x0 + s * this.cw + this.cw / 2, this.y0 + (this.def.notes - 1 - n) * this.ch + this.ch / 2, this.ch * 0.26);
+      // a glowing hole (the hints talk about "glowing holes")
+      const x = this.x0 + s * this.cw + this.cw / 2;
+      const y = this.y0 + (this.def.notes - 1 - n) * this.ch + this.ch / 2;
+      g.fillStyle(0xfff3b0, alpha * 0.6);
+      g.fillCircle(x, y, this.ch * 0.34);
+      g.lineStyle(3, 0xfff3b0, Math.min(1, alpha + 0.3));
+      g.strokeCircle(x, y, this.ch * 0.26);
     }
   }
 

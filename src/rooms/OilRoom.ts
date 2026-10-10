@@ -93,12 +93,19 @@ export class OilRoom extends RoomBase<'oil'> {
     if (this.def.pawl) {
       const c = this.add.container(this.pawlHome.x, this.pawlHome.y).setDepth(D.trayPart).setScale(0.9);
       const pg = this.add.graphics();
-      pg.fillStyle(0x60736d, 1);
-      pg.fillTriangle(-30, -6, 30, -6, 20, 16);
+      // the pawl: a chunky catch with a pivot pin, outlined so it stands out in the drawer
+      pg.fillStyle(0x342f29, 0.5);
+      pg.fillTriangle(-40, -6, 44, -6, 30, 28);
+      pg.fillStyle(0xad6b51, 1);
+      pg.fillTriangle(-42, -10, 42, -10, 28, 24);
+      pg.lineStyle(3, 0x342f29, 1);
+      pg.strokeTriangle(-42, -10, 42, -10, 28, 24);
       pg.fillStyle(0xbca16a, 1);
-      pg.fillCircle(-26, -2, 8);
+      pg.fillCircle(-34, -4, 11);
+      pg.lineStyle(2, 0x342f29, 1);
+      pg.strokeCircle(-34, -4, 11);
       c.add(pg);
-      c.setSize(80, 60);
+      c.setSize(100, 70);
       this.pawlObj = c;
       this.enableDrag({
         obj: c,
@@ -275,8 +282,14 @@ export class OilRoom extends RoomBase<'oil'> {
         g.fillStyle(0x60736d, 1);
         g.fillCircle(pw.x - 70, pw.y + 60, 34);
         if (!this.state.pawl) {
-          g.lineStyle(3, 0xf4ebd5, 0.4 + Math.sin(this.t * 4) * 0.3);
-          g.strokeRoundedRect(pw.x - 40, pw.y - 24, 80, 48, 8);
+          // where the pawl goes: a glowing pawl-shaped ghost with a dark edge
+          const pulse = 0.5 + Math.sin(this.t * 4) * 0.3;
+          g.fillStyle(0xfff3b0, 0.25 + pulse * 0.25);
+          g.fillTriangle(pw.x - 42, pw.y - 10, pw.x + 42, pw.y - 10, pw.x + 28, pw.y + 24);
+          g.lineStyle(6, 0x342f29, 0.5);
+          g.strokeTriangle(pw.x - 42, pw.y - 10, pw.x + 42, pw.y - 10, pw.x + 28, pw.y + 24);
+          g.lineStyle(3, 0xfff3b0, 0.6 + pulse * 0.4);
+          g.strokeTriangle(pw.x - 42, pw.y - 10, pw.x + 42, pw.y - 10, pw.x + 28, pw.y + 24);
         }
       }
     }
