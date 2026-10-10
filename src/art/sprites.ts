@@ -206,6 +206,14 @@ export function followGraphic(g: Phaser.GameObjects.Graphics, image: Phaser.Game
 
 const OBJECTS = ['clock','musicbox','train','radio','tea','bertie','orrery','tower','door','mouse','doorbell','bikebell','timer','pepper','jack','piano'];
 const EXTRA = ['cat','car','boat','whistle','flashlight','desklamp','vane','sprinkler','metronome','coinbank','gumball','robot','top','nightlight','kaleidoscope','bird'];
+/** Where an object's painting lives: its atlas and cell (4×4), or null when it has none. */
+export function objectArt(id: string): { atlas: string; index: number } | null {
+  let index = OBJECTS.indexOf(id);
+  if (index >= 0) return { atlas: 'item-atlas', index };
+  index = EXTRA.indexOf(id);
+  return index >= 0 ? { atlas: 'item-atlas-extra', index } : null;
+}
+
 export function paintedObject(g: Phaser.GameObjects.Graphics, id: string, x: number, y: number, scale: number): boolean {
   let index = OBJECTS.indexOf(id), atlas = 'item-atlas';
   if (index < 0) { index = EXTRA.indexOf(id); atlas = 'item-atlas-extra'; }

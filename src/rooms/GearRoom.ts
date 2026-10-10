@@ -16,6 +16,14 @@ import { setFlag } from '../core/progress';
 import { profile, persistSoon } from '../core/save';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
 import { FONT } from '../ui/widgets';
+import { withArt } from '../art/generated';
+import { atlasFrame, objectArt } from '../art/sprites';
+import { Portrait } from '../art/portraits';
+import { quickFixOf } from '../content/index';
+import type { CharId } from '../content/types';
+
+/** Output widgets that are a Quick Fix toy (drawn with the toy's painting). */
+const TOY_WIDGETS = ['wheels', 'paddle', 'grinder', 'spinner'];
 
 interface GearView {
   id: string;
@@ -35,7 +43,9 @@ const TRAY_SCALE = 0.62;
 export class GearRoom extends RoomBase<'gear'> {
   private views: GearView[] = [];
   private evalR!: GearEval;
-  private widgets: Array<{ out: GearOutput; g: Phaser.GameObjects.Graphics; a: number; b: number; beat: number; label?: Phaser.GameObjects.Text }> = [];
+  private widgets: Array<{ out: GearOutput; g: Phaser.GameObjects.Graphics; a: number; b: number; beat: number; label?: Phaser.GameObjects.Text; toy?: Phaser.GameObjects.Image }> = [];
+  /** In a Quick Fix, the customer stands by and watches their toy being mended. */
+  private owner?: Portrait;
   private driverG!: Phaser.GameObjects.Graphics;
   private chainOffset = 0;
   private lastPlaced: GearView | null = null;
@@ -49,7 +59,10 @@ export class GearRoom extends RoomBase<'gear'> {
     this.views = [];
     this.widgets = [];
     this.lastPlaced = null;
+    this.owner = undefined;
     const def = this.def;
+    const qf = quickFixOf(def.id);
+    if (qf) this.owner = new Portrait(this, 1160, 300, qf.owner as CharId, 0.55).setDepth(D.widget);
     const arbors = this.add.graphics().setDepth(D.back + 1);
     // output arbors and widgets
     for (const out of def.outputs) {
@@ -61,7 +74,19 @@ export class GearRoom extends RoomBase<'gear'> {
       arbors.lineStyle(2, 0xf4ebd5, 0.5);
       arbors.lineBetween(s.x, s.y - 2, out.at.x, out.at.y - 2);
       const g = this.add.graphics().setDepth(D.widget);
-      const w = { out, g, a: Math.random() * Math.PI * 2, b: 0.3, beat: 0, label: undefined as Phaser.GameObjects.Text | undefined };
+      const w = { out, g, a: Math.random() * Math.PI * 2, b: 0.3, beat: 0, label: undefined as Phaser.GameObjects.Text | undefined, toy: undefined as Phaser.GameObjects.Image | undefined };
+      // a Quick Fix toy: the gears drive the real toy (Pip's mouse, the bath boat, the top…)
+      const art = qf && TOY_WIDGETS.includes(out.widget) ? objectArt(qf.object) : null;
+      if (art) {
+        withArt(this, art.atlas, (key) => {
+          if (!g.active) return;
+          const img = this.add.image(out.at.x, out.at.y, key, atlasFrame(this, key, art.index, 4, 4, true)).setDepth(D.widget + 1);
+          const size = (out.size ?? 70) * (out.widget === 'wheels' || out.widget === 'paddle' ? 1.9 : 1.7);
+          const scale = size / Math.max(img.width, img.height);
+          img.setScale(scale).setData('base', scale);
+          w.toy = img;
+        });
+      }
       if (this.style.numbers) {
         w.label = this.add
           .text(out.at.x, out.at.y + (out.size ?? 70) + 28, '', { fontFamily: FONT, fontSize: '17px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 8, y: 4 }, align: 'center' })
@@ -500,11 +525,121 @@ export class GearRoom extends RoomBase<'gear'> {
     g.fillCircle(x, y, 7);
   }
 
+  /**
+   * A Quick Fix toy driven by the gears: the mouse or car scoots and bobs, the bath boat rocks on
+   * the water with its paddle wheel churning, the pepper mill turns and sprinkles, the top spins.
+   * Standing still until the gears reach it.
+   */
+  private drawToy(w: (typeof this.widgets)[number], omega: number): void {
+    const g = w.g;
+    const img = w.toy!;
+    const base = img.getData('base') as number;
+    const { x, y } = w.out.at;
+    const size = w.out.size ?? 70;
+    const t = this.time.now / 1000;
+    const on = omega !== 0;
+    const fast = Math.min(1, Math.abs(omega) / 6);
+    img.setScale(base).setRotation(0).setPosition(x, y);
+    switch (w.out.widget) {
+      case 'wheels': {
+        // ground, the toy scooting back and forth, speed lines behind it
+        const scoot = on ? Math.sin(w.a * 0.35) * 26 : 0;
+        const bob = on ? -Math.abs(Math.sin(w.a * 2)) * 5 : 0;
+        g.fillStyle(0x000000, 0.22);
+        g.fillEllipse(x + scoot, y + size * 0.62, size * 1.6, 16);
+        img.setPosition(x + scoot, y + bob).setRotation(on ? Math.sin(w.a * 2) * 0.03 : 0);
+        if (on) {
+          const dir = Math.cos(w.a * 0.35) >= 0 ? -1 : 1;
+          g.lineStyle(4, 0xf4ebd5, 0.4 + fast * 0.4);
+          for (let k = 0; k < 3; k++) {
+            const ly = y - 20 + k * 22;
+            const lx = x + scoot + dir * (size * 0.95 + k * 8);
+            g.lineBetween(lx, ly, lx + dir * (24 + fast * 20), ly);
+          }
+        }
+        break;
+      }
+      case 'paddle': {
+        // water, the boat rocking on it, the paddle wheel at the stern
+        const rock = Math.sin(t * 1.6) * 0.05;
+        const bob = Math.sin(t * 2) * 4;
+        const wx = x - size * 0.95;
+        const wy = y + size * 0.35;
+        // the paddle wheel turns with the gears
+        g.lineStyle(5, 0x6e5236, 1);
+        g.strokeCircle(wx, wy + bob, size * 0.36);
+        for (let k = 0; k < 6; k++) {
+          const a = w.a + (k / 6) * Math.PI * 2;
+          g.lineStyle(6, 0x856c50, 1);
+          g.lineBetween(wx, wy + bob, wx + Math.cos(a) * size * 0.42, wy + bob + Math.sin(a) * size * 0.42);
+        }
+        g.fillStyle(0xbca16a, 1);
+        g.fillCircle(wx, wy + bob, 7);
+        img.setPosition(x, y + bob).setRotation(rock);
+        // the water, in front so the boat sits in it
+        g.fillStyle(0x4f8fb0, 0.85);
+        g.fillRoundedRect(x - size * 1.6, y + size * 0.55, size * 3.2, size * 0.5, 14);
+        g.lineStyle(3, 0xbfe3f2, 0.9);
+        for (let k = 0; k < 6; k++) {
+          const wx2 = x - size * 1.4 + k * size * 0.55 + Math.sin(t * 2 + k) * 6;
+          g.beginPath();
+          g.arc(wx2, y + size * 0.62, 10, Math.PI * 1.1, Math.PI * 1.9, false);
+          g.strokePath();
+        }
+        if (on) {
+          g.fillStyle(0xd5f5e3, 0.8);
+          for (let k = 0; k < 4; k++) g.fillCircle(wx + Math.sin(t * 9 + k) * 18, wy + size * 0.3 - Math.abs(Math.sin(t * 7 + k * 2)) * 22, 4 + (k % 2) * 2);
+        }
+        break;
+      }
+      case 'grinder': {
+        // the mill twists and pepper falls
+        img.setRotation(on ? Math.sin(w.a * 2) * 0.08 : 0);
+        if (on) {
+          g.fillStyle(0x342f29, 0.8);
+          for (let k = 0; k < 8; k++) {
+            const fall = (t * 1.6 + k / 8) % 1;
+            g.fillCircle(x - 10 + ((k * 7) % 20), y + size * 0.8 + fall * 60, 2.5);
+          }
+        }
+        break;
+      }
+      case 'spinner': {
+        // the top spins upright when driven, and leans over when it isn't
+        g.fillStyle(0x000000, 0.2);
+        g.fillEllipse(x, y + size * 0.78, size * 1.1, 14);
+        if (on) {
+          const sx = Math.cos(w.a * 3);
+          img.setScale(base * (Math.abs(sx) < 0.2 ? 0.2 * Math.sign(sx || 1) : sx), base).setRotation(Math.sin(t * 5) * 0.04 * (1 - fast));
+          g.lineStyle(3, 0xf4ebd5, 0.5);
+          g.beginPath();
+          g.arc(x, y + size * 0.2, size * 0.9, Math.PI * 1.15, Math.PI * 1.45, false);
+          g.strokePath();
+          g.beginPath();
+          g.arc(x, y + size * 0.2, size * 0.9, Math.PI * 1.55, Math.PI * 1.85, false);
+          g.strokePath();
+        } else img.setRotation(0.5).setPosition(x + 10, y + 10);
+        break;
+      }
+    }
+    this.drawSpeedGauge(g, w, omega, x, y + size + 60);
+  }
+
+  protected onFixed(): void {
+    super.onFixed();
+    // the customer is delighted
+    if (this.owner?.active) {
+      this.owner.setMood('laugh');
+      this.tweens.add({ targets: this.owner, y: this.owner.y - 26, duration: 220, yoyo: true, repeat: 2, ease: 'Quad.easeOut' });
+    }
+  }
+
   private drawWidget(w: (typeof this.widgets)[number], omega: number, dt: number): void {
     const g = w.g;
     const { x, y } = w.out.at;
     const size = w.out.size ?? 70;
     g.clear();
+    if (w.toy) return this.drawToy(w, omega);
     const t = this.time.now / 1000;
     switch (w.out.widget) {
       case 'hands': {
