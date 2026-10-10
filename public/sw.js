@@ -1,10 +1,12 @@
 // Service worker: makes the game work offline once it has been opened once,
 // and lets Chrome on Android offer "Install app".
 //
-// Strategy: the page itself is network-first (so a new deploy shows up on the
-// next launch); everything else (hashed JS, icons) is cache-first.
+// Strategy: the page and the media manifests are network-first (so a new
+// deploy, or newly generated voices, music and pictures, show up on the next
+// launch); everything else (hashed JS, icons, audio and art files) is
+// cache-first, so the game keeps working offline.
 // Bump VERSION if you ever need to force-clear old caches.
-const VERSION = 'pm-v1';
+const VERSION = 'pm-v2';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -37,6 +39,21 @@ self.addEventListener('fetch', (event) => {
           return res;
         })
         .catch(() => caches.match('./')),
+    );
+    return;
+  }
+
+  if (new URL(req.url).pathname.endsWith('manifest.json')) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(VERSION).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req)),
     );
     return;
   }

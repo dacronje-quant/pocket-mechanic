@@ -147,38 +147,53 @@ at Engineer difficulty; each gives a clue symbol for the Mystery Box.
 - Tune-Ups: any finished room replays in Engineer rules; medals Copper / Silver / Gold / Brass by
   moves, time, hints, peeks vs. par.
 
-## 6. Audio pipeline (Gemini)
+## 6. Generated media pipeline (Gemini)
 
-- **Voices:** `gemini-3.8-flash-tts` (Interactions API, `POST /v1beta/interactions`, 24 kHz mono
-  WAV, 30 prebuilt voices, `speech_metadata.style` for delivery). Each character gets a fixed voice
-  and style. A script reads every line from `src/content` and writes `public/audio/voice/<id>.mp3`
-  plus a manifest; the game plays the file if present, otherwise uses `speechSynthesis`.
-- **Music:** `lyria-3-clip-preview` (exactly 30 s loops, 44.1 kHz stereo, MP3) — one instrumental
-  loop per object theme + shop + attic + bench + festival, written to `public/audio/music/`.
-- **Key handling:** the script reads `GEMINI_API_KEY` from the environment only. The key is never
-  committed, never bundled into the web build, never written to any file. Generated audio files
-  are committed instead.
-- Verify exact request fields against https://ai.google.dev/gemini-api/docs/speech-generation and
-  the Lyria docs before running (both models are recent).
+`scripts/generate-assets.mjs` (`npm run assets`) fills in optional media. Everything is optional:
+the game is complete with code-drawn art, synthesised music/SFX and device speech, and each file
+only replaces its fallback when the manifest lists it.
+
+- **Voices:** Gemini TTS (`gemini-3.8-flash-tts` by default; `generateContent` with
+  `responseModalities: ["AUDIO"]`, a prebuilt voice per character and `speechMetadata.style` for
+  delivery). The catalogue is `src/content/voicelines.ts` (~1,150 line ids → ~870 unique
+  recordings: story, LINES, room intros and hints, Quick Fix payoffs, Part-o-pedia pages, Attic
+  history, treasures, cards, read-aloud labels). Identical words in the same voice share one file.
+  Raw PCM is wrapped as WAV, then compressed to mono MP3 → `public/audio/voice/` + manifest.
+- **Music:** Lyria (`lyria-3-clip-preview`, a 30 s clip per prompt) — one instrumental loop per
+  theme (title, shop, the eight objects, attic, bench, nook, festival) → `public/audio/music/`.
+  The player crossfades each loop into itself and runs it through a low-pass filter that opens as
+  rooms are fixed (and stays warm in Wind-Down), so the generated music keeps the GDD §23.2
+  "hear your progress" promise with one file per theme.
+- **Painted art:** Gemini image ("Nano Banana", `gemini-3.1-flash-image`, 16:9 at 1K) — 14 story
+  backdrops, the title picture, 8 postcards (Rewards, Window Seat) and 23 Attic history plates →
+  WebP in `public/art/` + manifest. Scenes draw their code art first and fade the picture in on top
+  (`src/art/generated.ts`); characters and machines stay code-drawn so the style stays consistent.
+- **Video:** not used. Cutscenes are animated in code; video would bloat the offline PWA.
+- **Key handling:** `GEMINI_API_KEY` is read from the environment only, sent as a header, never
+  logged or written. Generated files are reviewed by a person and committed instead.
+- Model ids are overridable (`GEMINI_TTS_MODEL`, `GEMINI_MUSIC_MODEL`, `GEMINI_IMAGE_MODEL`). The
+  script retries on 429/5xx, only makes what is missing (`--force` to remake), and was verified
+  end-to-end against a local mock of the API (`GEMINI_API_BASE`).
 
 ## 7. Verification
 
 1. `npm test` — engine tests + `content.test.ts` (every room's authored solution succeeds; every
    room id referenced by repairs/quick fixes exists; story ids resolve).
-2. Headless playthrough (Playwright): for each room, open it, call `pm.debug.solve()`, wait for
-   the completion banner, assert no console errors; screenshot one room of each kind.
+2. Headless playthrough (`npm run playthrough`, Playwright): from an empty save, make a profile,
+   play every story scene and room (`pm.room.solve()` applies the authored solution through the
+   room's own pipeline), visit every hub area and a Quick Fix, fail on any page error.
 3. Touch test at Android phone size (915×412, `hasTouch`) with CDP touch events.
 
 ## 8. Status
 
 - [x] Prototype room (1.2 Gear Gallery), PWA, Pages workflow
 - [x] Engines: gears (+layers), flow (pipes/circuits/trains), light, logic — 26 tests passing
-- [ ] Engines: cards, cams
-- [ ] Core: profiles/settings save, journey, voice/music players, UI kit
-- [ ] Art: themes, portraits, object drawings, customisable Kip/Tess
-- [ ] RoomBase + 15 room kinds
-- [ ] Content: 49 rooms + 8 Big Fixes, story scripts, 24 Quick Fixes, Attic + Mystery Box, Part-o-pedia, cosmetics, stamps, Contraption Cards
-- [ ] Hub & meta scenes
-- [ ] Audio generation script (Gemini TTS + Lyria) and players
-- [ ] Verification suite + playthrough
-- [ ] Release build, README
+- [x] Engines: cards, cams (+ balance, pendulum, tune, chain, pins, seeded Attic generators)
+- [x] Core: profiles/settings save, journey, voice/music players, UI kit
+- [x] Art: themes, portraits, object drawings, customisable Kip/Tess
+- [x] RoomBase + 15 room kinds
+- [x] Content: 49 rooms + 8 Big Fixes, story scripts, 24 Quick Fixes, Attic + Mystery Box, Part-o-pedia, cosmetics, stamps, Contraption Cards
+- [x] Hub & meta scenes (title/profiles, shop, story, Test Run, rewards, festival, shelf + Tune-Ups, town, Part-o-pedia, Paint & Polish, Nook + Job Book, Invention Bench, Attic, Quick Fixes, grown-ups)
+- [x] Generated media script (Gemini TTS + Lyria + Nano Banana images) and players — media files themselves still to be generated with a key and reviewed
+- [x] Verification suite (188 tests) + automated playthrough; all 57 story rooms and 24 Quick Fixes solved in the browser
+- [x] Release build, README

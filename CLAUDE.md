@@ -13,6 +13,8 @@ building, and tick items off in BUILD_PLAN §8 as they land.
 - `npm run dev` — dev server (also on the LAN for phone testing)
 - `npm test` — vitest (engines + content solvability)
 - `npm run build` — typecheck + production build to `dist/`
+- `npm run playthrough` — headless Chromium plays the story from an empty save (needs a running server)
+- `npm run assets` — optional Gemini voices/music/pictures (`--dry-run` works without a key)
 
 ## Conventions
 - Mechanism engines in `src/mechanism/` are pure TS with no Phaser imports, deterministic, and
@@ -26,9 +28,9 @@ building, and tick items off in BUILD_PLAN §8 as they land.
 - Child safety (GDD §26): no ads, no purchases, no online features, no free text from players.
 
 ## Secrets
-- `GEMINI_API_KEY` is only ever read from the environment by the audio generation script.
-  Never commit it, never put it in client code, never write it to a file or log. Commit the
-  generated audio files instead.
+- `GEMINI_API_KEY` is only ever read from the environment by the asset generation script
+  (`scripts/generate-assets.mjs`: voices, music, pictures). Never commit it, never put it in client
+  code, never write it to a file or log. Commit the generated audio and art files instead.
 
 ## Testing in a browser
 Headless Chromium via Playwright works for screenshots and playthroughs. Software GL is slow, so

@@ -1,13 +1,15 @@
 {
   "name": "pocket-mechanic",
-  "version": "0.1.0",
-  "description": "Pocket Mechanic: The Clockwork Repair Shop — touch-first web prototype",
+  "version": "1.0.0",
+  "description": "Pocket Mechanic: The Clockwork Repair Shop — a touch-first repair-puzzle game for children aged 4–10",
   "scripts": {
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "assets": "node scripts/generate-assets.mjs",
+    "playthrough": "node scripts/playthrough.mjs"
   },
   "license": "UNLICENSED",
   "dependencies": {

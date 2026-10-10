@@ -3,7 +3,9 @@
  * layers: a broken machine plays a sparse version and every fixed room adds
  * an instrument, so players hear their progress. Themes are synthesised here
  * as a fallback; a generated loop (Lyria) under public/audio/music replaces a
- * theme when the manifest lists one.
+ * theme when the manifest lists one — crossfaded into itself so it never
+ * clicks, and heard through a low-pass filter that opens up as rooms are
+ * fixed, so the generated music still tells the player their progress.
  */
 import type { ThemeId } from '../content/types';
 import { ac, audioFile, bus, loadBuffer, whenUnlocked } from './engine';
@@ -61,7 +63,11 @@ let timer: ReturnType<typeof setInterval> | null = null;
 let nextTime = 0;
 let step = 0;
 let tempoScale = 1;
-let fileBuffer: AudioBufferSourceNode | null = null;
+/** A generated loop (Lyria) playing: crossfaded repeats through a low-pass filter that opens with progress. */
+let file: { buf: AudioBuffer; filter: BiquadFilterNode; out: GainNode; voices: Array<{ src: AudioBufferSourceNode; gain: GainNode }>; timer: ReturnType<typeof setTimeout> | null } | null = null;
+let fileProgress = 1;
+let fileWindDown = false;
+const XFADE = 1.6;
 
 function note(c: AudioContext, dest: AudioNode, freq: number, t: number, len: number, type: OscillatorType, peak: number): void {
   const o = c.createOscillator();
@@ -131,15 +137,88 @@ function schedule(): void {
 }
 
 function stopFile(): void {
-  if (fileBuffer) {
-    try {
-      fileBuffer.stop();
-    } catch {
-      /* already stopped */
-    }
-    fileBuffer.disconnect();
-    fileBuffer = null;
+  if (!file) return;
+  const f = file;
+  file = null;
+  if (f.timer) clearTimeout(f.timer);
+  const c = ac();
+  const t = c?.currentTime ?? 0;
+  try {
+    f.out.gain.setTargetAtTime(0, t, 0.15);
+  } catch {
+    /* context gone */
   }
+  setTimeout(() => {
+    for (const v of f.voices) {
+      try {
+        v.src.stop();
+      } catch {
+        /* already stopped */
+      }
+    }
+    f.out.disconnect();
+  }, 700);
+}
+
+/** A broken machine sounds muffled and far away; every fixed room opens the sound up (GDD §23.2). */
+function applyFileProgress(): void {
+  const c = ac();
+  if (!file || !c) return;
+  const p = Math.max(0, Math.min(1, fileProgress));
+  const top = fileWindDown ? 2600 : 18000;
+  file.filter.frequency.setTargetAtTime(Math.min(top, 450 * Math.pow(40, p)), c.currentTime, 0.4);
+  file.out.gain.setTargetAtTime((fileWindDown ? 0.55 : 0.75) + p * 0.25, c.currentTime, 0.4);
+}
+
+/** Start one repeat of the loop at `when`, fading in, and schedule the next one to overlap it. */
+function loopFrom(when: number): void {
+  const c = ac();
+  if (!file || !c) return;
+  const f = file;
+  const src = c.createBufferSource();
+  src.buffer = f.buf;
+  const gain = c.createGain();
+  gain.gain.setValueAtTime(0, when);
+  gain.gain.linearRampToValueAtTime(1, when + XFADE);
+  const end = when + f.buf.duration;
+  gain.gain.setValueAtTime(1, end - XFADE);
+  gain.gain.linearRampToValueAtTime(0, end);
+  src.connect(gain).connect(f.filter);
+  src.start(when);
+  src.stop(end + 0.05);
+  f.voices.push({ src, gain });
+  src.onended = () => {
+    f.voices = f.voices.filter((v) => v.src !== src);
+    gain.disconnect();
+  };
+  const next = end - XFADE;
+  f.timer = setTimeout(() => {
+    if (file === f) loopFrom(next);
+  }, Math.max(0, (next - c.currentTime - 0.5) * 1000));
+}
+
+function startFile(buf: AudioBuffer, dest: AudioNode): void {
+  const c = ac();
+  if (!c) return;
+  const filter = c.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.Q.value = 0.5;
+  const out = c.createGain();
+  out.gain.value = 0;
+  filter.connect(out).connect(dest);
+  file = { buf, filter, out, voices: [], timer: null };
+  applyFileProgress();
+  // a loop shorter than two crossfades just plays straight through on repeat
+  if (buf.duration < XFADE * 3) {
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(filter);
+    src.start();
+    file.voices.push({ src, gain: out });
+    return;
+  }
+  loopFrom(c.currentTime + 0.05);
 }
 
 /** Play a theme. `progress` (0..1) decides how many layers are back. */
@@ -147,7 +226,12 @@ export function playMusic(id: keyof typeof THEMES, progress = 1, windDown = fals
   tempoScale = windDown ? 0.85 : 1;
   const want = Math.max(1, Math.min(5, 1 + Math.round(progress * 4)));
   layers = windDown ? Math.min(want, 3) : want;
-  if (current?.id === id) return;
+  if (current?.id === id) {
+    fileProgress = progress;
+    fileWindDown = windDown;
+    applyFileProgress();
+    return;
+  }
   stopMusic();
   current = { id, theme: THEMES[id] };
   const c0 = ac();
@@ -159,18 +243,16 @@ export function playMusic(id: keyof typeof THEMES, progress = 1, windDown = fals
     });
     return;
   }
-  const file = audioFile('music', id);
+  fileProgress = progress;
+  fileWindDown = windDown;
+  const url = audioFile('music', id);
   const c = ac();
-  if (file && c) {
+  if (url && c) {
     const dest = bus('music');
-    void loadBuffer(file).then((buf) => {
-      if (!buf || current?.id !== id || !dest) return startSynth();
-      const src = c.createBufferSource();
-      src.buffer = buf;
-      src.loop = true;
-      src.connect(dest);
-      src.start();
-      fileBuffer = src;
+    void loadBuffer(url).then((buf) => {
+      if (current?.id !== id) return;
+      if (!buf || !dest) return startSynth();
+      startFile(buf, dest);
     });
     return;
   }
@@ -188,6 +270,8 @@ function startSynth(): void {
 
 export function setMusicProgress(progress: number): void {
   layers = Math.max(1, Math.min(5, 1 + Math.round(progress * 4)));
+  fileProgress = progress;
+  applyFileProgress();
 }
 
 export function stopMusic(): void {

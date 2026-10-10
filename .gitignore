@@ -3,3 +3,7 @@ dist/
 .DS_Store
 *.log
 .vscode/
+playthrough/
+public/art/*.src.*
+public/audio/**/*.src
+public/audio/**/*.wav.tmp
