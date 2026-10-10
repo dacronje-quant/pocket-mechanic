@@ -61,12 +61,15 @@ export class BalanceRoom extends RoomBase<'balance'> {
     if ((L.fulcrumMin ?? L.fulcrum) !== (L.fulcrumMax ?? L.fulcrum)) {
       const k = this.add.container(BX + this.state.fulcrum * STEP, BY + 60).setDepth(D.parts + 1);
       const kg = this.add.graphics();
+      // the fulcrum reaches right up to the beam's pivot pin (the beam rests on it)
       kg.fillStyle(0x000000, 0.3);
-      kg.fillTriangle(-40, 54, 44, 54, 2, -6);
+      kg.fillTriangle(-40, 54, 44, 54, 2, -54);
       kg.fillStyle(0x7a4b26, 1);
-      kg.fillTriangle(-42, 50, 42, 50, 0, -10);
+      kg.fillTriangle(-42, 50, 42, 50, 0, -58);
+      kg.lineStyle(2, 0x3d2b1e, 0.8);
+      kg.strokeTriangle(-42, 50, 42, 50, 0, -58);
       kg.fillStyle(0xbca16a, 1);
-      kg.fillCircle(0, 28, 10);
+      kg.fillCircle(0, 18, 10);
       k.add(kg);
       k.setSize(100, 80);
       k.setInteractive({ draggable: true, useHandCursor: true });
@@ -283,8 +286,11 @@ export class BalanceRoom extends RoomBase<'balance'> {
     const pivot = { x: BX + f * STEP, y: BY };
     // fulcrum
     if (!this.fulcrumKnob) {
+      // the fulcrum reaches right up to the beam's pivot pin (the beam rests on it)
       g.fillStyle(0x7a4b26, 1);
-      g.fillTriangle(pivot.x - 42, BY + 110, pivot.x + 42, BY + 110, pivot.x, BY + 50);
+      g.fillTriangle(pivot.x - 42, BY + 110, pivot.x + 42, BY + 110, pivot.x, BY + 2);
+      g.lineStyle(2, 0x3d2b1e, 0.8);
+      g.strokeTriangle(pivot.x - 42, BY + 110, pivot.x + 42, BY + 110, pivot.x, BY + 2);
     } else this.fulcrumKnob.setPosition(pivot.x, BY + 60);
     g.fillStyle(0x554638, 1);
     g.fillRect(BX - (L.half + 1) * STEP, BY + 110, (L.half + 1) * 2 * STEP, 12);

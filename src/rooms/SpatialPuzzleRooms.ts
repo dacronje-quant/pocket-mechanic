@@ -156,25 +156,45 @@ abstract class PieceRoom<K extends 'shadow' | 'packing'> extends RoomBase<K> {
   private paintPiece(p: PieceView, i: number): void {
     const cells = this.cells(p), { w, h } = this.dimensions(p), s = this.S;
     const color = PIECE_COLORS[i % PIECE_COLORS.length]; p.g.clear();
-    for (const c of cells) {
-      const x = (c.x - w / 2) * s + 2, y = (c.y - h / 2) * s + 2;
-      bevelCell(p.g, x, y, s, color);
-      if (this.def.kind === 'packing') {
-        p.g.lineStyle(s * 0.12, CM.cream, 0.8); p.g.lineBetween(x + s * 0.5, y + 5, x + s * 0.5, y + s - 8);
-        p.g.lineBetween(x + 5, y + s * 0.5, x + s - 8, y + s * 0.5);
+    const g = p.g;
+    const has = new Set(cells.map((c) => `${c.x},${c.y}`));
+    const shadow = this.def.kind === 'shadow';
+    // one solid shape (squares joined edge to edge), so a piece reads as one tool or one present
+    const body = shadow ? 0xaab4ae : color;
+    g.fillStyle(0x000000, 0.25);
+    for (const c of cells) g.fillRect((c.x - w / 2) * s + 4, (c.y - h / 2) * s + 6, s, s);
+    g.fillStyle(body, 1);
+    for (const c of cells) g.fillRect((c.x - w / 2) * s, (c.y - h / 2) * s, s, s);
+    g.fillStyle(0xffffff, 0.18);
+    for (const c of cells) if (!has.has(`${c.x},${c.y - 1}`)) g.fillRect((c.x - w / 2) * s + 3, (c.y - h / 2) * s + 3, s - 6, s * 0.22);
+    if (!shadow) {
+      // wrapping paper: a ribbon through the middle row and column, and a bow
+      const midX = Math.floor((w - 1) / 2), midY = Math.floor((h - 1) / 2);
+      g.fillStyle(CM.cream, 0.95);
+      for (const c of cells) {
+        const x = (c.x - w / 2) * s, y = (c.y - h / 2) * s;
+        if (c.x === midX) g.fillRect(x + s * 0.4, y, s * 0.2, s);
+        if (c.y === midY) g.fillRect(x, y + s * 0.4, s, s * 0.2);
       }
-      if (this.selected === p.piece.id) { p.g.lineStyle(3, CM.glow, 1); p.g.strokeRoundedRect(x - 1, y - 1, s - 2, s - 2, 8); }
+      const bow = has.has(`${midX},${midY}`) ? { x: midX, y: midY } : cells[0];
+      const bx = (bow.x - w / 2 + 0.5) * s, by = (bow.y - h / 2 + 0.5) * s;
+      g.fillStyle(CM.cream, 1);
+      g.fillEllipse(bx - s * 0.18, by - s * 0.08, s * 0.34, s * 0.22);
+      g.fillEllipse(bx + s * 0.18, by - s * 0.08, s * 0.34, s * 0.22);
+      g.fillStyle(0xb5442c, 1);
+      g.fillCircle(bx, by - s * 0.06, s * 0.08);
     }
-    if (this.def.kind === 'shadow') {
-      // Distinct tool silhouettes on the connected bodies, not letters or numbers.
-      const r = Math.min(s * 0.27, 22), art = p.piece.art;
-      p.g.lineStyle(8, CM.ink, 0.85); p.g.lineBetween(0, r, 0, -r);
-      p.g.lineStyle(4, CM.cream, 1); p.g.lineBetween(-2, r - 2, -2, -r);
-      if (art.includes('hammer')) { p.g.fillStyle(CM.cream, 1); p.g.fillRoundedRect(-r, -r - 8, r * 2, 15, 3); }
-      else if (art.includes('screw')) { p.g.fillStyle(CM.copperLight, 1); p.g.fillRoundedRect(-7, 3, 14, r + 5, 5); }
-      else if (art.includes('saw')) { p.g.fillStyle(CM.cream, 1); p.g.fillTriangle(-r, -r, r, -r, r, r * 0.6); }
-      else { p.g.lineStyle(7, CM.cream, 1); p.g.beginPath(); p.g.arc(0, -r, r * 0.6, 0.15, Math.PI - 0.15); p.g.strokePath(); }
+    // the outline round the outside edge only
+    const sel = this.selected === p.piece.id;
+    g.lineStyle(sel ? 5 : 3, sel ? CM.glow : CM.ink, sel ? 1 : 0.85);
+    for (const c of cells) {
+      const x = (c.x - w / 2) * s, y = (c.y - h / 2) * s;
+      if (!has.has(`${c.x},${c.y - 1}`)) g.lineBetween(x, y, x + s, y);
+      if (!has.has(`${c.x},${c.y + 1}`)) g.lineBetween(x, y + s, x + s, y + s);
+      if (!has.has(`${c.x - 1},${c.y}`)) g.lineBetween(x, y, x, y + s);
+      if (!has.has(`${c.x + 1},${c.y}`)) g.lineBetween(x + s, y, x + s, y + s);
     }
+    if (shadow) this.drawTool(g, p.piece.art, Math.min(w, h) * s * 0.42 + Math.max(w, h) * s * 0.08);
     p.restScale = Math.min(0.78, 86 / (Math.max(w, h) * s));
     const placed = (this.state as Placement[]).some((q) => q.id === p.piece.id);
     const hitW = placed ? w * s + 14 : Math.max(w * s + 14, 88 / p.restScale);
@@ -186,6 +206,32 @@ abstract class PieceRoom<K extends 'shadow' | 'packing'> extends RoomBase<K> {
     }
     p.obj.setData('turn', p.turn);
   }
+  /** A big tool drawing across a tool piece, centred: wrench, hammer, screwdriver-screw or saw. */
+  private drawTool(g: G, art: string, r: number): void {
+    const ink = CM.ink;
+    if (art.includes('hammer')) {
+      g.fillStyle(0x8a5a34, 1); g.fillRoundedRect(-r * 0.12, -r * 0.5, r * 0.24, r * 1.4, 4);
+      g.fillStyle(0x5d6a66, 1); g.fillRoundedRect(-r * 0.62, -r * 0.82, r * 1.24, r * 0.42, 5);
+      g.lineStyle(2, ink, 0.9); g.strokeRoundedRect(-r * 0.62, -r * 0.82, r * 1.24, r * 0.42, 5);
+    } else if (art.includes('screw')) {
+      g.fillStyle(0x5d6a66, 1); g.fillRoundedRect(-r * 0.16, -r * 0.6, r * 0.32, r * 1.5, 4);
+      g.lineStyle(2, ink, 0.8);
+      for (let k = 0; k < 5; k++) g.lineBetween(-r * 0.2, -r * 0.4 + k * r * 0.26, r * 0.2, -r * 0.3 + k * r * 0.26);
+      g.fillStyle(0xbca16a, 1); g.fillEllipse(0, -r * 0.7, r * 0.7, r * 0.3);
+      g.lineStyle(3, ink, 0.9); g.lineBetween(-r * 0.2, -r * 0.7, r * 0.2, -r * 0.7);
+    } else if (art.includes('saw')) {
+      g.fillStyle(0xd9dfdc, 1); g.fillTriangle(-r * 0.8, -r * 0.5, r * 0.6, -r * 0.5, -r * 0.8, r * 0.7);
+      g.lineStyle(2, ink, 0.9); g.strokeTriangle(-r * 0.8, -r * 0.5, r * 0.6, -r * 0.5, -r * 0.8, r * 0.7);
+      for (let k = 0; k < 6; k++) { const t = k / 6; g.lineBetween(-r * 0.8 + t * r * 1.4, -r * 0.5 + t * r * 1.2, -r * 0.7 + t * r * 1.4, -r * 0.5 + t * r * 1.2 + 6); }
+      g.fillStyle(0x8a5a34, 1); g.fillRoundedRect(r * 0.4, -r * 0.75, r * 0.45, r * 0.5, 5);
+    } else {
+      // wrench: a handle with an open jaw at the top
+      g.fillStyle(0x5d6a66, 1); g.fillRoundedRect(-r * 0.14, -r * 0.3, r * 0.28, r * 1.2, 5);
+      g.lineStyle(r * 0.24, 0x5d6a66, 1); g.beginPath(); g.arc(0, -r * 0.5, r * 0.32, Math.PI * 0.15, Math.PI * 0.85, true); g.strokePath();
+      g.lineStyle(2, ink, 0.8); g.beginPath(); g.arc(0, -r * 0.5, r * 0.46, Math.PI * 0.15, Math.PI * 0.85, true); g.strokePath();
+    }
+  }
+
   private paintBoard(): void {
     const g = this.boardG, def = this.def as PieceBoardDef; g.clear();
     for (const at of def.board) {
@@ -193,13 +239,16 @@ abstract class PieceRoom<K extends 'shadow' | 'packing'> extends RoomBase<K> {
       g.fillStyle(def.kind === 'shadow' ? CM.tealDark : CM.woodLight, 1); g.fillRoundedRect(x + 1, y + 1, this.S - 2, this.S - 2, 5);
       g.lineStyle(1, CM.cream, 0.2); g.strokeRoundedRect(x + 3, y + 3, this.S - 6, this.S - 6, 5);
     }
+    // each tool's shadow on the wall: one solid silhouette hanging from a hook
     for (const outline of def.outlines ?? []) {
       if ((this.state as Placement[]).some((p) => p.id === outline.id)) continue;
-      for (const at of outline.cells) {
-        const x = this.ox + at % def.cols * this.S, y = this.oy + Math.floor(at / def.cols) * this.S;
-        g.fillStyle(CM.ink, this.style.id === 'tinker' ? 0.5 : 0.25); g.fillRoundedRect(x + 4, y + 4, this.S - 8, this.S - 8, 5);
-        g.lineStyle(2, CM.paper, 0.6); g.strokeRoundedRect(x + 5, y + 5, this.S - 10, this.S - 10, 5);
-      }
+      const has = new Set(outline.cells);
+      g.fillStyle(CM.ink, this.style.id === 'tinker' ? 0.62 : 0.48);
+      for (const at of outline.cells) g.fillRect(this.ox + at % def.cols * this.S + 2, this.oy + Math.floor(at / def.cols) * this.S + 2, this.S - 4 + (has.has(at + 1) && (at + 1) % def.cols ? 4 : 0), this.S - 4 + (has.has(at + def.cols) ? 4 : 0));
+      const top = Math.min(...outline.cells);
+      const hx = this.ox + (top % def.cols + 0.5) * this.S, hy = this.oy + Math.floor(top / def.cols) * this.S;
+      g.fillStyle(CM.brass, 1); g.fillCircle(hx, hy - 4, 7);
+      g.lineStyle(3, CM.ink, 0.8); g.strokeCircle(hx, hy - 4, 7);
     }
   }
   protected refresh(): void {
@@ -447,9 +496,26 @@ export class TiltRoom extends RoomBase<'tilt'> {
       const c = this.cell(at), x = c.x - this.S / 2, y = c.y - this.S / 2;
       if (this.def.walls.includes(at)) bevelCell(g, x + 1, y + 1, this.S + 2, CM.tealDark);
       else { g.fillStyle(CM.paper, 1); g.fillRoundedRect(x + 1, y + 1, this.S - 2, this.S - 2, 4); g.lineStyle(1, CM.woodLight, 0.5); g.strokeRoundedRect(x + 3, y + 3, this.S - 6, this.S - 6, 4); }
-      if (this.def.holes.includes(at)) { g.fillStyle(CM.ink, 1); g.fillCircle(c.x, c.y, this.S * 0.29); g.lineStyle(3, CM.copper, 1); g.strokeCircle(c.x, c.y, this.S * 0.31); }
+      if (this.def.holes.includes(at)) {
+        // a hole: dark and deep, with a curved arrow — it sends the marble back to the start
+        const r = this.S * 0.3;
+        g.fillStyle(0x0d0907, 1); g.fillCircle(c.x, c.y, r);
+        g.lineStyle(3, CM.copper, 1); g.strokeCircle(c.x, c.y, r + 2);
+        g.lineStyle(3, CM.cream, 0.85); g.beginPath(); g.arc(c.x, c.y, r * 0.55, Math.PI * 0.2, Math.PI * 1.6, false); g.strokePath();
+        const ax = c.x + Math.cos(Math.PI * 1.6) * r * 0.55, ay = c.y + Math.sin(Math.PI * 1.6) * r * 0.55;
+        g.fillStyle(CM.cream, 0.9); g.fillTriangle(ax + 6, ay + 2, ax - 3, ay - 6, ax - 2, ay + 7);
+      }
       const goal = this.def.goals.indexOf(at);
-      if (goal >= 0) { g.fillStyle(CM.ink, 0.85); g.fillCircle(c.x, c.y, this.S * 0.34); g.lineStyle(5, goal ? 0xba786d : CM.tealLight, 1); g.strokeCircle(c.x, c.y, this.S * 0.31); g.lineStyle(1, CM.cream, 0.75); g.strokeCircle(c.x, c.y, this.S * 0.37); }
+      if (goal >= 0) {
+        // a cup in its marble's colour, seen from above: rim, inside and a highlight
+        const col = goal ? 0xba786d : CM.teal;
+        const r = this.S * 0.36;
+        g.fillStyle(0x000000, 0.25); g.fillCircle(c.x + 2, c.y + 3, r);
+        g.fillStyle(col, 1); g.fillCircle(c.x, c.y, r);
+        g.fillStyle(Phaser.Display.Color.IntegerToColor(col).darken(35).color, 1); g.fillCircle(c.x, c.y + 2, r * 0.68);
+        g.lineStyle(2, CM.ink, 0.9); g.strokeCircle(c.x, c.y, r);
+        g.lineStyle(3, 0xffffff, 0.55); g.beginPath(); g.arc(c.x, c.y, r * 0.84, Math.PI * 1.1, Math.PI * 1.5, false); g.strokePath();
+      }
     }
     this.balls.forEach((ball, i) => { const c = this.cell(this.state.marbles[i]); ball.setPosition(c.x, c.y).setData('cell', this.state.marbles[i]); });
   }

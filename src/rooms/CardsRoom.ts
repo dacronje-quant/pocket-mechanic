@@ -136,6 +136,7 @@ export class CardsRoom extends RoomBase<'cards'> {
   private bertie!: Phaser.GameObjects.Graphics;
   private bertieArt?: Phaser.GameObjects.Image;
   private bubbleG!: Phaser.GameObjects.Graphics;
+  private spritesG!: Phaser.GameObjects.Graphics;
   private scoreG!: Phaser.GameObjects.Graphics;
   private stageX = 880;
   private stageY = 390;
@@ -196,6 +197,7 @@ export class CardsRoom extends RoomBase<'cards'> {
     this.scoreG = this.add.graphics().setDepth(D.mech + 1);
     this.bertie = this.add.graphics().setDepth(D.mech + 2);
     this.bubbleG = this.add.graphics().setDepth(D.mech + 4);
+    this.spritesG = this.add.graphics().setDepth(D.mech + 3).setBlendMode(Phaser.BlendModes.ADD);
     // the painted Big Bertie (the drawn robot stays as a stand-in until it loads)
     withArt(this, 'portrait-clementine', (key) => {
       if (!this.bertie.active) return;
@@ -640,6 +642,27 @@ export class CardsRoom extends RoomBase<'cards'> {
   }
 
   private drawSparkles(): void {
+    // the light sprites dance with Bertie while he shows the dance (the hints say to watch them)
+    const sg = this.spritesG;
+    sg.clear();
+    if (this.demoing) {
+      const bx = this.bertieArt?.x ?? this.stageX;
+      const by = (this.bertieArt?.y ?? this.stageY + 128) - 150;
+      for (let k = 0; k < 3; k++) {
+        const a = this.t * 3 + (k * Math.PI * 2) / 3;
+        const px = bx + Math.cos(a) * 120;
+        const py = by + Math.sin(a) * 50 - (this.pose === 'jump' ? 30 : 0);
+        sg.fillStyle(this.pose ? MOVE_COLOR[this.pose] : 0xfff3b0, 0.35);
+        sg.fillCircle(px, py, 20);
+        sg.fillStyle(0xfff3b0, 0.95);
+        sg.fillCircle(px, py, 8);
+        for (let j = 0; j < 4; j++) {
+          const b = this.t * 6 + j * 1.6;
+          sg.fillStyle(0xffffff, 0.6);
+          sg.fillCircle(px + Math.cos(b) * 14, py + Math.sin(b) * 14, 2);
+        }
+      }
+    }
     // in the Dance Party, the button for the next move glows
     const next = this.nextPartyMove();
     for (const b of this.partyBtns) b.btn.setScale(b.move === next ? 1 + Math.sin(this.t * 6) * 0.07 : 1);

@@ -395,15 +395,33 @@ export class LogicRoom extends RoomBase<'logic'> {
     g.fillRoundedRect(x - 54, y - 60, 112, 124, 16);
     switch (n.art) {
       case 'door': {
+        // an arched wooden doorway with two planked doors that swing apart onto light
         g.fillStyle(0x3d2b25, 1);
-        g.fillRoundedRect(x - 56, y - 64, 112, 124, 14);
-        const open = on ? 44 : 0;
-        g.fillStyle(0xad6b51, 1);
-        g.fillRect(x - 46, y - 54, 46 - open, 108);
-        g.fillRect(x + open, y - 54, 46 - open, 108);
+        g.fillRoundedRect(x - 58, y - 52, 116, 116, { tl: 0, tr: 0, bl: 6, br: 6 });
+        g.fillCircle(x, y - 52, 58);
+        g.fillStyle(0x1a120c, 1);
+        g.fillRect(x - 46, y - 52, 92, 108);
+        g.fillCircle(x, y - 52, 46);
+        const open = on ? 40 : 0;
         if (on) {
-          g.fillStyle(0xfff3b0, 0.5);
-          g.fillRect(x - open, y - 54, open * 2, 108);
+          g.fillStyle(0xfff3b0, 0.85);
+          g.fillRect(x - open, y - 52, open * 2, 108);
+          g.fillCircle(x, y - 52, Math.min(open, 46));
+        }
+        for (const side of [-1, 1]) {
+          const w = 46 - open;
+          if (w <= 0) continue;
+          const x0 = side < 0 ? x - 46 : x + open;
+          g.fillStyle(0xad6b51, 1);
+          g.fillRect(x0, y - 52, w, 108);
+          g.fillStyle(0x8a5536, 1);
+          for (let k = 1; k < 3; k++) g.fillRect(x0 + (w * k) / 3 - 1, y - 52, 2, 108);
+          g.fillStyle(0x5e3a2a, 1);
+          g.fillRect(x0, y - 30, w, 5);
+          g.fillRect(x0, y + 26, w, 5);
+          // brass handle by the middle
+          g.fillStyle(0xd9b45f, 1);
+          g.fillCircle(side < 0 ? x0 + w - 8 : x0 + 8, y + 2, 5);
         }
         break;
       }
