@@ -858,7 +858,11 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       roundButton(this, x, 52, '?', () => this.requestHint(), { fontSize: 38 }).setDepth(D.hud);
     }
     x -= 90;
-    roundButton(this, x, 52, '💬', () => this.bubble.say(this.def.intro, { id: roomVoiceId(this.def, this.style.id, 'intro') }), { fontSize: 28, say: '' }).setDepth(D.hud);
+    // Hear it again: replays whatever was said last (a hint you missed); pressed while a line is
+    // showing, or before anything was said, it gives the room's main instruction.
+    roundButton(this, x, 52, '💬', () => {
+      if (this.bubble.showing || !this.bubble.replay()) this.bubble.say(this.def.intro, { id: roomVoiceId(this.def, this.style.id, 'intro') });
+    }, { fontSize: 28, say: '' }).setDepth(D.hud);
     if (tessUnlocked(profile()) && settings().coop !== 'hands') {
       x -= 90;
       roundButton(this, x, 52, '👥', () => this.toggleTess(), { fontSize: 28 }).setDepth(D.hud);
