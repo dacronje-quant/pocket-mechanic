@@ -56,7 +56,7 @@ Added room ids are `1-7`, `2-7`, `6-7` and `8-0`. Completed repair flags remain 
 
 [`roomVoiceId`](../src/content/roomVoice.ts) gives each new puzzle kind and age mode its own instruction ids, for example `4-3.sorting.engineer.intro`. Intros and all three hint tiers use the same ids in the live room and the generation catalogue. Replaced rooms therefore cannot select old recordings that describe tracks, pipes or beams.
 
-The new age-specific instruction sets deliberately use device speech until recordings for those ids are generated. When device speech is unavailable, visual hints and bounded speech timing still allow play to continue. The existing production recordings stay intact. Archived puzzles reuse their original intro/hint recording ids because their instructions are unchanged. A future audio generation pass can fill the new ids without replacing the preserved recordings.
+All 120 age-specific introductions and hint tiers now have Nana recordings under those IDs. The archived payoffs and new control labels are also recorded. The audio checker rejects missing files and stale speaker/text assignments instead of allowing new lines to depend on device speech. Device speech still provides bounded recovery when a file cannot load. Archived puzzles reuse their original intro/hint IDs because their instructions are unchanged. The original recordings are retained alongside the current bank. See [VOICE_CASTING.md](VOICE_CASTING.md) for the portrait-directed supporting cast.
 
 ## Engine and integration verification
 
