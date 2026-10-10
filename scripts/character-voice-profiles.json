@@ -14,9 +14,10 @@
     "theo": {
       "name": "Theo",
       "appearance": "Small curly-haired boy in overalls; cheerful train-loving twin.",
-      "direction": "Light tenor, eager and playful; avoid a deep relaxed presenter voice.",
-      "description": "A male adult voice performer in his early twenties, with a naturally light high-tenor speaking register. Eager, playful and enthusiastic, with clear bright vowels and quick little changes of expression. Gentle British English; an easy conversational smile and clear unhurried words. A natural adult performance for a fictional storybook character. Avoid bass resonance, radio-presenter formality or shouting. Clean dry studio speech, no music or sound effects.",
-      "speed": 0.98
+      "direction": "Much lighter and softer male tone, with delicate androgynous resonance; retain playful enthusiasm.",
+      "description": "An adult male British voice in his early twenties, a naturally delicate high tenor with soft androgynous resonance. A light, airy, smooth conversational timbre, very little chest resonance, gentle clear vowels and an easy friendly smile. Playful enthusiasm delivered softly, expressive melodic inflection and clear unhurried words. Clearly a natural adult male performer, relaxed and approachable. Avoid a deep masculine announcer, bass, gravel or exaggerated theatrical projection. Clean dry studio speech, no music or effects.",
+      "speed": 0.98,
+      "revision": "feedback-2026-10-11"
     },
     "ada": {
       "name": "Ada",
@@ -35,9 +36,10 @@
     "mateo": {
       "name": "Mateo",
       "appearance": "Small curly-haired boy in green clothes; Rosa’s little brother.",
-      "direction": "Light, mischievous and giggly; avoid the confident social-media presenter tone.",
-      "description": "A male adult voice performer in his early twenties, with a naturally light forward high-tenor voice and a smiling, slightly nasal resonance. Mischievous, playful and warmly amused, with tiny natural chuckles and lively short phrases. British English, clear words and easy conversational pacing. A natural adult performance for a fictional storybook character. Never a deep announcer or brash sales presenter. Clean dry studio speech, no music or sound effects.",
-      "speed": 0.98
+      "direction": "Airy, delicate male tone with playful short phrases and spontaneous amusement; minimise chest resonance.",
+      "description": "An adult male British voice performer in his early twenties, with a naturally very light airy upper-tenor register and a soft delicate conversational sound. A smooth gentle timbre with minimal chest resonance, an open smile and spontaneous warm amusement. Short playful phrases with little melodic rises, easy lively expression and clear words. A natural adult male performance, never a mature radio presenter, booming baritone, rough bass or forceful masculine projection. Clean dry studio speech, no music or effects.",
+      "speed": 0.99,
+      "revision": "feedback-2026-10-11"
     },
     "odette": {
       "name": "Young Odette",
@@ -73,6 +75,39 @@
       "direction": "Older male, precise but warm, with understated amusement.",
       "description": "An elderly British man in his late sixties, a precise gentle piano teacher with spectacles and a bow tie. A warm clear light baritone voice with subtle natural age texture. Careful diction, musical phrasing and quietly amused kindness; dignified but secretly playful. Unhurried conversation, never a stern lecture or grand announcer voice. Clean dry studio speech, no music or effects.",
       "speed": 0.92
+    },
+    "pepperwhistle": {
+      "name": "Mrs. Pepperwhistle",
+      "appearance": "Female cafe owner with curls and a feathered hat.",
+      "direction": "Explicitly female, mature, theatrical and delighted; replace the male-sounding performance.",
+      "description": "A female British woman in her fifties with an unmistakably feminine warm mezzo-soprano speaking voice. A theatrical cafe proprietor with curls and a feathered hat, grand, dramatic, expressive and delighted. Rich rounded female vowels, animated musical intonation and an affectionate smile; dignified warmth with amused little flourishes. Clear measured conversation, no male baritone resonance, shouting or shrillness. Clean dry studio speech, no music or effects.",
+      "speed": 0.95,
+      "revision": "feedback-2026-10-11"
+    },
+    "bertie": {
+      "name": "Big Bertie",
+      "appearance": "Large friendly clockwork robot who dances at the fairground.",
+      "direction": "Clearly mechanical robot voice, metallic synthetic resonance, precise rhythmic syllables; cheerful and easy to understand.",
+      "description": "A friendly fictional male clockwork robot with an unmistakably synthetic mechanical speaking voice. Deep rounded robot resonance, metallic buzzy electronic timbre, precise evenly spaced syllables and subtly stepped musical intonation. A joyful gentle dancing automaton, pleasantly comical and welcoming. Every word clearly intelligible at an unhurried pace. Clearly robotic rather than an ordinary human announcer; no frightening harsh distortion, shouting, sound effects or background music. Clean isolated speech.",
+      "speed": 0.91,
+      "revision": "feedback-2026-10-11",
+      "voiceProcessing": "clockwork-robot-v1"
+    },
+    "juniper": {
+      "name": "Miss Juniper",
+      "appearance": "Bespectacled adult schoolteacher with a star hair clip.",
+      "direction": "Mature adult female teacher, calm, thoughtful and gently assured; remove the youthful sound.",
+      "description": "A mature British woman in her late forties, a thoughtful schoolteacher who loves astronomy. A warm settled female mezzo speaking register with natural adult depth, gentle rounded vowels and a calm assured manner. Soft, dreamy, kind and reflective; clear diction, relaxed musical phrasing and an unhurried conversational pace. Experienced and quietly reassuring, never girlish, breathless, stern or theatrical. Clean dry studio speech, no music or effects.",
+      "speed": 0.92,
+      "revision": "feedback-2026-10-11"
+    },
+    "fisher": {
+      "name": "The Fishers",
+      "appearance": "Bearded fisherman wearing an oilskin coat.",
+      "direction": "Deep male sailor voice, weathered and hearty with warm gratitude; intelligible rather than a pirate caricature.",
+      "description": "A male British fisherman in his late fifties, with a deep resonant bass-baritone voice, a gently gravelly sea-weathered texture and a hearty affectionate smile. A natural coastal West Country English lilt, warm rugged vowels, relaxed sailor rhythm and cheerful gratitude. Clear unhurried words, sturdy easygoing confidence and good humour. Distinctly deep and nautical, never a polished presenter, exaggerated pirate, threatening growl or shouted performance. Clean dry studio speech, no music or effects.",
+      "speed": 0.94,
+      "revision": "feedback-2026-10-11"
     }
   }
 }

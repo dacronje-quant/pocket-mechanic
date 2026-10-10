@@ -76,12 +76,16 @@ async function api(path, body, timeout = 120000) {
     return res;
   }
 }
-function normalize(source, relative, kind, trim = {}) {
+function normalize(source, relative, kind, trim = {}, voiceProcessing) {
   const output = join(AUDIO, relative);
   mkdirSync(dirname(output), { recursive: true });
   const filters = [];
   if (trim.start !== undefined) filters.push(`atrim=start=${trim.start}:duration=${trim.seconds},asetpts=PTS-STARTPTS`);
   if (kind !== 'music') filters.push('silenceremove=start_periods=1:start_duration=0.005:start_threshold=-48dB');
+  if (voiceProcessing === 'clockwork-robot-v1') {
+    // A gentle mechanical buzz and short metallic resonance; retain clear words.
+    filters.push('tremolo=f=35:d=0.32', 'aecho=0.8:0.75:7|14:0.22|0.12');
+  } else if (voiceProcessing) throw new Error('Unsupported voice processing profile.');
   const target = kind === 'voice' ? -20 : kind === 'music' ? -24 : -23;
   filters.push(`loudnorm=I=${target}:TP=-2:LRA=7`, 'alimiter=limit=0.7:level=false', 'afade=t=in:d=0.003');
   execFileSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y', '-i', source, '-af', filters.join(','), '-ac', kind === 'music' ? '2' : '1', '-ar', kind === 'voice' ? '24000' : '44100', '-b:a', kind === 'voice' ? '64k' : kind === 'music' ? '96k' : '96k', '-f', 'mp3', output + '.tmp'], { stdio: 'pipe' });
@@ -179,7 +183,7 @@ async function voices() {
     if (!job.actor) throw new Error(`No voice assigned for ${job.who}.`);
     const raw = join(WORK, job.file.split('/').at(-1));
     await binary(`/v1/text-to-speech/${job.actor.voiceId}?output_format=mp3_44100_128`, { text: job.text, model_id: cast.model, voice_settings: job.actor.settings, seed: 20261010 }, raw);
-    normalize(raw, job.file, 'voice');
+    normalize(raw, job.file, 'voice', {}, job.actor.voiceProcessing);
     for (const line of lines) if (line.who === job.who && line.text === job.text) manifest.voice[line.id] = job.file;
     report.completed[job.file] = { kind: 'voice', who: job.who, text: job.text, model: cast.model };
     save();

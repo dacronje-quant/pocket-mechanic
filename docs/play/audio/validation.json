@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-10T22:15:48.525Z",
+  "checkedAt": "2026-10-10T22:45:14.289Z",
   "expectedVoiceIds": 1290,
   "coveredVoiceIds": 1290,
   "recordedVoiceIds": 1290,
@@ -8,7 +8,7 @@
   "musicThemes": 14,
   "effectCues": 44,
   "decodedFiles": 1050,
-  "bytes": 51968113,
+  "bytes": 51788209,
   "failures": [],
   "files": [
     {
@@ -48,28 +48,28 @@
       "meanDb": -20.7
     },
     {
-      "file": "voice/e5bc034e625e2509191d.mp3",
-      "bytes": 18477,
-      "peakDb": -6.6,
-      "meanDb": -20.6
-    },
-    {
       "file": "voice/d0ae52e94ca47ed2861f.mp3",
       "bytes": 35565,
       "peakDb": -4.3,
       "meanDb": -20.3
     },
     {
-      "file": "voice/cfa1d4a5407ce763b138.mp3",
-      "bytes": 64557,
-      "peakDb": -5.3,
-      "meanDb": -20.5
+      "file": "voice/e5bc034e625e2509191d.mp3",
+      "bytes": 18477,
+      "peakDb": -6.6,
+      "meanDb": -20.6
     },
     {
       "file": "voice/0c19ec31ed7c5468fff4.mp3",
       "bytes": 37869,
       "peakDb": -2.9,
       "meanDb": -19.7
+    },
+    {
+      "file": "voice/cfa1d4a5407ce763b138.mp3",
+      "bytes": 64557,
+      "peakDb": -5.3,
+      "meanDb": -20.5
     },
     {
       "file": "voice/46fda68c3a5a917f8668.mp3",
@@ -96,16 +96,16 @@
       "meanDb": -20.6
     },
     {
-      "file": "voice/50c76c12174524a60f7e.mp3",
-      "bytes": 56685,
-      "peakDb": -5.1,
-      "meanDb": -21.3
-    },
-    {
       "file": "voice/f348cb412cc043e90bb7.mp3",
       "bytes": 26349,
       "peakDb": -8.1,
       "meanDb": -20.5
+    },
+    {
+      "file": "voice/50c76c12174524a60f7e.mp3",
+      "bytes": 56685,
+      "peakDb": -5.1,
+      "meanDb": -21.3
     },
     {
       "file": "voice/c6291d5bd073dc6c42ac.mp3",
@@ -132,15 +132,15 @@
       "meanDb": -19.9
     },
     {
-      "file": "voice/e861e155ad61d7e08fe0.mp3",
-      "bytes": 26541,
-      "peakDb": -4.1,
-      "meanDb": -20.3
+      "file": "voice/7018a1c5f39ebe8560cc.mp3",
+      "bytes": 21933,
+      "peakDb": -6.9,
+      "meanDb": -20.4
     },
     {
-      "file": "voice/443cea3229ad3625f729.mp3",
-      "bytes": 48237,
-      "peakDb": -4.6,
+      "file": "voice/51518644b7c7075cc9c4.mp3",
+      "bytes": 39981,
+      "peakDb": -6.8,
       "meanDb": -20.3
     },
     {
@@ -156,15 +156,21 @@
       "meanDb": -19.1
     },
     {
+      "file": "voice/ee92d3e8625afc04209a.mp3",
+      "bytes": 52845,
+      "peakDb": -3.7,
+      "meanDb": -20.7
+    },
+    {
       "file": "voice/aef49582cb0cd9ba0f37.mp3",
       "bytes": 55917,
       "peakDb": -5.4,
       "meanDb": -22.6
     },
     {
-      "file": "voice/ee92d3e8625afc04209a.mp3",
-      "bytes": 52845,
-      "peakDb": -3.7,
+      "file": "voice/332326704548a2084b2c.mp3",
+      "bytes": 28653,
+      "peakDb": -5.9,
       "meanDb": -20.7
     },
     {
@@ -172,12 +178,6 @@
       "bytes": 102381,
       "peakDb": -5.3,
       "meanDb": -21.4
-    },
-    {
-      "file": "voice/332326704548a2084b2c.mp3",
-      "bytes": 28653,
-      "peakDb": -5.9,
-      "meanDb": -20.7
     },
     {
       "file": "voice/56be0a84145016a2aab3.mp3",
@@ -198,10 +198,10 @@
       "meanDb": -21
     },
     {
-      "file": "voice/fdb59fb012dad87bb72c.mp3",
-      "bytes": 37293,
-      "peakDb": -2.2,
-      "meanDb": -20.1
+      "file": "voice/774a91c35194a131e275.mp3",
+      "bytes": 29229,
+      "peakDb": -4.6,
+      "meanDb": -20.4
     },
     {
       "file": "voice/6834874c664f9df1e9e8.mp3",
@@ -228,28 +228,28 @@
       "meanDb": -23.3
     },
     {
+      "file": "voice/ed01710d8ed5fa931f1f.mp3",
+      "bytes": 29805,
+      "peakDb": -3.9,
+      "meanDb": -20.1
+    },
+    {
       "file": "voice/79d652dd19d8398c9da3.mp3",
       "bytes": 72237,
       "peakDb": -5.6,
       "meanDb": -21.2
     },
     {
-      "file": "voice/f3c89093becd597e744b.mp3",
-      "bytes": 40749,
-      "peakDb": -3.9,
-      "meanDb": -20.7
+      "file": "voice/a6a02c3d37e0d7e2ee74.mp3",
+      "bytes": 55149,
+      "peakDb": -6.5,
+      "meanDb": -20.8
     },
     {
-      "file": "voice/34fb34e56f8fc8486572.mp3",
-      "bytes": 69165,
-      "peakDb": -4.5,
-      "meanDb": -21.5
-    },
-    {
-      "file": "voice/ddca0aeb10f5024301ef.mp3",
-      "bytes": 51693,
-      "peakDb": -3.6,
-      "meanDb": -20.3
+      "file": "voice/25c1ae41ae491de3e469.mp3",
+      "bytes": 40557,
+      "peakDb": -5.1,
+      "meanDb": -21.6
     },
     {
       "file": "voice/7dfd955ae48ed26a1c13.mp3",
@@ -258,10 +258,10 @@
       "meanDb": -19.6
     },
     {
-      "file": "voice/2be1a449fd5a9af46f86.mp3",
-      "bytes": 73005,
-      "peakDb": -2.9,
-      "meanDb": -19.9
+      "file": "voice/ea7179fe8e633535c820.mp3",
+      "bytes": 51117,
+      "peakDb": -5,
+      "meanDb": -20.4
     },
     {
       "file": "voice/57725d05b278366a5a4d.mp3",
@@ -300,10 +300,10 @@
       "meanDb": -23.9
     },
     {
-      "file": "voice/ed8e6d7c56cd34e77838.mp3",
-      "bytes": 26925,
-      "peakDb": -6.3,
-      "meanDb": -21.2
+      "file": "voice/84f1e70f05a2fd8ab992.mp3",
+      "bytes": 20973,
+      "peakDb": -8.6,
+      "meanDb": -23.9
     },
     {
       "file": "voice/642de1f3a3faffe1241f.mp3",
@@ -330,22 +330,22 @@
       "meanDb": -20.1
     },
     {
-      "file": "voice/bad188b9df2d7ad2183f.mp3",
-      "bytes": 37101,
-      "peakDb": -6.4,
-      "meanDb": -19.8
+      "file": "voice/796b59cc4e12c5437142.mp3",
+      "bytes": 35949,
+      "peakDb": -6.8,
+      "meanDb": -19.7
     },
     {
-      "file": "voice/338f6f581b8dc1e42d7e.mp3",
-      "bytes": 60909,
-      "peakDb": -4,
-      "meanDb": -20.5
+      "file": "voice/27356bb442a4d3162a43.mp3",
+      "bytes": 61293,
+      "peakDb": -7.2,
+      "meanDb": -20.9
     },
     {
-      "file": "voice/6b8c0c2af4afb6021e89.mp3",
-      "bytes": 58221,
-      "peakDb": -4.1,
-      "meanDb": -20.6
+      "file": "voice/dafd0e6887a54318314b.mp3",
+      "bytes": 56493,
+      "peakDb": -6,
+      "meanDb": -20.7
     },
     {
       "file": "voice/cf2d7b4a14dcb053cf51.mp3",
@@ -354,10 +354,10 @@
       "meanDb": -19.4
     },
     {
-      "file": "voice/554c34d0932001e9922f.mp3",
-      "bytes": 63789,
-      "peakDb": -3.9,
-      "meanDb": -22
+      "file": "voice/cf0063877bc7b254bdef.mp3",
+      "bytes": 66669,
+      "peakDb": -6,
+      "meanDb": -21.7
     },
     {
       "file": "voice/828f3b4d0944513927f8.mp3",
@@ -660,16 +660,16 @@
       "meanDb": -21.3
     },
     {
-      "file": "voice/ff13a5d8d6add4e03ce7.mp3",
-      "bytes": 38445,
-      "peakDb": -3.9,
-      "meanDb": -19.1
-    },
-    {
       "file": "voice/b201651f8c7b5407d261.mp3",
       "bytes": 39789,
       "peakDb": -6.3,
       "meanDb": -20.9
+    },
+    {
+      "file": "voice/ff13a5d8d6add4e03ce7.mp3",
+      "bytes": 38445,
+      "peakDb": -3.9,
+      "meanDb": -19.1
     },
     {
       "file": "voice/b265bd26cd66a656cc55.mp3",
@@ -2400,10 +2400,10 @@
       "meanDb": -21.5
     },
     {
-      "file": "voice/6b12fcf8ae6204cf3b78.mp3",
-      "bytes": 40557,
-      "peakDb": -2,
-      "meanDb": -19.4
+      "file": "voice/27bb591bc366242916e2.mp3",
+      "bytes": 42477,
+      "peakDb": -3.4,
+      "meanDb": -18.8
     },
     {
       "file": "voice/cf93350defcfddba8f37.mp3",
@@ -2418,10 +2418,10 @@
       "meanDb": -20.5
     },
     {
-      "file": "voice/75179b3c53a8bcdb0688.mp3",
-      "bytes": 23661,
-      "peakDb": -6.2,
-      "meanDb": -22.1
+      "file": "voice/11640a08d675f5323add.mp3",
+      "bytes": 21933,
+      "peakDb": -6.4,
+      "meanDb": -20.9
     },
     {
       "file": "voice/84dbee2103a9e9fec50c.mp3",
@@ -2484,9 +2484,9 @@
       "meanDb": -20.5
     },
     {
-      "file": "voice/bf3523abb208c4c6d239.mp3",
-      "bytes": 35181,
-      "peakDb": -4.6,
+      "file": "voice/73bc95dd06c2662728b1.mp3",
+      "bytes": 29037,
+      "peakDb": -6.7,
       "meanDb": -20.5
     },
     {
@@ -2508,10 +2508,10 @@
       "meanDb": -20.1
     },
     {
-      "file": "voice/4337426d4319ffa1f0ec.mp3",
-      "bytes": 17901,
-      "peakDb": -4.6,
-      "meanDb": -20.4
+      "file": "voice/8eff8be3fa0c41cd6891.mp3",
+      "bytes": 14829,
+      "peakDb": -4.8,
+      "meanDb": -19.8
     },
     {
       "file": "voice/faa3708680501f4f325c.mp3",
@@ -2736,10 +2736,10 @@
       "meanDb": -20
     },
     {
-      "file": "voice/31783c826511fe295eb8.mp3",
-      "bytes": 27117,
-      "peakDb": -6.1,
-      "meanDb": -20.6
+      "file": "voice/b9808dfa807e2bda222e.mp3",
+      "bytes": 23661,
+      "peakDb": -7.4,
+      "meanDb": -20.3
     },
     {
       "file": "voice/4fedd0446c69271a04ad.mp3",
@@ -2802,10 +2802,10 @@
       "meanDb": -20.1
     },
     {
-      "file": "voice/df6757ac8985d6376e69.mp3",
-      "bytes": 31533,
-      "peakDb": -3.6,
-      "meanDb": -18.4
+      "file": "voice/2c990648f6439d5ee167.mp3",
+      "bytes": 23853,
+      "peakDb": -5,
+      "meanDb": -20
     },
     {
       "file": "voice/18d4fef7dfc124976b78.mp3",
@@ -2892,10 +2892,10 @@
       "meanDb": -20.3
     },
     {
-      "file": "voice/02dbd159f67a5f810660.mp3",
-      "bytes": 23661,
-      "peakDb": -7.3,
-      "meanDb": -20.8
+      "file": "voice/6117c380b850c7e4d496.mp3",
+      "bytes": 18861,
+      "peakDb": -8.4,
+      "meanDb": -20.1
     },
     {
       "file": "voice/ac93fa7cc75c9eddd78a.mp3",
@@ -3906,16 +3906,16 @@
       "meanDb": -20.1
     },
     {
-      "file": "voice/f126644a079b4771f1d5.mp3",
-      "bytes": 39789,
-      "peakDb": -5.5,
-      "meanDb": -20.3
-    },
-    {
       "file": "voice/3bc918bb9963bbd7ef13.mp3",
       "bytes": 81069,
       "peakDb": -4.4,
       "meanDb": -20.9
+    },
+    {
+      "file": "voice/f126644a079b4771f1d5.mp3",
+      "bytes": 39789,
+      "peakDb": -5.5,
+      "meanDb": -20.3
     },
     {
       "file": "voice/3e8ddb2771c2e84ce52f.mp3",
@@ -4758,10 +4758,10 @@
       "meanDb": -20
     },
     {
-      "file": "voice/7dc35c4f959118cc4b42.mp3",
-      "bytes": 30957,
-      "peakDb": -4.8,
-      "meanDb": -20.3
+      "file": "voice/6ab8881d9369de941c67.mp3",
+      "bytes": 24237,
+      "peakDb": -5.9,
+      "meanDb": -19.9
     },
     {
       "file": "voice/bc868bc6de04ff320bb2.mp3",
@@ -4782,16 +4782,16 @@
       "meanDb": -21.1
     },
     {
-      "file": "voice/c9b8490c890da925987e.mp3",
-      "bytes": 51309,
-      "peakDb": -4.9,
-      "meanDb": -21.5
+      "file": "voice/fe269d73f5050b280883.mp3",
+      "bytes": 31725,
+      "peakDb": -4.7,
+      "meanDb": -20.9
     },
     {
-      "file": "voice/8ac04bcee7318b87c6d4.mp3",
-      "bytes": 43437,
-      "peakDb": -2.4,
-      "meanDb": -20.1
+      "file": "voice/9ec4989c2b51e645d721.mp3",
+      "bytes": 30765,
+      "peakDb": -3.6,
+      "meanDb": -20.8
     },
     {
       "file": "voice/0dd2c755ef52bed15075.mp3",
@@ -4806,16 +4806,16 @@
       "meanDb": -21
     },
     {
-      "file": "voice/bc2d0d32d5276dc4e62a.mp3",
-      "bytes": 41901,
-      "peakDb": -5.4,
-      "meanDb": -21.1
+      "file": "voice/33509f70c5321e4d7a79.mp3",
+      "bytes": 34413,
+      "peakDb": -7.4,
+      "meanDb": -20.4
     },
     {
-      "file": "voice/af2315e0923d1de0dcd7.mp3",
-      "bytes": 32685,
-      "peakDb": -4.8,
-      "meanDb": -20.1
+      "file": "voice/1f53296e095a611e2af5.mp3",
+      "bytes": 27885,
+      "peakDb": -7.9,
+      "meanDb": -20.2
     },
     {
       "file": "voice/4170d5d506e38fce1be7.mp3",
@@ -4848,16 +4848,16 @@
       "meanDb": -20.9
     },
     {
-      "file": "voice/ef5a36747ac9a449eb00.mp3",
-      "bytes": 7917,
-      "peakDb": -6.1,
-      "meanDb": -20
+      "file": "voice/01350cdba8185fd86b9e.mp3",
+      "bytes": 7149,
+      "peakDb": -8.9,
+      "meanDb": -20.2
     },
     {
-      "file": "voice/4bd4a1186450fcab252d.mp3",
-      "bytes": 15981,
-      "peakDb": -5.8,
-      "meanDb": -21.3
+      "file": "voice/7f1b5698399e63d14e72.mp3",
+      "bytes": 11373,
+      "peakDb": -10,
+      "meanDb": -20.7
     },
     {
       "file": "voice/2c43fe9629a806e52d19.mp3",
@@ -4866,10 +4866,10 @@
       "meanDb": -21.2
     },
     {
-      "file": "voice/1a2be6be8543c1a6065b.mp3",
-      "bytes": 16173,
-      "peakDb": -5,
-      "meanDb": -21.8
+      "file": "voice/097b0cd796d9980d503d.mp3",
+      "bytes": 14829,
+      "peakDb": -8.3,
+      "meanDb": -20.7
     },
     {
       "file": "voice/df1601a338509ebbb8c5.mp3",
@@ -5550,10 +5550,10 @@
       "meanDb": -19.9
     },
     {
-      "file": "voice/2fcf918831c71b5d3bfa.mp3",
-      "bytes": 87021,
-      "peakDb": -5.4,
-      "meanDb": -20.5
+      "file": "voice/25ca313643771954a290.mp3",
+      "bytes": 27309,
+      "peakDb": -5.8,
+      "meanDb": -20.1
     },
     {
       "file": "voice/6214a1804a831f6f1d73.mp3",
@@ -5562,10 +5562,10 @@
       "meanDb": -20.8
     },
     {
-      "file": "voice/25ca313643771954a290.mp3",
-      "bytes": 27309,
-      "peakDb": -5.8,
-      "meanDb": -20.1
+      "file": "voice/2fcf918831c71b5d3bfa.mp3",
+      "bytes": 87021,
+      "peakDb": -5.4,
+      "meanDb": -20.5
     },
     {
       "file": "voice/cacc57129b92ae2adc15.mp3",
@@ -5574,16 +5574,16 @@
       "meanDb": -20.8
     },
     {
-      "file": "voice/5891e2c37e8befe19e08.mp3",
-      "bytes": 29613,
-      "peakDb": -5.5,
-      "meanDb": -19.8
-    },
-    {
       "file": "voice/c6580571f06df398da16.mp3",
       "bytes": 39213,
       "peakDb": -7.2,
       "meanDb": -20.4
+    },
+    {
+      "file": "voice/5891e2c37e8befe19e08.mp3",
+      "bytes": 29613,
+      "peakDb": -5.5,
+      "meanDb": -19.8
     },
     {
       "file": "voice/e78ba75ac2cec818081a.mp3",
@@ -5832,10 +5832,10 @@
       "meanDb": -21.1
     },
     {
-      "file": "voice/02ed446771570db1a691.mp3",
-      "bytes": 18093,
-      "peakDb": -5.3,
-      "meanDb": -19.8
+      "file": "voice/cc74d7042c7042082bec.mp3",
+      "bytes": 14637,
+      "peakDb": -6.2,
+      "meanDb": -19
     },
     {
       "file": "voice/e5f15730d1975d73697d.mp3",
@@ -5862,16 +5862,16 @@
       "meanDb": -20.3
     },
     {
-      "file": "voice/6806682fb61e7c0c9c49.mp3",
-      "bytes": 20589,
-      "peakDb": -4.9,
-      "meanDb": -20.5
+      "file": "voice/f8a0bf12cbe5e6151690.mp3",
+      "bytes": 18669,
+      "peakDb": -7.7,
+      "meanDb": -19.4
     },
     {
-      "file": "voice/79a979832b9398eae881.mp3",
-      "bytes": 23853,
-      "peakDb": -3.2,
-      "meanDb": -20.8
+      "file": "voice/0546b9607bfdbdddf8bb.mp3",
+      "bytes": 16749,
+      "peakDb": -4.9,
+      "meanDb": -20.4
     },
     {
       "file": "voice/e0bf324e0c190f27d1f5.mp3",
@@ -6048,12 +6048,6 @@
       "meanDb": -27.2
     },
     {
-      "file": "music/elevenlabs-festival.mp3",
-      "bytes": 432319,
-      "peakDb": -12.9,
-      "meanDb": -27.2
-    },
-    {
       "file": "sfx/boing.mp3",
       "bytes": 15091,
       "peakDb": -2.7,
@@ -6064,6 +6058,12 @@
       "bytes": 7881,
       "peakDb": -7.8,
       "meanDb": -24.2
+    },
+    {
+      "file": "music/elevenlabs-festival.mp3",
+      "bytes": 432319,
+      "peakDb": -12.9,
+      "meanDb": -27.2
     },
     {
       "file": "sfx/dingDong.mp3",

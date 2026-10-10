@@ -1,5 +1,33 @@
 # Voice update verification — 11 October 2026
 
+## Revision after listening feedback
+
+The user approved fourteen voices and requested changes to Theo, Mateo,
+Mrs. Pepperwhistle, Big Bertie, Miss Juniper and the Fishers. Only those six
+actors were replaced: 30 distinct recordings covering 31 line IDs. The fourteen
+approved actor assignments and their recordings are unchanged. Previous media,
+music and effects are preserved. Theo and Mateo remain natural adult male
+performances; Gemini is not configured, so actual childlike Gemini speech is
+not claimed. Bertie's new synthetic voice also receives a gentle mechanical
+effect during generation, captured in its cache fingerprint.
+
+Verification repeated for this revision:
+
+- 226 tests pass; TypeScript and both production builds pass.
+- All 1,290 spoken IDs remain recorded; all 1,050 referenced audio files decode
+  with zero missing, stale, silent or clipped-file failures.
+- The browser starts all 30 replacement clips through the game speech path,
+  with zero device-speech fallbacks and zero errors.
+- All 30 replacement clips decode after an offline reload.
+- Pages assets match the local build: 1,094 files checked with zero errors.
+- The listening page contains 20 portraits/current clips and six previous
+  clips, preselects the fourteen approved ratings, retains feedback on reload,
+  plays one clip at a time and fits a 390-pixel phone viewport without overflow.
+
+These are technical checks. The six replacement performances still need the
+user's listening judgment. Raw ledgers are in the ignored
+`.asset-work/voice-alignment/feedback-2026-10-11/` folder.
+
 Scope: complete the recorded voice catalogue and align supporting voices with
 the current Copper & Moss portraits. The work is on
 `fix/character-voices-puzzle-guidance` in the Copper & Moss worktree.

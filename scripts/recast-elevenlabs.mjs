@@ -17,6 +17,7 @@ const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : '';
 const atomic = (file, value) => { writeFileSync(file + '.tmp', JSON.stringify(value, null, 2) + '\n'); renameSync(file + '.tmp', file); };
 const jobs = Object.entries(profiles.characters).filter(([who]) => !only || who === only);
 if (!jobs.length) throw new Error('No matching character profile.');
+for (const [, p] of jobs) if (p.voiceProcessing && p.voiceProcessing !== 'clockwork-robot-v1') throw new Error('Unsupported voice processing profile.');
 if (dry) { console.log(JSON.stringify(jobs.map(([who, p]) => ({ who, appearance: p.appearance, direction: p.direction })), null, 2)); process.exit(0); }
 if (existsSync(join(root, '.env'))) loadEnvFile(join(root, '.env'));
 const key = process.env.ELEVENLABS_API_KEY;
@@ -34,7 +35,8 @@ async function api(url, body) {
   return res.json();
 }
 const subscription = await api('/v1/user/subscription');
-const current = (who, profile) => cast.characters[who]?.castingRevision === profiles.revision && cast.characters[who]?.description === profile.description;
+const revision = profile => profile.revision || profiles.revision;
+const current = (who, profile) => cast.characters[who]?.castingRevision === revision(profile) && cast.characters[who]?.description === profile.description && cast.characters[who]?.voiceProcessing === profile.voiceProcessing;
 const needed = jobs.filter(([who, profile]) => !current(who, profile)).length;
 console.log(`${needed} portrait-directed actors to assign; ${subscription.voice_limit - subscription.voice_slots_used} free voice slots.`);
 if (subscription.voice_limit - subscription.voice_slots_used < needed) throw new Error('Not enough free voice slots. No existing voices have been removed.');
@@ -58,14 +60,15 @@ for (const [who, p] of jobs) {
     }), selected: 0 };
     atomic(recordPath, record);
   }
-  const name = `Pocket Mechanic - ${p.name} - ${profiles.revision}`;
+  const name = `Pocket Mechanic - ${p.name} - ${revision(p)}`;
   // Recover an actor saved remotely before a local interruption; do not create duplicates.
   const available = await api('/v2/voices?page_size=100&search=' + encodeURIComponent(name));
   let voice = available.voices?.find(v => v.name === name && v.description === p.description);
   if (!voice) voice = await api('/v1/text-to-voice', { voice_name: name, voice_description: p.description,
     generated_voice_id: record.previews[record.selected].generatedVoiceId });
   cast.characters[who] = { name: p.name, voiceId: voice.voice_id, description: p.description,
-    castingRevision: profiles.revision, direction: p.direction,
+    castingRevision: revision(p), direction: p.direction,
+    ...(p.voiceProcessing ? { voiceProcessing: p.voiceProcessing } : {}),
     settings: { stability: .5, similarity_boost: .8, speed: p.speed, use_speaker_boost: true } };
   atomic(castPath, cast);
   console.log(`Assigned ${p.name}.`);

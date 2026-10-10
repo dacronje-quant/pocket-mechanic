@@ -27,22 +27,22 @@ explains the restriction.
 | Nana Odette | Silver-haired grandmother clockmaker; warm, patient and gently playful. | Preserve Nana A. |
 | Albert Finch | Round baker with moustache and chef's hat; warm, sentimental, a little flustered. | Preserve existing actor. |
 | Rosa | Girl with pigtails; bright, curious and affectionate. | New light soprano adult performer. |
-| Theo | Small curly-haired boy in overalls; eager about trains. | New light, energetic tenor adult performer. |
+| Theo | Small curly-haired boy in overalls; eager about trains. | Revised after listening feedback: delicate, soft high-tenor adult male voice with lighter androgynous resonance. |
 | Ada | Small girl in orange overalls; confident, decisive and playful. | New lively upper mezzo adult performer, distinct from Rosa. |
 | Pip | Very small blond boy in a yellow jumper; soft, cheerful and bashful. | New light male adult performer, replacing the mature female narrator. |
-| Mateo | Small boy in green; mischievous and warmly amused. | New light tenor adult performer, replacing the social-media presenter. |
+| Mateo | Small boy in green; mischievous and warmly amused. | Revised after listening feedback: very light airy upper-tenor adult male voice, playful short phrases and minimal chest resonance. Gemini is not configured; this remains an adult performance. |
 | Young Odette | Apprentice with goggles and a braid; bright, earnest and curious. | New lyrical soprano adult performer, distinct from Nana. |
 | Captain Marigold | Older silver-haired woman in a navy captain's coat. | New older female actor: steady, reassuring and gently weathered. |
-| Mrs. Pepperwhistle | Expressive café owner with curls and feathered hat; theatrical warmth. | Preserve existing actor. |
+| Mrs. Pepperwhistle | Expressive café owner with curls and feathered hat; theatrical warmth. | Replace male-sounding performance with explicitly female mature mezzo, theatrical and delighted. |
 | Professor Pockets | White-haired older man with spectacles and top hat. | New older male actor: light, whimsical, animated and gently amused. |
-| Miss Juniper | Bespectacled teacher with a star clip; soft, thoughtful and calm. | Preserve existing actor. |
+| Miss Juniper | Bespectacled teacher with a star clip; soft, thoughtful and calm. | Replace youthful voice with mature female teacher in her late forties, calm and assured. |
 | Mrs. Odum | Silver-braided gardener in a straw hat. | New older female actor: practical, relaxed and affectionate. |
 | Mr. Lindqvist | Silver-haired teacher in a bow tie and waistcoat. | New older male actor: precise, musical and quietly playful. |
 | Mr. Ade | Friendly moustached postman; cheerful and conversational. | Preserve existing actor. |
 | The Busker | Bearded musician in a knitted cap; friendly and easygoing. | Preserve existing actor. |
-| The Fishers | Bearded fisherman in an oilskin coat; cheerful gratitude. | Preserve existing actor. |
+| The Fishers | Bearded fisherman in an oilskin coat; cheerful gratitude. | Deep male bass-baritone, weathered coastal lilt and hearty sailor warmth. |
 | Magnus | Glossy magpie; grand, theatrical, comic, able to soften. | Preserve Magnus A. |
-| Big Bertie | Large friendly robot; booming but joyful. | Preserve existing actor. |
+| Big Bertie | Large friendly robot; booming but joyful. | Synthetic mechanical male voice, plus gentle 35 Hz amplitude modulation and short metallic resonance. |
 | Whisker | Small, round shop mouse; chattery, easily startled, comic. | Preserve existing actor. |
 
 Kip and Tess keep expressive beeps. Pudding keeps recorded cat foley. Residents
@@ -54,8 +54,9 @@ production direction that could be read aloud.
 
 ## Generation and verification
 
-`scripts/character-voice-profiles.json` records the ten replacement casting
-directions. `scripts/recast-elevenlabs.mjs` designs and assigns those actors,
+`scripts/character-voice-profiles.json` records replacement casting
+directions, including six revisions requested after listening. Per-character
+revisions preserve the fourteen accepted actors. `scripts/recast-elevenlabs.mjs` designs and assigns those actors,
 preserving prior voices and cached previews; `--dry-run` makes no API requests.
 `scripts/generate-elevenlabs.mjs voices` records changed/missing dialogue into
 new hashed MP3s and updates the manifest. Keys stay in the local environment.
