@@ -210,14 +210,41 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
       g.fillStyle(0xbca16a, 1);
       g.fillCircle(e.x + 110, 150, 28);
       if (this.def.pallet && !this.state.pallet) {
-        g.lineStyle(3, 0xf4ebd5, 0.5 + Math.sin(this.t * 4) * 0.3);
-        g.strokeRoundedRect(e.x - 50, e.y + 8, 100, 44, 8);
+        // where the pallet goes: a glowing pallet-shaped ghost with a dark edge
+        const pulse = 0.5 + Math.sin(this.t * 4) * 0.3;
+        const px = e.x, py = e.y + 30;
+        g.fillStyle(0xfff3b0, 0.25 + pulse * 0.3);
+        g.fillTriangle(px - 40, py - 10, px + 40, py - 10, px, py + 22);
+        g.fillRect(px - 46, py - 16, 18, 12);
+        g.fillRect(px + 28, py - 16, 18, 12);
+        g.lineStyle(5, 0x342f29, 0.5);
+        g.strokeTriangle(px - 40, py - 10, px + 40, py - 10, px, py + 22);
+        g.lineStyle(3, 0xfff3b0, 0.6 + pulse * 0.4);
+        g.strokeTriangle(px - 40, py - 10, px + 40, py - 10, px, py + 22);
       }
     }
     if (ticked && running) {
       this.beat++;
       if (this.beat % 2) sfx.tick(0.9);
       else sfx.tock();
+    }
+    if (this.def.pallet || this.def.goal === 'push') this.drawClock(g, running);
+    // nothing moving yet: a curved arrow beside the bob says "push me"
+    // (when the pallet is missing, its glowing slot comes first, then the push)
+    if (!this.state.pushed && !this.fixed && this.def.goal === 'push' && (!this.def.pallet || this.state.pallet)) {
+      const v = this.views[0];
+      const pulse = 0.6 + Math.sin(this.t * 5) * 0.4;
+      g.lineStyle(7, 0x342f29, 0.5 * pulse + 0.2);
+      g.beginPath();
+      g.arc(v.bob.x, v.bob.y - 60, 80, Math.PI * 0.62, Math.PI * 0.92, false);
+      g.strokePath();
+      g.lineStyle(4, 0xfff3b0, pulse);
+      g.beginPath();
+      g.arc(v.bob.x, v.bob.y - 60, 80, Math.PI * 0.62, Math.PI * 0.92, false);
+      g.strokePath();
+      const tip = { x: v.bob.x + Math.cos(Math.PI * 0.62) * 80, y: v.bob.y - 60 + Math.sin(Math.PI * 0.62) * 80 };
+      g.fillStyle(0xfff3b0, pulse);
+      g.fillTriangle(tip.x + 14, tip.y - 2, tip.x - 6, tip.y - 12, tip.x - 2, tip.y + 10);
     }
     if (this.def.goal === 'sync' && this.views.length > 1) {
       // the bridge forms when both bobs swing together
@@ -241,6 +268,50 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
       g.fillCircle(1000, 140, 14);
     }
     void pendulumSolved;
+  }
+
+  /** The clock the pendulum keeps: a face beside the escapement whose hands only move while it ticks. */
+  private drawClock(g: Phaser.GameObjects.Graphics, running: boolean): void {
+    const cx = this.escape.x + 250;
+    const cy = 190;
+    const wheel = { x: this.escape.x + 110, y: 150 };
+    g.lineStyle(8, 0x554638, 1);
+    g.lineBetween(wheel.x, wheel.y, cx, cy);
+    g.lineStyle(4, 0xb88a2c, 1);
+    g.lineBetween(wheel.x, wheel.y, cx, cy);
+    g.fillStyle(0x000000, 0.3);
+    g.fillCircle(cx + 4, cy + 6, 74);
+    g.fillStyle(0x6e4a2a, 1);
+    g.fillCircle(cx, cy, 74);
+    g.fillStyle(0xb88a2c, 1);
+    g.fillCircle(cx, cy, 66);
+    g.fillStyle(0xf4ebd5, 1);
+    g.fillCircle(cx, cy, 60);
+    for (let k = 0; k < 12; k++) {
+      const a = (k / 12) * Math.PI * 2;
+      g.fillStyle(0x342f29, 1);
+      g.fillCircle(cx + Math.cos(a) * 50, cy + Math.sin(a) * 50, k % 3 ? 2 : 4);
+    }
+    const minutes = running ? this.beat * 0.25 : 0;
+    const hA = -Math.PI / 2 + (minutes / 12) * (Math.PI / 30) + Math.PI * 0.33;
+    const mA = -Math.PI / 2 + minutes * (Math.PI / 30);
+    g.lineStyle(7, 0x342f29, 1);
+    g.lineBetween(cx, cy, cx + Math.cos(hA) * 30, cy + Math.sin(hA) * 30);
+    g.lineStyle(4, 0x342f29, 1);
+    g.lineBetween(cx, cy, cx + Math.cos(mA) * 46, cy + Math.sin(mA) * 46);
+    g.fillStyle(0xb5442c, 1);
+    g.fillCircle(cx, cy, 6);
+    if (!running) {
+      // a stopped clock: little "zzz" marks
+      g.lineStyle(3, 0x342f29, 0.5);
+      for (let k = 0; k < 2; k++) {
+        const zx = cx + 70 + k * 16;
+        const zy = cy - 60 - k * 18;
+        g.lineBetween(zx, zy, zx + 10, zy);
+        g.lineBetween(zx + 10, zy, zx, zy + 10);
+        g.lineBetween(zx, zy + 10, zx + 10, zy + 10);
+      }
+    }
   }
 
   protected hintTarget(): HintTarget | null {

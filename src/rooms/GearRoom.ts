@@ -739,9 +739,32 @@ export class GearRoom extends RoomBase<'gear'> {
         g.strokeCircle(x, y, size);
         g.lineStyle(5, 0xbca16a, 1);
         g.lineBetween(x, y, x + Math.cos(a) * size, y + Math.sin(a) * size);
-        const colors: Record<string, number> = { Mercury: 0xb0a8a0, Venus: 0xe8c39e, Earth: 0x5fa8d3 };
+        // a planet you can tell apart: grey cratered Mercury, creamy Venus, blue-and-green Earth
+        const colors: Record<string, number> = { Mercury: 0xa8a29a, Venus: 0xe8c39e, Earth: 0x4f8fd0 };
+        const sizes: Record<string, number> = { Mercury: 14, Venus: 19, Earth: 22 };
+        const px = x + Math.cos(a) * size, py = y + Math.sin(a) * size;
+        const pr = sizes[w.out.label ?? ''] ?? 16;
+        g.fillStyle(0x000000, 0.3);
+        g.fillCircle(px + 3, py + 4, pr);
         g.fillStyle(colors[w.out.label ?? ''] ?? 0xe05a47, 1);
-        g.fillCircle(x + Math.cos(a) * size, y + Math.sin(a) * size, 12);
+        g.fillCircle(px, py, pr);
+        if (w.out.label === 'Earth') {
+          g.fillStyle(0x5f9a4a, 1);
+          g.fillEllipse(px - pr * 0.3, py - pr * 0.2, pr * 0.8, pr * 0.6);
+          g.fillEllipse(px + pr * 0.35, py + pr * 0.35, pr * 0.6, pr * 0.4);
+        } else if (w.out.label === 'Mercury') {
+          g.fillStyle(0x7d776f, 1);
+          g.fillCircle(px - pr * 0.3, py - pr * 0.2, pr * 0.25);
+          g.fillCircle(px + pr * 0.35, py + pr * 0.25, pr * 0.18);
+        } else {
+          g.fillStyle(0xd4a874, 0.8);
+          g.fillEllipse(px, py - pr * 0.25, pr * 1.6, pr * 0.3);
+          g.fillEllipse(px, py + pr * 0.3, pr * 1.6, pr * 0.3);
+        }
+        g.fillStyle(0xffffff, 0.35);
+        g.fillCircle(px - pr * 0.35, py - pr * 0.4, pr * 0.3);
+        g.lineStyle(2, 0x342f29, 0.8);
+        g.strokeCircle(px, py, pr);
         g.fillStyle(0xf1d391, 1);
         g.fillCircle(x, y, 18);
         break;

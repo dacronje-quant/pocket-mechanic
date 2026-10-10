@@ -533,6 +533,57 @@ export class FlowRoom extends RoomBase<'flow'> {
         break;
       case 'K': {
         const wet = cell >= 0 && this.pipe?.reached.has(cell);
+        // what the water or steam goes to, as the room's words call it
+        const art = this.def.id === '5-2' ? 'wheel' : ['5-4', '8-2'].includes(this.def.id) ? 'piston' : 'tank';
+        if (art === 'wheel' && !t.forbidden) {
+          // a waterwheel that turns once the water reaches it
+          const a = wet ? this.time.now / 300 : 0;
+          g.lineStyle(5, 0x6e5236, 1);
+          g.strokeCircle(x, y, S * 0.3);
+          for (let k = 0; k < 8; k++) {
+            const aa = a + (k / 8) * Math.PI * 2;
+            g.lineStyle(4, 0x856c50, 1);
+            g.lineBetween(x, y, x + Math.cos(aa) * S * 0.3, y + Math.sin(aa) * S * 0.3);
+            g.fillStyle(0xad6b51, 1);
+            g.fillRect(x + Math.cos(aa) * S * 0.3 - 5, y + Math.sin(aa) * S * 0.3 - 5, 10, 10);
+          }
+          g.fillStyle(0xbca16a, 1);
+          g.fillCircle(x, y, 6);
+          if (wet) {
+            g.fillStyle(0x5fa8d3, 0.8);
+            for (let k = 0; k < 3; k++) g.fillCircle(x - S * 0.2 + k * S * 0.2, y + S * 0.34 + Math.sin(this.time.now / 120 + k) * 3, 4);
+          }
+          break;
+        }
+        if (art === 'piston') {
+          // a piston in its cylinder: it pumps when steam arrives; the wobbly one leans and is cracked
+          const wobbly = t.forbidden;
+          const pump = wet ? Math.abs(Math.sin(this.time.now / 160)) * S * 0.14 : 0;
+          const lean = wobbly ? 0.25 : 0;
+          const P = (dx: number, dy: number) => new Phaser.Math.Vector2(x + dx * Math.cos(lean) - dy * Math.sin(lean), y + dx * Math.sin(lean) + dy * Math.cos(lean));
+          g.fillStyle(wobbly ? 0x8f8a7a : 0x82938c, 1);
+          g.fillPoints([P(-S * 0.18, S * 0.32), P(S * 0.18, S * 0.32), P(S * 0.18, -S * 0.08), P(-S * 0.18, -S * 0.08)], true);
+          g.fillStyle(0xbca16a, 1);
+          g.fillPoints([P(-S * 0.06, -S * 0.08 - pump), P(S * 0.06, -S * 0.08 - pump), P(S * 0.06, -S * 0.34 - pump), P(-S * 0.06, -S * 0.34 - pump)], true);
+          g.fillPoints([P(-S * 0.14, -S * 0.34 - pump), P(S * 0.14, -S * 0.34 - pump), P(S * 0.14, -S * 0.4 - pump), P(-S * 0.14, -S * 0.4 - pump)], true);
+          if (wobbly) {
+            // keep it dry: red warning stripes and a crack
+            g.lineStyle(3, 0xd64541, 1);
+            for (let k = 0; k < 3; k++) {
+              const a = P(-S * 0.18, S * 0.24 - k * S * 0.12);
+              const b = P(S * 0.18, S * 0.14 - k * S * 0.12);
+              g.lineBetween(a.x, a.y, b.x, b.y);
+            }
+            if (wet) {
+              g.fillStyle(0xffffff, 0.7);
+              g.fillCircle(x + S * 0.2, y - S * 0.2, 8);
+            }
+          } else if (wet) {
+            g.fillStyle(0xffffff, 0.6);
+            g.fillCircle(x - S * 0.22, y - S * 0.1 - pump, 6);
+          }
+          break;
+        }
         if (t.forbidden) {
           // the sugar bowl: keep it dry (stripes so it reads without colour)
           g.fillStyle(0xffffff, 1);
@@ -653,6 +704,8 @@ export class FlowRoom extends RoomBase<'flow'> {
         g.fillStyle(0xffffff, 1);
         if (shapeIdx % 3 === 0) g.fillCircle(fx + 8, fy - 16, 2.5);
         else if (shapeIdx % 3 === 1) g.fillRect(fx + 6, fy - 18, 4, 4);
+        // what the station delivers, when the room names it (cake, presents, balloons)
+        this.drawStationThing(g, t.id ?? '', side ? x - S * 0.06 : x, side ? y : y - S * 0.06, S * 0.2);
         break;
       }
       case 'Z':
@@ -662,6 +715,40 @@ export class FlowRoom extends RoomBase<'flow'> {
         g.lineStyle(3, 0x342f29, 1);
         g.lineBetween(x + S * 0.3, y + S * 0.3, x + S * 0.3 + (t.state ? 8 : -8), y + S * 0.18);
         break;
+      }
+    }
+  }
+
+  /** A cake, a present or balloons on a station's platform, so "cake first" can be seen. */
+  private drawStationThing(g: Phaser.GameObjects.Graphics, id: string, x: number, y: number, r: number): void {
+    g.lineStyle(2, 0x342f29, 0.8);
+    if (id.includes('cake')) {
+      g.fillStyle(0x8a5a34, 1);
+      g.fillRoundedRect(x - r, y - r * 0.2, r * 2, r * 1.1, 4);
+      g.fillStyle(0xf4ebd5, 1);
+      g.fillRoundedRect(x - r, y - r * 0.4, r * 2, r * 0.5, 4);
+      g.strokeRoundedRect(x - r, y - r * 0.4, r * 2, r * 1.3, 4);
+      g.fillStyle(0xd64541, 1);
+      g.fillRect(x - 2, y - r * 1.0, 4, r * 0.6);
+      g.fillStyle(0xffd43b, 1);
+      g.fillCircle(x, y - r * 1.1, 3.5);
+    } else if (id.includes('present')) {
+      g.fillStyle(0x537a72, 1);
+      g.fillRect(x - r * 0.9, y - r * 0.7, r * 1.8, r * 1.6);
+      g.strokeRect(x - r * 0.9, y - r * 0.7, r * 1.8, r * 1.6);
+      g.fillStyle(0xffd43b, 1);
+      g.fillRect(x - 3, y - r * 0.7, 6, r * 1.6);
+      g.fillRect(x - r * 0.9, y - 3, r * 1.8, 6);
+      g.fillEllipse(x - 6, y - r * 0.85, 12, 8);
+      g.fillEllipse(x + 6, y - r * 0.85, 12, 8);
+    } else if (id.includes('balloon')) {
+      for (const [dx, col] of [[-r * 0.6, 0xd64541], [r * 0.1, 0x3b7dd8], [r * 0.7, 0xffd43b]] as Array<[number, number]>) {
+        g.lineStyle(1.5, 0x342f29, 0.8);
+        g.lineBetween(x + dx, y - r * 0.3, x, y + r);
+        g.fillStyle(col, 1);
+        g.fillEllipse(x + dx, y - r * 0.7, r * 0.9, r * 1.1);
+        g.lineStyle(2, 0x342f29, 0.8);
+        g.strokeEllipse(x + dx, y - r * 0.7, r * 0.9, r * 1.1);
       }
     }
   }
