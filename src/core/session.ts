@@ -35,6 +35,9 @@ export function markClosed(): void {
   closedThisSession = true;
 }
 
+/** The shop has closed for today (until a grown-up reopens it). */
+export const shopClosed = (): boolean => closedThisSession;
+
 /** A grown-up reopened the shop through the parental gate. */
 export function reopen(): void {
   closedThisSession = false;

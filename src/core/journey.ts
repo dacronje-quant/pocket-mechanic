@@ -24,7 +24,8 @@ export type Step =
   | { scene: 'shop' }
   | { scene: 'quick' }
   | { scene: 'attic' }
-  | { scene: 'shelf' };
+  | { scene: 'shelf' }
+  | { scene: 'bench' };
 
 const HOME: Step = { scene: 'shop' };
 
@@ -68,7 +69,7 @@ export function afterRoom(p: Profile, launch: RoomLaunch): Step {
     case 'tuneup':
       return { scene: 'shelf' };
     case 'free':
-      return HOME;
+      return { scene: 'bench' };
   }
   const r = repairOfRoom(launch.roomId);
   if (!r) return HOME;
@@ -82,4 +83,9 @@ export function afterRoom(p: Profile, launch: RoomLaunch): Step {
 
 export function prologueOr(p: Profile, next: Step): Step {
   return withStory(p, 'prologue', next);
+}
+
+/** The attic opens with a little story the first time. */
+export function atticStep(p: Profile): Step {
+  return withStory(p, 'attic-open', { scene: 'attic' });
 }

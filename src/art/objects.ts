@@ -393,7 +393,86 @@ export function drawSmallObject(g: Phaser.GameObjects.Graphics, id: string, x: n
     g.fillStyle(c, 1);
     g.fillCircle(x + dx * s, y + dy * s, r * s);
   };
+  const T = (pts: number[], c: number) => {
+    g.fillStyle(c, 1);
+    const vs: Phaser.Math.Vector2[] = [];
+    for (let i = 0; i < pts.length; i += 2) vs.push(v(x + pts[i] * s, y + pts[i + 1] * s));
+    g.fillPoints(vs, true);
+  };
   switch (id) {
+    // the eight Great Repair objects, as small icons (job board, shelf, padlocks)
+    case 'clock':
+      T([-44, -20, 0, -56, 44, -20], 0x7a4b26);
+      R(-36, -22, 72, 70, 0x8a5a33);
+      C(0, 6, 22, 0xf6ead0);
+      g.lineStyle(3 * s, 0x2b1d14, 1);
+      g.lineBetween(x, y + 6 * s, x, y - 10 * s);
+      g.lineBetween(x, y + 6 * s, x + 10 * s, y + 6 * s);
+      R(-8, -40, 16, 12, 0x2b1d14, 3);
+      C(0, -34, 5, 0xffd43b);
+      R(-14, 48, 4, 14, 0xd9a441, 1);
+      R(10, 48, 4, 18, 0xd9a441, 1);
+      break;
+    case 'musicbox':
+      R(-44, -6, 88, 46, 0xd98aa8, 6);
+      R(-48, -20, 96, 16, 0xb5607e, 6);
+      C(0, 16, 9, 0xffd43b);
+      g.fillStyle(0xfce4ec, 1);
+      g.fillEllipse(x, y - 34 * s, 16 * s, 26 * s);
+      C(0, -48, 7, 0xe8913a);
+      break;
+    case 'train':
+      R(-46, -10, 70, 36, 0xd64541, 6);
+      R(-10, -36, 30, 30, 0xd64541, 4);
+      R(-40, -24, 16, 16, 0x2b2b33, 3);
+      R(24, 0, 24, 26, 0x3463b5, 4);
+      C(-30, 30, 10, 0x2b2b33);
+      C(0, 30, 10, 0x2b2b33);
+      C(36, 30, 8, 0x2b2b33);
+      break;
+    case 'radio':
+      R(-46, -36, 92, 72, 0x8a5a33, 14);
+      R(-36, -26, 44, 50, 0xc89a62, 8);
+      for (let i = 0; i < 4; i++) R(-32, -20 + i * 11, 36, 3, 0x6e4527, 1);
+      C(26, -10, 9, 0xd9a441);
+      C(26, 16, 7, 0xd9a441);
+      break;
+    case 'tea':
+      R(-30, -20, 60, 60, 0xc9d1d9, 10);
+      g.fillStyle(0xadb5bd, 1);
+      g.fillEllipse(x, y - 22 * s, 64 * s, 18 * s);
+      R(-6, -46, 12, 22, 0xd9a441, 3);
+      T([30, -6, 54, -24, 56, -16, 34, 6], 0xadb5bd);
+      C(0, 10, 10, 0x3fa37a);
+      break;
+    case 'bertie':
+      R(-26, -10, 52, 50, 0x6c7a89, 8);
+      R(-20, -48, 40, 36, 0x9aa6b4, 8);
+      C(-9, -32, 6, 0xffd43b);
+      C(9, -32, 6, 0xffd43b);
+      R(-40, -6, 14, 34, 0x6c7a89, 6);
+      R(26, -6, 14, 34, 0x6c7a89, 6);
+      C(0, 12, 8, 0xd64541);
+      break;
+    case 'orrery':
+      C(0, 0, 16, 0xffd43b);
+      g.lineStyle(2 * s, 0xd9a441, 1);
+      g.strokeEllipse(x, y, 90 * s, 34 * s);
+      g.strokeEllipse(x, y, 60 * s, 22 * s);
+      C(44, 0, 6, 0x74c0fc);
+      C(-28, 8, 5, 0xe8913a);
+      R(-4, 16, 8, 26, 0x8a5a33, 2);
+      R(-22, 40, 44, 8, 0x8a5a33, 3);
+      break;
+    case 'tower':
+      R(-20, -40, 40, 92, 0x9a8f86, 2);
+      T([-28, -40, 0, -66, 28, -40], 0x6b6560);
+      C(0, -18, 13, 0xf6ead0);
+      g.lineStyle(2 * s, 0x2b1d14, 1);
+      g.lineBetween(x, y - 18 * s, x, y - 27 * s);
+      g.lineBetween(x, y - 18 * s, x + 6 * s, y - 18 * s);
+      R(-8, 30, 16, 22, 0x5a3a22, 6);
+      break;
     case 'door':
       R(-30, -50, 60, 100, 0x8a5a33);
       C(18, 0, 5, 0xd9a441);

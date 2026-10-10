@@ -30,6 +30,8 @@ export function sceneFor(step: Step): { key: string; data: object } {
       return { key: 'shelf', data: {} };
     case 'shop':
       return { key: 'shop', data: {} };
+    case 'bench':
+      return { key: 'bench', data: {} };
   }
 }
 

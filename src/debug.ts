@@ -19,6 +19,12 @@ export const pm: {
   scene: string;
   errors: string[];
   ready: boolean;
-} = { room: null, scene: '', errors: [], ready: false };
+  /** Story, Test Run, rewards and festival scenes: skip straight to the end. */
+  next: (() => void) | null;
+  /** Tappable things in hub scenes, by name (the playthrough taps them). */
+  hot: Record<string, () => void>;
+  /** The save and a few helpers, for the automated playthrough only. */
+  dev?: { save: unknown; persist: () => void; go: (scene: string, data?: object) => void };
+} = { room: null, scene: '', errors: [], ready: false, next: null, hot: {} };
 
 (window as unknown as { pm: typeof pm }).pm = pm;

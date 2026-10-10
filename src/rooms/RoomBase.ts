@@ -261,6 +261,8 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       this.time.delayedCall(1300, () => this.bubble.say(this.def.intro, { id: `${this.def.id}.intro` }));
     }
     pm.scene = this.scene.key;
+    pm.next = null;
+    pm.hot = {};
     pm.room = {
       roomId: this.def.id,
       kind: this.def.kind,
@@ -392,6 +394,8 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       else o.setInteractive({ draggable: true, useHandCursor: true, pixelPerfect: false });
     } else this.input.setDraggable(o, true);
     o.setData('drag', spec);
+    // High contrast (GDD §25.2): a bright outline on everything you can pick up
+    if (settings().contrast && this.renderer.type === Phaser.WEBGL) o.postFX?.addGlow(0xfff36b, 3, 0, false, 0.1, 10);
   }
 
   private nearestTarget(spec: DragSpec, x: number, y: number): SnapTarget | null {
@@ -528,6 +532,11 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     this.bubble.hide();
     this.hintG.clear();
     if (this.launch.mode === 'playground') return;
+    if (this.launch.mode === 'free') {
+      // Nest Studio and other free builds: just celebrate, nothing to record
+      this.time.delayedCall(1500, () => this.showBanner([], 0));
+      return;
+    }
 
     const mode = this.launch.mode;
     const report = markFixed(p, this.def.id, { quick: mode === 'quick', attic: mode === 'attic' });
@@ -625,6 +634,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       c.add(this.add.text(0, 62, `${'●'.repeat(medal)} ${names[medal]}`, { fontFamily: FONT, fontSize: '26px', color: cols[medal], fontStyle: 'bold', stroke: '#2b1d14', strokeThickness: 5 }).setOrigin(0.5));
     }
     const next = afterRoom(p, this.launch);
+    pm.next = () => this.leave(next);
     const btnY = 112;
     c.add(roundButton(this, -120, btnY, '↻', () => this.scene.restart(), { r: 36, fontSize: 34, say: 'Again!' }));
     c.add(roundButton(this, 0, btnY, '⌂', () => this.leave({ scene: 'shop' }), { r: 36, fontSize: 34, say: 'Back to the shop' }));

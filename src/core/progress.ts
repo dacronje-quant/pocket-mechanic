@@ -321,3 +321,12 @@ export function whatWeLearned(p: Profile, now = Date.now()): string {
 export function quickFixesOpen(p: Profile): QuickFixDef[] {
   return QUICK_FIXES.filter((q) => quickOpen(p, q));
 }
+
+/** Kip's Nook grows with Golden Gears: matchbox (0) → tin-can cottage (1) → clockwork house (2). */
+export function nookLevel(p: Profile): number {
+  const g = storyGold(p);
+  return g >= 60 ? 2 : g >= 20 ? 1 : 0;
+}
+
+/** Has the player opened an area since it unlocked? (new areas sparkle in the shop) */
+export const visited = (p: Profile, area: string): boolean => p.flags.includes(`visit:${area}`);

@@ -118,3 +118,12 @@ export const PEDIA: PediaEntry[] = [
 ];
 
 export const pediaById = (id: string): PediaEntry | undefined => PEDIA.find((p) => p.id === id);
+
+/** The three spoken lines of a page, with their voice-file ids. */
+export function pediaLines(e: PediaEntry): Array<{ id: string; text: string }> {
+  return [
+    { id: `pedia.${e.id}.say`, text: e.say },
+    { id: `pedia.${e.id}.how`, text: `How it really works: ${e.how}` },
+    { id: `pedia.${e.id}.home`, text: `Spot it at home! ${e.home}` },
+  ];
+}

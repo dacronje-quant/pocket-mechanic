@@ -4,6 +4,7 @@
  * your wave is drawn over a golden ghost wave (GDD §25.3 visual sound cues).
  */
 import Phaser from 'phaser';
+import { LINES } from '../content/story';
 import * as sfx from '../audio/sfx';
 import { speak } from '../audio/voice';
 import { clarity, dialPitch, dialTuned, waveSample } from '../mechanism/tune';
@@ -150,7 +151,7 @@ export class TuneRoom extends RoomBase<'tune'> {
     });
     if (this.def.mode === 'radio' && this.def.dials.every((q) => dialTuned(this.state[q.id], q.target, q.tol)) && !this.wasTuned) {
       this.wasTuned = true;
-      void speak('marigold', '…this is Brasswick Harbour, can you hear me…?', 'radio.harbour');
+      void speak('marigold', LINES['radio.harbour'].text, 'radio.harbour');
     }
   }
 

@@ -3,6 +3,7 @@ import { click } from '../audio/sfx';
 import { speak, stopVoice } from '../audio/voice';
 import { badge } from '../art/portraits';
 import type { CharId } from '../content/types';
+import { uiLineId } from '../content/voicelines';
 import { profile, settings } from '../core/save';
 
 export const FONT = '"Trebuchet MS", "Segoe UI", system-ui, sans-serif';
@@ -63,7 +64,7 @@ export function roundButton(scene: Phaser.Scene, x: number, y: number, icon: str
     release();
     if (!was || opts.disabled) return;
     click();
-    if (opts.say && settings().readAloud) void speak('nana', opts.say);
+    if (opts.say && settings().readAloud) void speak('nana', opts.say, uiLineId(opts.say));
     onTap();
   });
   c.setData('icon', t);

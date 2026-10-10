@@ -4,6 +4,7 @@
  * front layer). Outputs drive clock hands, fans, wheels, planet arms and more.
  */
 import Phaser from 'phaser';
+import { LINES } from '../content/story';
 import * as sfx from '../audio/sfx';
 import { ensureGearTexture, type GearVariant } from '../art/textures';
 import { meshPhase, pitchRadius, MODULE } from '../mechanism/graph';
@@ -243,7 +244,7 @@ export class GearRoom extends RoomBase<'gear'> {
     if (sol.jammed) {
       sfx.nuhUh();
       if (setFlag(profile(), 'jam')) persistSoon();
-      this.bubble?.say('Oh dear, a jam! Those gears are all pushing each other.', { id: 'room.jam', ms: 3000 });
+      this.bubble?.say(LINES['room.jam'].text, { id: 'room.jam', ms: 3000 });
       for (const v of this.views) {
         v.omega = 0;
         this.tweens.add({ targets: v.img, x: v.img.x + 3, duration: 50, yoyo: true, repeat: 4 });
