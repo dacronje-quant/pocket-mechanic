@@ -42,15 +42,30 @@ export function atlasFrame(scene: Phaser.Scene, key: string, index: number, cols
 /** A painted illustration follows a Graphics owner's transform, visibility and lifecycle. */
 export function followGraphic(g: Phaser.GameObjects.Graphics, image: Phaser.GameObjects.Image, x: number, y: number, w: number, h: number): void {
   const scene = g.scene;
+  // The image takes the graphic's place in the draw order: directly above it, in the same container
+  // (or the scene's list at the same depth). Anything added after the graphic, like a picture or
+  // text on a painted card, stays on top of it.
+  // Callers often move the graphic into a container after creating it, so this re-homes the image
+  // whenever the graphic moves.
+  const place = () => {
+    const parent = g.parentContainer;
+    if (parent) {
+      if (image.parentContainer !== parent) {
+        image.parentContainer?.remove(image);
+        parent.addAt(image, parent.getIndex(g) + 1);
+      } else if (parent.getIndex(image) !== parent.getIndex(g) + 1) parent.moveAbove<Phaser.GameObjects.GameObject>(image, g);
+    } else if (!image.parentContainer) {
+      if (image.depth !== g.depth) image.setDepth(g.depth);
+      const list = scene.children;
+      if (list.getIndex(image) !== list.getIndex(g) + 1) list.moveAbove(image as Phaser.GameObjects.GameObject, g);
+    }
+  };
   const update = () => {
     if (!g.scene || !image.scene) return;
-    const matrix = g.getWorldTransformMatrix(); const at = matrix.transformPoint(x, y);
-    let root: Phaser.GameObjects.GameObject = g, alpha = g.alpha, visible = g.visible, mask = g.mask;
-    for (let parent = g.parentContainer; parent; parent = parent.parentContainer) { root = parent; alpha *= parent.alpha; visible &&= parent.visible; mask = parent.mask ?? mask; }
-    if (mask) image.setMask(mask);
-    image.setPosition(at.x, at.y).setScale(w / image.width * matrix.scaleX, h / image.height * matrix.scaleY)
-      .setRotation(Math.atan2(matrix.b, matrix.a)).setAlpha(alpha).setVisible(visible)
-      .setDepth((root as Phaser.GameObjects.Graphics).depth + 0.002);
+    place();
+    const at = g.getLocalTransformMatrix().transformPoint(x, y);
+    image.setPosition(at.x, at.y).setScale(w / image.width * g.scaleX, h / image.height * g.scaleY)
+      .setRotation(g.rotation).setAlpha(g.alpha).setVisible(g.visible);
   };
   const cleanup = () => { scene.events.off(Phaser.Scenes.Events.POST_UPDATE, update); if (image.scene) image.destroy(); };
   scene.events.on(Phaser.Scenes.Events.POST_UPDATE, update); g.once(Phaser.GameObjects.Events.DESTROY, cleanup);
