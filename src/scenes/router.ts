@@ -37,38 +37,62 @@ export function sceneFor(step: Step): { key: string; data: object } {
 
 let leaving = false;
 
-/** Fade out and go to the next step. */
-export function go(scene: Phaser.Scene, step: Step, fast = false): void {
+/** Scenes call this when they start, so a lost transition can never block navigation for good. */
+export function resetLeaving(): void {
+  leaving = false;
+}
+
+/**
+ * Fade out, then start `key`. The fade is forced (a fade-in still running —
+ * e.g. a tap in the first quarter-second of a scene — used to swallow the
+ * fade-out, so its "complete" event never came), and a timer finishes the move
+ * anyway if the fade never completes. `leaving` is always cleared, even if the
+ * scene stopped in the meantime; before, it could stay set and every later
+ * button that changes scene silently did nothing.
+ */
+function leave(scene: Phaser.Scene, key: string, data: object, ms: number, fast = false): void {
   if (leaving) return;
   leaving = true;
   stopVoice();
-  const { key, data } = sceneFor(step);
-  const cam = scene.cameras.main;
+  let done = false;
   const finish = () => {
+    if (done) return;
+    done = true;
     leaving = false;
-    scene.scene.start(key, data);
+    try {
+      scene.scene.start(key, data);
+    } catch {
+      scene.game.scene.start(key, data);
+    }
   };
   if (fast) return finish();
-  cam.fadeOut(260, 26, 18, 12);
-  cam.once('camerafadeoutcomplete', finish);
-  // safety: if the fade never completes (hidden tab), move on anyway
+  const cam = scene.cameras.main;
+  try {
+    cam.once('camerafadeoutcomplete', finish);
+    cam.fade(ms, 26, 18, 12, true);
+  } catch {
+    return finish();
+  }
+  // safety: if the fade never completes (hidden tab, scene paused), move on anyway
   setTimeout(() => {
-    if (leaving && scene.scene.isActive()) finish();
-  }, 900);
+    if (done) return;
+    const sys = scene.sys;
+    // the scene was stopped some other way: just release the lock
+    if (!sys || !(sys.isActive() || sys.isPaused() || sys.isSleeping())) {
+      done = true;
+      leaving = false;
+      return;
+    }
+    finish();
+  }, ms + 700);
+}
+
+/** Fade out and go to the next step. */
+export function go(scene: Phaser.Scene, step: Step, fast = false): void {
+  const { key, data } = sceneFor(step);
+  leave(scene, key, data, 260, fast);
 }
 
 export function goScene(scene: Phaser.Scene, key: string, data: object = {}): void {
-  if (leaving) return;
-  leaving = true;
-  stopVoice();
-  const cam = scene.cameras.main;
-  const finish = () => {
-    leaving = false;
-    scene.scene.start(key, data);
-  };
-  cam.fadeOut(240, 26, 18, 12);
-  cam.once('camerafadeoutcomplete', finish);
-  setTimeout(() => {
-    if (leaving && scene.scene.isActive()) finish();
-  }, 900);
+  leave(scene, key, data, 240);
 }

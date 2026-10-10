@@ -27,6 +27,7 @@ export class Kip extends Phaser.GameObjects.Container {
   private pupilDx = 0;
   private look: KipLook;
   private trailTimer = 0;
+  private blinkTimer?: Phaser.Time.TimerEvent;
   readonly groundY: number;
   readonly variant: 'kip' | 'tess';
   minX = 60;
@@ -60,7 +61,9 @@ export class Kip extends Phaser.GameObjects.Container {
     this.setSize(70, 90);
     scene.add.existing(this);
     this.redraw();
-    scene.time.addEvent({ delay: 3200 + Math.random() * 800, loop: true, callback: () => this.blink() });
+    // Keep the handle: a looping timer that outlives a destroyed Kip used to throw on
+    // `this.scene` (undefined after destroy), which killed Phaser's game loop.
+    this.blinkTimer = scene.time.addEvent({ delay: 3200 + Math.random() * 800, loop: true, callback: () => this.blink() });
   }
 
   setLook(look: KipLook): void {
@@ -411,7 +414,7 @@ export class Kip extends Phaser.GameObjects.Container {
   private setupTrail(trail: string): void {
     this.trail?.destroy();
     this.trail = undefined;
-    if (!trail || trail === 'trail-none') return;
+    if (!trail || trail === 'trail-none' || !this.scene) return;
     const key = trail === 'trail-notes' ? 'note' : trail === 'trail-gears' ? 'minigear' : trail === 'trail-steam' ? 'puff' : trail === 'trail-stars' ? 'star' : 'spark';
     if (!this.scene.textures.exists(key)) return;
     this.trail = this.scene.add.particles(0, 0, key, {
@@ -443,6 +446,7 @@ export class Kip extends Phaser.GameObjects.Container {
   }
 
   blink(): void {
+    if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
     const lids = this.lids;
     let step = 0;
     const L = this.look;
@@ -469,6 +473,7 @@ export class Kip extends Phaser.GameObjects.Container {
   }
 
   walkTo(x: number, onArrive?: () => void): void {
+    if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
     if (this.busy) return;
     const tx = Phaser.Math.Clamp(x, this.minX, this.maxX);
     if (Math.abs(tx - this.x) < 8) {
@@ -493,6 +498,7 @@ export class Kip extends Phaser.GameObjects.Container {
 
   /** Happy hop + spin (the "Wind-Up Wiggle"). */
   celebrate(): void {
+    if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
     this.busy = true;
     this.walkTween?.stop();
     this.keySpeed = 8;
@@ -515,32 +521,38 @@ export class Kip extends Phaser.GameObjects.Container {
 
   /** Proud Polish: buff the chest after a fix. */
   polish(): void {
+    if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
     this.scene.tweens.add({ targets: this.torso, angle: { from: -6, to: 6 }, duration: 120, yoyo: true, repeat: 3, onComplete: () => this.torso.setAngle(0) });
   }
 
   /** A little shrug when a part refuses to fit. */
   shrug(): void {
+    if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
     this.scene.tweens.add({ targets: this.torso, angle: { from: -12, to: 12 }, duration: 90, yoyo: true, repeat: 2, onComplete: () => this.torso.setAngle(0) });
   }
 
   /** Giggles: rapid little shakes. */
   giggle(): void {
+    if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
     this.scene.tweens.add({ targets: this.torso, y: -34, duration: 50, yoyo: true, repeat: 6 });
   }
 
   /** Peek: the lens-eyes push forward like binoculars. */
   peek(): void {
+    if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
     this.scene.tweens.add({ targets: [this.eyesG, this.pupils], scale: 1.3, duration: 160, yoyo: true, hold: 300 });
   }
 
   /** Point the whole body at something (hint). */
   point(x: number): void {
+    if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
     this.walkTo(x - 120 * Math.sign(x - this.x || 1));
     this.scene.tweens.add({ targets: this.torso, angle: x > this.x ? 18 : -18, duration: 200, yoyo: true, hold: 600 });
   }
 
   /** Tick-Tock Nap: sit and snooze. */
   nap(on: boolean): void {
+    if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
     this.busy = on;
     this.scene.tweens.add({ targets: this.torso, y: on ? -20 : -30, angle: on ? -8 : 0, duration: 400 });
     this.keySpeed = on ? 0.2 : 0.6;
@@ -566,6 +578,9 @@ export class Kip extends Phaser.GameObjects.Container {
   }
 
   preDestroy(): void {
+    this.blinkTimer?.remove();
+    this.blinkTimer = undefined;
+    this.walkTween?.stop();
     this.trail?.destroy();
   }
 }

@@ -39,7 +39,7 @@ import { pm } from '../debug';
 import { effective, initialState, isSolved, solutionState, type Effective, type StateOf } from '../rules';
 import { FIDDLE_SPOTS, makeFiddle, THEME_FIDDLES } from './fiddles';
 import { blocker, card, FONT, roundButton, SERIF, setButtonIcon, showWords, SpeechBubble, toast } from '../ui/widgets';
-import { go } from '../scenes/router';
+import { go, resetLeaving } from '../scenes/router';
 import { toggleFullscreen } from '../platform';
 
 export const D = {
@@ -197,6 +197,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
   }
 
   create(): void {
+    resetLeaving();
     const s = settings();
     ensureBasics(this);
     setLevels({ muted: s.muted, music: s.music, sfx: s.sfx, voice: s.voice });

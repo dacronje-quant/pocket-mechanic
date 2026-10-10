@@ -59,6 +59,7 @@ export class Portrait extends Phaser.GameObjects.Container {
   private talking = false;
   private talkT = 0;
   private open = false;
+  private blinkTimer?: Phaser.Time.TimerEvent;
 
   constructor(scene: Phaser.Scene, x: number, y: number, who: CharId, scale = 1) {
     super(scene, x, y);
@@ -75,7 +76,10 @@ export class Portrait extends Phaser.GameObjects.Container {
       this.lids = scene.add.graphics();
       this.add([this.bodyG, this.face, this.mouth, this.lids]);
       this.draw();
-      scene.time.addEvent({ delay: 2600 + Math.random() * 1500, loop: true, callback: () => this.blink() });
+      this.blinkTimer = scene.time.addEvent({ delay: 2600 + Math.random() * 1500, loop: true, callback: () => this.blink() });
+      // Story subtitles rebuild their portrait badge every line; without this the
+      // orphaned timer called blink() on a destroyed portrait and froze the game.
+      this.once(Phaser.GameObjects.Events.DESTROY, () => this.blinkTimer?.remove());
     }
     scene.add.existing(this);
   }
@@ -88,6 +92,7 @@ export class Portrait extends Phaser.GameObjects.Container {
     if (m === this.mood) return;
     this.mood = m;
     if (!this.kip) this.drawMouth();
+    if (!this.scene) return;
     if (m === 'laugh' || m === 'surprised') this.scene.tweens.add({ targets: this, y: this.y - 14, duration: 120, yoyo: true, repeat: m === 'laugh' ? 2 : 0 });
     if (this.kip && (m === 'laugh' || m === 'happy' || m === 'proud')) this.kip.celebrate();
   }
@@ -101,6 +106,7 @@ export class Portrait extends Phaser.GameObjects.Container {
   }
 
   blink(): void {
+    if (!this.scene) return;
     if (this.kip) return this.kip.blink();
     const p = this.person();
     if (!p && !this.lids) return;
