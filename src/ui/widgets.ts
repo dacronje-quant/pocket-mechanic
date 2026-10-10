@@ -402,10 +402,24 @@ export function parentalGate(scene: Phaser.Scene, onPass: () => void, onCancel?:
   items.push(x);
 }
 
-/** A keypad of letter stamps (initials) or code symbols. */
-export function keypad(scene: Phaser.Scene, x: number, y: number, keys: string, max: number, onChange: (value: string) => void, depth = 100): { destroy: () => void; value: () => string } {
+/**
+ * A keypad of letter stamps (initials) or code symbols. A physical keyboard
+ * works too (matching keys, Backspace, and Enter → `onEnter`), so a child at
+ * a computer who types isn't left wondering why nothing happens.
+ */
+export function keypad(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  keys: string,
+  max: number,
+  onChange: (value: string) => void,
+  depth = 100,
+  onEnter?: () => void,
+): { destroy: () => void; value: () => string } {
   let value = '';
   const objs: Phaser.GameObjects.GameObject[] = [];
+  const buttons = new Map<string, Phaser.GameObjects.Container>();
   const cols = keys.length > 16 ? 8 : 6;
   const shown = scene.add.text(x, y - 40, '', { fontFamily: SERIF, fontSize: '40px', color: '#3b260b', fontStyle: 'bold', backgroundColor: '#fff6e2', padding: { x: 16, y: 6 } }).setOrigin(0.5).setDepth(depth);
   objs.push(shown);
@@ -413,23 +427,55 @@ export function keypad(scene: Phaser.Scene, x: number, y: number, keys: string, 
     shown.setText(value || '·');
     onChange(value);
   };
+  const press = (k: string) => {
+    if (value.length < max) value += k;
+    refresh();
+  };
+  const erase = () => {
+    value = value.slice(0, -1);
+    refresh();
+  };
   [...keys].forEach((k, i) => {
     const bx = x + ((i % cols) - (cols - 1) / 2) * 62;
     const by = y + 30 + Math.floor(i / cols) * 62;
-    objs.push(
-      roundButton(scene, bx, by, k, () => {
-        if (value.length < max) value += k;
-        refresh();
-      }, { r: 27, fontSize: 24 }).setDepth(depth),
-    );
+    const b = roundButton(scene, bx, by, k, () => press(k), { r: 27, fontSize: 24 }).setDepth(depth);
+    buttons.set(k.toUpperCase(), b);
+    objs.push(b);
   });
   const rows = Math.ceil(keys.length / cols);
-  objs.push(
-    roundButton(scene, x + ((cols - 1) / 2) * 62 + 70, y + 30 + (rows - 1) * 62, '⌫', () => {
-      value = value.slice(0, -1);
-      refresh();
-    }, { r: 27, fontSize: 24 }).setDepth(depth),
-  );
+  const back = roundButton(scene, x + ((cols - 1) / 2) * 62 + 70, y + 30 + (rows - 1) * 62, '⌫', erase, { r: 27, fontSize: 24 }).setDepth(depth);
+  objs.push(back);
+
+  // Physical keyboard: flash the matching stamp so it feels the same as a tap.
+  const flash = (b?: Phaser.GameObjects.Container) => {
+    const draw = b?.getData('draw') as ((pressed: boolean) => void) | undefined;
+    if (!b || !draw) return;
+    draw(true);
+    scene.time.delayedCall(110, () => b.active && draw(false));
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.repeat) return;
+    if (e.key === 'Backspace') {
+      erase();
+      flash(back);
+    } else if (e.key === 'Enter') {
+      onEnter?.();
+    } else if (e.key.length === 1 && buttons.has(e.key.toUpperCase())) {
+      const k = e.key.toUpperCase();
+      click();
+      press(k);
+      flash(buttons.get(k));
+    }
+  };
+  scene.input.keyboard?.on('keydown', onKey);
+  let gone = false;
+  const destroy = () => {
+    if (gone) return;
+    gone = true;
+    scene.input.keyboard?.off('keydown', onKey);
+    objs.forEach((o) => o.destroy());
+  };
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, destroy);
   refresh();
-  return { destroy: () => objs.forEach((o) => o.destroy()), value: () => value };
+  return { destroy, value: () => value };
 }

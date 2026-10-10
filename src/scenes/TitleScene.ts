@@ -154,17 +154,25 @@ export class TitleScene extends MetaScene {
     const letters = () => {
       clearStep();
       this.line('title.letters');
+      let moved = false;
+      const next = () => {
+        if (moved) return;
+        moved = true;
+        styles();
+      };
       const pad = keypad(this, 650, 190, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 3, (v) => {
         initials = v;
         look.initials = v;
         preview.setLook(look);
-      }, depth);
-      let padGone = false;
-      const padObj = { destroy: () => !padGone && ((padGone = true), pad.destroy()) } as unknown as Phaser.GameObjects.GameObject;
+      }, depth, next);
+      const padObj = { destroy: () => pad.destroy() } as unknown as Phaser.GameObjects.GameObject;
       stepObjs.push(padObj);
       this.panel.push(padObj);
-      addStep(roundButton(this, 1080, 560, '▶', () => styles(), { r: 44, fontSize: 40, color: 0x8ce99a, say: 'Next' }));
-      this.hot('lettersNext', () => styles());
+      // Letters are optional, so ▶ is always live; a slow pulse shows it's the way on.
+      const nextBtn = addStep(roundButton(this, 1080, 560, '▶', next, { r: 44, fontSize: 40, color: 0x8ce99a, say: 'Next' }));
+      nextBtn.once(Phaser.GameObjects.Events.DESTROY, () => this.tweens.killTweensOf(nextBtn));
+      this.tweens.add({ targets: nextBtn, scale: 1.12, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 1200 });
+      this.hot('lettersNext', next);
     };
 
     const styles = () => {
