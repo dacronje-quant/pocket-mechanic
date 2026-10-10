@@ -10,6 +10,7 @@ import { heart, Kip, star } from './Kip';
 import { DEFAULT_LOOK, TESS_LOOK } from '../content/cosmetics';
 import { CM, drawPatina } from './copperMoss';
 import { withArt } from './generated';
+import { atlasFrame } from './sprites';
 
 type HairStyle = 'bun' | 'short' | 'curly' | 'pigtails' | 'puffs' | 'long' | 'wild' | 'bald' | 'braid' | 'updo' | 'neat' | 'tuft';
 type Hat = 'none' | 'captain' | 'feathered' | 'tophat' | 'postman' | 'straw' | 'beanie' | 'toque' | 'goggles';
@@ -30,51 +31,6 @@ interface Person {
   wide?: boolean;
 }
 
-/** Register one atlas cell and trim its clear margin once, so cast sizes stay consistent. */
-function paintedFrame(texture: Phaser.Textures.Texture, who: CharId, index: number, columns: number, rows: number): string {
-  const name = `portrait-${who}`;
-  if (texture.has(name)) return name;
-  const source = texture.source[0];
-  const cellWidth = Math.floor(source.width / columns);
-  const cellHeight = Math.floor(source.height / rows);
-  const cellX = (index % columns) * cellWidth;
-  const cellY = Math.floor(index / columns) * cellHeight;
-  let left = 0;
-  let top = 0;
-  let width = cellWidth;
-  let height = cellHeight;
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = cellWidth;
-    canvas.height = cellHeight;
-    const context = canvas.getContext('2d', { willReadFrequently: true });
-    if (context) {
-      context.drawImage(texture.getSourceImage() as CanvasImageSource, cellX, cellY, cellWidth, cellHeight, 0, 0, cellWidth, cellHeight);
-      const pixels = context.getImageData(0, 0, cellWidth, cellHeight).data;
-      let minX = cellWidth;
-      let minY = cellHeight;
-      let maxX = -1;
-      let maxY = -1;
-      for (let py = 0; py < cellHeight; py++) for (let px = 0; px < cellWidth; px++) {
-        if (pixels[(py * cellWidth + px) * 4 + 3] < 24) continue;
-        minX = Math.min(minX, px);
-        minY = Math.min(minY, py);
-        maxX = Math.max(maxX, px);
-        maxY = Math.max(maxY, py);
-      }
-      if (maxX >= minX && maxY >= minY) {
-        left = Math.max(0, minX - 3);
-        top = Math.max(0, minY - 3);
-        width = Math.min(cellWidth, maxX + 4) - left;
-        height = Math.min(cellHeight, maxY + 4) - top;
-      }
-    }
-  } catch {
-    // A restricted canvas keeps the complete cell; the procedural portrait remains a fallback.
-  }
-  texture.add(name, 0, cellX + left, cellY + top, width, height);
-  return name;
-}
 
 const PEOPLE: Partial<Record<CharId, Person>> = {
   nana: { skin: 0xe7bc96, hair: 'bun', hairColor: 0xd8d2bf, specs: 'big', clothes: CM.moss, collar: CM.cream, extra: 'pencils' },
@@ -104,11 +60,14 @@ const FACE_ANCHORS: Partial<Record<CharId, [number, number]>> = {
   nana: [.59, .215], albert: [.53, .32], rosa: [.5, .27], theo: [.56, .23], ada: [.5, .28],
   marigold: [.52, .25], pepperwhistle: [.51, .29], pockets: [.52, .34], juniper: [.48, .24],
   ade: [.57, .26], odum: [.5, .3], lindqvist: [.5, .24], busker: [.5, .25],
-  mateo: [.5, .27], pip: [.55, .28], odette: [.5, .27], fisher: [.5, .29],
-  magnus: [.73, .19], coo: [.64, .27], clementine: [.64, .25], mice: [.52, .4],
+  mateo: [.5, .27], pip: [.55, .28], odette: [.5, .27], fisher: [.48, .15],
+  magnus: [.73, .19], coo: [.64, .27], clementine: [.64, .25], mice: [.6, .24],
   humbug: [.63, .51], steamington: [.6, .35], bertie: [.58, .22], lumen: [.69, .43],
-  pigeon: [.75, .25], whisker: [.66, .34], pudding: [.73, .52],
+  pigeon: [.75, .25], whisker: [.66, .34], pudding: [.55, .45],
 };
+
+/** Figures whose face is a big part of the picture (a curled-up cat, a huddle of mice) zoom in less in badges. */
+const HEAD_HEIGHT: Partial<Record<CharId, number>> = { pudding: 250, mice: 430 };
 
 export class Portrait extends Phaser.GameObjects.Container {
   readonly who: CharId;
@@ -156,13 +115,15 @@ export class Portrait extends Phaser.GameObjects.Container {
     if (!id) return;
     withArt(this.scene, id, (key) => {
       if (!this.active || !this.scene) return;
-      const texture = this.scene.textures.get(key);
       const index = humanIndex >= 0 ? humanIndex : creatureIndex;
-      const frame = paintedFrame(texture, this.who, this.who === 'nana' ? 0 : index, this.who === 'nana' ? 1 : 4, this.who === 'nana' ? 1 : humanIndex >= 0 ? 4 : 3);
+      // whole figures, cut cleanly out of the sheet (nothing from neighbours, nothing cut off)
+      const frame = atlasFrame(this.scene, key, this.who === 'nana' ? 0 : index, this.who === 'nana' ? 1 : 4, this.who === 'nana' ? 1 : humanIndex >= 0 ? 4 : 3, true);
       const image = this.scene.add.image(0, 0, key, frame).setName(`portrait:painted:${this.who}`);
-      const height = this.headOnly ? 660 : 350;
+      const height = this.headOnly ? HEAD_HEIGHT[this.who] ?? 660 : 350;
       const anchor = this.headOnly ? FACE_ANCHORS[this.who] ?? [.5, .24] : [.5, .2];
-      image.setScale(height / image.height).setOrigin(anchor[0], anchor[1]);
+      // full figures are kept no wider than they are tall (the cat lies down)
+      const scale = this.headOnly ? height / image.height : Math.min(height / image.height, height / image.width);
+      image.setScale(scale).setOrigin(anchor[0], anchor[1]);
       this.portraitArt = image;
       if (this.headOnly) this.y = 0;
       this.add(image);
