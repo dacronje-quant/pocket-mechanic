@@ -16,7 +16,7 @@ import { tickPlayTime, windDownActive } from '../core/session';
 import { pm } from '../debug';
 import { goFullscreen } from '../platform';
 import { FONT, roundButton, SERIF, showWords, SpeechBubble } from '../ui/widgets';
-import { go } from './router';
+import { go, resetLeaving } from './router';
 
 export const HUD = 900;
 
@@ -32,9 +32,12 @@ export abstract class MetaScene extends Phaser.Scene {
     setSoft(s.soft);
     setVoiceChip(profile().look.voice);
     pm.scene = this.scene.key;
+    resetLeaving();
     pm.next = null;
     pm.hot = {};
-    this.input.on('pointerdown', () => {
+    this.input.on('pointerdown', () => unlockAudio());
+    // fullscreen needs a finished tap (pointerup); see platform.ts
+    this.input.on('pointerup', () => {
       unlockAudio();
       goFullscreen(this);
     });

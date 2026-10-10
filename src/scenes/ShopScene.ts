@@ -176,6 +176,7 @@ export class ShopScene extends MetaScene {
     };
     c.on('pointerup', tap);
     this.hot(name, tap);
+    if (unlocked && !winddownLocked) this.hot(`${name}:open`, tap); // lets the touch playthrough tell locked from broken
     return c;
   }
 

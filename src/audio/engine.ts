@@ -33,7 +33,7 @@ export function ac(): AudioContext | null {
       }
       applyLevels();
     }
-    if (ctx.state === 'suspended') void ctx.resume();
+    if (ctx.state === 'suspended') Promise.resolve(ctx.resume()).catch(() => undefined); // autoplay denied: carry on silently
     return ctx;
   } catch {
     return null;
@@ -106,13 +106,23 @@ const buffers = new Map<string, Promise<AudioBuffer | null>>();
 export function loadBuffer(url: string): Promise<AudioBuffer | null> {
   let p = buffers.get(url);
   if (!p) {
+    // Before the first tap there is no AudioContext yet: don't cache that "no".
+    const c = ac();
+    if (!c) return Promise.resolve(null);
     p = (async () => {
       try {
-        const c = ac();
-        if (!c) return null;
         const res = await fetch(`./audio/${url}`);
         if (!res.ok) return null;
-        return await c.decodeAudioData(await res.arrayBuffer());
+        const data = await res.arrayBuffer();
+        // Older Safari only has the callback form of decodeAudioData.
+        return await new Promise<AudioBuffer | null>((ok) => {
+          try {
+            const r = c.decodeAudioData(data, (b) => ok(b), () => ok(null));
+            if (r && typeof r.catch === 'function') r.catch(() => ok(null));
+          } catch {
+            ok(null);
+          }
+        });
       } catch {
         return null;
       }

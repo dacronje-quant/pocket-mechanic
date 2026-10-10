@@ -63,17 +63,29 @@ export async function speak(who: CharId, text: string, id?: string): Promise<voi
   }
   const file = id ? audioFile('voice', id) : undefined;
   if (file) {
-    const buf = await loadBuffer(file);
+    // a missing or slow voice file must never hold up the story: give it a moment, then use device speech
+    const buf = await Promise.race([loadBuffer(file), wait(4).then(() => null)]);
     const c = ac();
     const dest = bus('voice');
     if (buf && c && dest) {
       const src = c.createBufferSource();
       src.buffer = buf;
-      src.connect(dest);
-      src.start();
+      try {
+        src.connect(dest);
+        src.start();
+      } catch {
+        await wait(lineDuration(text));
+        return;
+      }
       playing = src;
+      // onended never fires while the AudioContext is suspended (autoplay denied,
+      // iOS after a call, a backgrounded tab), so never wait longer than the line.
       await new Promise<void>((res) => {
-        src.onended = () => res();
+        const cap = setTimeout(res, (buf.duration + 1.5) * 1000);
+        src.onended = () => {
+          clearTimeout(cap);
+          res();
+        };
       });
       if (playing === src) playing = null;
       return;

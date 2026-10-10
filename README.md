@@ -111,6 +111,21 @@ authored solution through the room's own pipeline), visits every hub area and a 
 fails on any page error. Screenshots land in `playthrough/`. Software rendering is slow, so it waits
 on game state, not fixed delays.
 
+### Touch-only playthrough (phones and tablets)
+
+```bash
+npm run build && npm run preview -- --port 4173   # a built copy, so edits don't reload the page mid-run
+npm run playthrough:touch -- --url http://localhost:4173 --device all
+```
+
+Emulates phones and tablets (`phone`, `tablet`, `phone-portrait`, `tablet-portrait`, or `all`) with
+touch only, and taps every menu button, story ▶, room banner, the letter-stamp keypad (including ⌫),
+each hub area and its back button, the grown-ups gate (a real press-and-hold) and the title's
+profile card at their on-screen positions. Puzzles are completed with each room's authored
+solution. It fails on any page or console error, a frozen game loop, or a button that does nothing.
+It uses the Canvas renderer (`?renderer=canvas`) because headless software WebGL runs at ~3 fps;
+add `--webgl` to test the WebGL renderer.
+
 ## Deploy to GitHub Pages
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions**.

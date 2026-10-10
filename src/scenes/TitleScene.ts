@@ -25,6 +25,8 @@ export const AVATARS = ['finish-brass', 'finish-copper', 'finish-silver', 'finis
 
 export class TitleScene extends MetaScene {
   private panel: Phaser.GameObjects.GameObject[] = [];
+  /** Bumped whenever the new-fixer panel opens or closes, so late timers from an old panel do nothing. */
+  private panelGen = 0;
 
   constructor() {
     super('title');
@@ -62,7 +64,8 @@ export class TitleScene extends MetaScene {
     roundButton(this, 60, 660, '⚙', () => parentalGate(this, () => goScene(this, 'grownups', { back: 'title' })), { r: 30, fontSize: 26, say: 'For grown-ups' }).setDepth(HUD);
     this.hot('new', () => this.newProfile());
     this.time.delayedCall(700, () => this.line('title.who'));
-    if (!save.profiles.length) this.time.delayedCall(400, () => this.newProfile());
+    // first launch: open the new-fixer panel by itself, unless a tap on + already did
+    if (!save.profiles.length) this.time.delayedCall(400, () => !this.panel.length && this.newProfile());
   }
 
   private profiles(): void {
@@ -98,6 +101,7 @@ export class TitleScene extends MetaScene {
   }
 
   private closePanel(): void {
+    this.panelGen++;
     this.panel.forEach((o) => o.destroy());
     this.panel = [];
   }
@@ -105,6 +109,8 @@ export class TitleScene extends MetaScene {
   /** New fixer: pick a colour → stamp letters (optional) → pick a tool (Play Style). */
   private newProfile(): void {
     this.closePanel();
+    const gen = this.panelGen;
+    const live = () => gen === this.panelGen && this.scene.isActive();
     const look: KipLook = { ...DEFAULT_LOOK };
     let avatar = 0;
     let initials = '';
@@ -140,7 +146,10 @@ export class TitleScene extends MetaScene {
           look.finish = fin;
           preview.setLook(look);
           preview.celebrate();
-          this.time.delayedCall(500, letters);
+          // Only if this panel is still the open one: this timer used to fire after ✕ or after
+          // the panel was reopened, dropping a second keypad on top of the first. Taps then
+          // went to one keypad while the other one's letters were shown.
+          this.time.delayedCall(500, () => live() && letters());
         }));
         t.add(new Kip(this, 0, 56, { ...DEFAULT_LOOK, finish: fin }).setScale(1.4));
         this.hot(`colour${i}`, () => {
@@ -151,7 +160,10 @@ export class TitleScene extends MetaScene {
       });
     };
 
+    let onLetters = false;
     const letters = () => {
+      if (onLetters || !live()) return; // two quick colour taps used to build the keypad twice
+      onLetters = true;
       clearStep();
       this.line('title.letters');
       let moved = false;
@@ -176,6 +188,7 @@ export class TitleScene extends MetaScene {
     };
 
     const styles = () => {
+      if (!live()) return;
       clearStep();
       this.line('title.style');
       (['tinker', 'fixer', 'engineer'] as PlayStyleId[]).forEach((sid, i) => {
@@ -188,7 +201,10 @@ export class TitleScene extends MetaScene {
       });
     };
 
+    let created = false;
     const create = (sid: PlayStyleId) => {
+      if (created || !live()) return; // one profile per panel, however many taps
+      created = true;
       const p = addProfile(initials, avatar, sid);
       if (!p) return this.closePanel();
       p.look = { ...look };

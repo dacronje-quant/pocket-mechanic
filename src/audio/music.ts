@@ -252,8 +252,12 @@ export function playMusic(id: keyof typeof THEMES, progress = 1, windDown = fals
     void loadBuffer(url).then((buf) => {
       if (current?.id !== id) return;
       if (!buf || !dest) return startSynth();
-      startFile(buf, dest);
-    });
+      try {
+        startFile(buf, dest);
+      } catch {
+        startSynth();
+      }
+    }).catch(() => startSynth());
     return;
   }
   startSynth();

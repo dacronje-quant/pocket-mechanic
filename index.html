@@ -22,6 +22,9 @@
         background: #1a120c;
         overflow: hidden;
         touch-action: none;
+        overscroll-behavior: none; /* no pull-to-refresh / bounce stealing drags */
+        -webkit-touch-callout: none; /* no long-press callout on iOS */
+        -webkit-text-size-adjust: 100%;
         -webkit-user-select: none;
         user-select: none;
         -webkit-tap-highlight-color: transparent;
@@ -53,14 +56,29 @@
         0%, 30% { transform: rotate(0deg); }
         60%, 100% { transform: rotate(-90deg); }
       }
+      #rotate .ok {
+        margin-top: 10px;
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        background: #8ce99a;
+        color: #2b1d14;
+        font-size: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
+      }
       @media (orientation: portrait) and (pointer: coarse) {
         #rotate { display: flex; }
       }
+      /* tapped away: play upright (rotation lock on, or a tablet on a stand) */
+      body.rotate-ok #rotate { display: none; }
     </style>
   </head>
   <body>
     <div id="game"></div>
-    <div id="rotate"><div class="phone">📱</div><div>Turn me sideways!</div></div>
+    <div id="rotate"><div class="phone">📱</div><div>Turn me sideways!</div><div class="ok" aria-label="Play">▶</div></div>
     <script type="module" src="./src/main.ts"></script>
   </body>
 </html>

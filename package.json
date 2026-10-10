@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "assets": "node scripts/generate-assets.mjs",
-    "playthrough": "node scripts/playthrough.mjs"
+    "playthrough": "node scripts/playthrough.mjs",
+    "playthrough:touch": "node scripts/touch-playthrough.mjs"
   },
   "license": "UNLICENSED",
   "dependencies": {

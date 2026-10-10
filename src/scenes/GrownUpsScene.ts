@@ -47,7 +47,8 @@ export class GrownUpsScene extends MetaScene {
     this.add.rectangle(0, 0, 1280, 720, 0xf3e2bd).setOrigin(0).setDepth(0);
     this.add.rectangle(0, 0, 1280, 96, 0x3d2412).setOrigin(0).setDepth(HUD - 1);
     this.add.text(640, 48, 'For grown-ups', { fontFamily: SERIF, fontSize: '36px', color: '#ffd76a', fontStyle: 'bold' }).setOrigin(0.5).setDepth(HUD);
-    this.backButton(() => goScene(this, this.back), '✓');
+    // with every profile removed there is no shop to go back to: go to the title to make one
+    this.backButton(() => goScene(this, save.profiles.length ? this.back : 'title'), '✓');
     this.render();
     // scroll by dragging or with the wheel
     let drag: { y0: number; c0: number } | null = null;
