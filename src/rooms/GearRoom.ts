@@ -464,6 +464,42 @@ export class GearRoom extends RoomBase<'gear'> {
     void at;
   }
 
+  /**
+   * A speed gauge for an output with a speed goal: a half dial with the goal zone in green and a
+   * needle for how fast the output turns compared with the driver.
+   */
+  private drawSpeedGauge(g: Phaser.GameObjects.Graphics, w: (typeof this.widgets)[number], omega: number, x: number, y: number): void {
+    const out = w.out;
+    const goal = out.ratio ?? out.maxRatio ?? out.minRatio;
+    if (goal === undefined) return;
+    const omegaIn = this.evalR ? Math.abs(this.evalR.omegaIn) : 0;
+    const ratio = omegaIn ? Math.abs(omega) / omegaIn : 0;
+    const top = Math.max(goal * 3, 2);
+    const ang = (v: number) => Math.PI + Math.min(1, v / top) * Math.PI;
+    const R = 46;
+    g.fillStyle(0x342f29, 1);
+    g.slice(x, y, R + 8, Math.PI, 0, false);
+    g.fillPath();
+    g.fillStyle(0xe9dcc0, 1);
+    g.slice(x, y, R, Math.PI, 0, false);
+    g.fillPath();
+    // the goal zone
+    const tol = out.tol ?? 0.06;
+    const z0 = out.ratio !== undefined ? goal * (1 - tol) : out.maxRatio !== undefined ? 0 : goal;
+    const z1 = out.ratio !== undefined ? goal * (1 + tol) : out.maxRatio !== undefined ? goal : top;
+    g.fillStyle(0x51cf66, 0.85);
+    g.slice(x, y, R - 4, ang(z0), ang(Math.max(z1, z0 + top * 0.03)), false);
+    g.fillPath();
+    g.fillStyle(0xe9dcc0, 1);
+    g.fillCircle(x, y, R - 22);
+    // the needle
+    const a = ang(ratio);
+    g.lineStyle(5, 0xd64541, 1);
+    g.lineBetween(x, y, x + Math.cos(a) * (R - 6), y + Math.sin(a) * (R - 6));
+    g.fillStyle(0x342f29, 1);
+    g.fillCircle(x, y, 7);
+  }
+
   private drawWidget(w: (typeof this.widgets)[number], omega: number, dt: number): void {
     const g = w.g;
     const { x, y } = w.out.at;
@@ -504,19 +540,43 @@ export class GearRoom extends RoomBase<'gear'> {
         }
         break;
       }
-      case 'fan':
+      case 'fan': {
+        // a brass fan in a guard ring; spinning fast it blurs into a disc
+        const fast = Math.min(1, Math.abs(omega) / 8);
+        g.fillStyle(0x000000, 0.25);
+        g.fillCircle(x + 5, y + 8, size + 10);
+        g.fillStyle(0x3d2b25, 1);
+        g.fillCircle(x, y, size + 10);
+        g.fillStyle(0xe9dcc0, 1);
+        g.fillCircle(x, y, size + 2);
+        if (fast > 0.3) {
+          g.fillStyle(0xc8a24e, 0.25 + fast * 0.35);
+          g.fillCircle(x, y, size * 0.95);
+        }
         for (let i = 0; i < 4; i++) {
           const a = w.a + (i / 4) * Math.PI * 2;
-          g.fillStyle(0xe8e8f0, 0.95);
-          g.fillEllipse(x + Math.cos(a) * size * 0.5, y + Math.sin(a) * size * 0.5, size * 0.9, size * 0.32);
+          const ca = Math.cos(a);
+          const sa = Math.sin(a);
+          const P = (r: number, side: number) => new Phaser.Math.Vector2(x + ca * r - sa * side, y + sa * r + ca * side);
+          const blade = [P(14, -8), P(size * 0.92, -size * 0.26), P(size * 0.95, size * 0.1), P(14, 8)];
+          g.fillStyle(0x7a5a24, 1 - fast * 0.5);
+          g.fillPoints(blade.map((p) => new Phaser.Math.Vector2(p.x + 3, p.y + 3)), true);
+          g.fillStyle(0xd9b45f, 1 - fast * 0.5);
+          g.fillPoints(blade, true);
+          g.lineStyle(2, 0x6e4a14, 1 - fast * 0.5);
+          g.strokePoints(blade, true, true);
         }
+        g.lineStyle(3, 0x6e4a14, 0.6);
+        for (let k = 1; k <= 3; k++) g.strokeCircle(x, y, (size * k) / 3.2);
+        g.lineStyle(6, 0xb88a2c, 1);
+        g.strokeCircle(x, y, size + 4);
         g.fillStyle(0x554638, 1);
-        g.fillCircle(x, y, 12);
-        if (Math.abs(omega) > 4) {
-          g.lineStyle(2, 0xffffff, 0.5);
-          g.strokeCircle(x, y, size + 6);
-        }
+        g.fillCircle(x, y, 16);
+        g.fillStyle(0xbca16a, 1);
+        g.fillCircle(x, y, 8);
+        this.drawSpeedGauge(g, w, omega, x, y + size + 44);
         break;
+      }
       case 'wheels':
       case 'paddle': {
         for (const dx of [-size * 0.6, size * 0.6]) {

@@ -15,8 +15,8 @@ import { Portrait } from '../art/portraits';
 import type { HuntItem, NestDeco } from '../content/types';
 import { LINES } from '../content/story';
 import { checkStamps, setFlag } from '../core/progress';
-import { persist, profile } from '../core/save';
-import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
+import { persist, profile, settings } from '../core/save';
+import { D, RoomBase, TRAY, type HintTarget, type SnapTarget } from './RoomBase';
 import { puffAt } from './fiddles';
 
 // ───────────────────────────── hunt ─────────────────────────────
@@ -43,12 +43,25 @@ export class HuntRoom extends RoomBase<'hunt'> {
       g.fillEllipse(4, 10, 150, 90);
       g.fillStyle(col, 1);
       if (c.art === 'cushion') {
-        g.fillRoundedRect(-75, -40, 150, 80, 34);
-        g.fillStyle(0xffffff, 0.25);
-        g.fillCircle(0, 0, 6);
-        g.lineStyle(3, 0x000000, 0.15);
-        g.lineBetween(-60, 0, -10, 0);
-        g.lineBetween(10, 0, 60, 0);
+        // a plump velvet cushion: piped edge, a sheen on top, a tufted button and corner tassels
+        const dark = Phaser.Display.Color.IntegerToColor(col).darken(25).color;
+        g.fillStyle(dark, 1);
+        g.fillRoundedRect(-78, -42, 156, 86, 38);
+        g.fillStyle(col, 1);
+        g.fillRoundedRect(-72, -38, 144, 76, 34);
+        g.fillStyle(0xffffff, 0.18);
+        g.fillEllipse(-14, -18, 100, 22);
+        g.lineStyle(3, dark, 0.7);
+        for (const [dx, dy] of [[-44, -24], [44, -24], [-44, 24], [44, 24], [-56, 0], [56, 0]]) g.lineBetween(0, 0, dx * 0.7, dy * 0.7);
+        g.fillStyle(dark, 1);
+        g.fillCircle(0, 0, 9);
+        g.fillStyle(0xf1d391, 1);
+        g.fillCircle(0, 0, 5);
+        for (const [tx, ty] of [[-70, -32], [70, -32], [-70, 32], [70, 32]]) {
+          g.fillStyle(0xd9b45f, 1);
+          g.fillCircle(tx, ty, 6);
+          g.fillTriangle(tx - 5, ty + 2, tx + 5, ty + 2, tx + (tx < 0 ? -6 : 6), ty + 16);
+        }
       } else if (c.art === 'spool') {
         g.fillRect(-40, -46, 80, 92);
         g.fillStyle(0x856c50, 1);
@@ -64,6 +77,8 @@ export class HuntRoom extends RoomBase<'hunt'> {
       cov.setSize(160, 100);
       cov.setInteractive({ useHandCursor: true });
       cov.on('pointerup', () => this.lift(i));
+      // covers breathe gently, inviting a tap
+      if (c.art === 'cushion') this.tweens.add({ targets: cov, scaleY: 1.04, scaleX: 0.98, duration: 900 + (i % 3) * 140, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: i * 120 });
       this.covers.push(cov);
     });
   }
@@ -144,6 +159,9 @@ export class HuntRoom extends RoomBase<'hunt'> {
 
 export class BusyRoom extends RoomBase<'busy'> {
   private gadgets: Array<{ g: Phaser.GameObjects.Graphics; on: number; a: number; image?: Phaser.GameObjects.Image; index: number }> = [];
+  /** stars on tried gadgets, the progress lamps in the drawer, and the light chase */
+  private marks!: Phaser.GameObjects.Graphics;
+  private lamps!: Phaser.GameObjects.Graphics;
 
   constructor() {
     super('room-busy');
@@ -151,6 +169,10 @@ export class BusyRoom extends RoomBase<'busy'> {
 
   protected build(): void {
     this.gadgets = [];
+    this.marks = this.add.graphics().setDepth(D.mech + 2);
+    this.lamps = this.add.graphics().setDepth(D.trayPart);
+    this.chase = 0;
+    const seen = new Set<string>();
     const board = this.add.graphics().setDepth(D.back + 1);
     etchedPlate(board, 190, 124, 900, 400, CM.woodDark, 1, 827);
     for (let i = 0; i < 5; i++) drawTimber(board, 205, 138 + i * 74, 870, 74, 827 + i, i % 2 ? CM.wood : CM.woodLight);
@@ -164,10 +186,18 @@ export class BusyRoom extends RoomBase<'busy'> {
       const index = ['button','switch','dial','horn','crank','lights','bell','lever','spinner'].indexOf(gd.art);
       const v: typeof this.gadgets[number] = { g, on: 0, a: 0, index };
       this.gadgets.push(v);
+      // the painting has one picture per gadget type, so a second one of a kind gets a new colour
+      const repeat = seen.has(gd.art);
+      seen.add(gd.art);
       withArt(this, 'busy-gadgets', (key) => {
         if (!g.active || !g.scene || index < 0) return;
         v.image = this.add.image(gd.x, gd.y, key, atlasFrame(this, key, index, 3, 6, true)).setDepth(D.mech).setName(`busy:${gd.art}`);
         const scale = 126 / Math.max(v.image.width, v.image.height); v.image.setScale(scale).setData('restScale', scale);
+        if (repeat) {
+          const fx = this.renderer.type === Phaser.WEBGL ? v.image.preFX?.addColorMatrix() : undefined;
+          if (fx) fx.hue(230);
+          else v.image.setTint(0xb4a8ff);
+        }
         g.setVisible(false);
       });
       const z = this.add.zone(gd.x, gd.y, 140, 140).setInteractive({ useHandCursor: true }).setDepth(D.mech + 1);
@@ -210,15 +240,126 @@ export class BusyRoom extends RoomBase<'busy'> {
         break;
     }
     this.sparkleAt(gd.x, gd.y, 8);
+    this.wonder(gd, i);
     const isNew = !this.state.has(i);
     this.state.add(i);
+    // a gadget tried for the first time gets a star, and a lamp lights in the drawer (drawMarks)
     if (isNew) this.act();
     else this.fiddle(`busy${i}`);
+  }
+
+  /** Something wonderful for each gadget (GDD: "every button does something wonderful"). */
+  private wonder(gd: { x: number; y: number; art: string; color: number }, i: number): void {
+    const calm = settings().calm;
+    switch (gd.art) {
+      case 'button': {
+        const burst = this.add.particles(gd.x, gd.y - 20, 'star', {
+          lifespan: 900,
+          speed: { min: 140, max: 340 },
+          angle: { min: 200, max: 340 },
+          gravityY: 420,
+          scale: { start: 0.9, end: 0.2 },
+          tint: i === 0 ? [0xd64541, 0xf1d391, 0xffffff] : [0x9b7fd8, 0x7fc8d8, 0xffffff],
+          emitting: false,
+        }).setDepth(D.fx);
+        burst.explode(26);
+        this.time.delayedCall(1200, () => burst.destroy());
+        break;
+      }
+      case 'switch':
+        if (!calm) this.cameras.main.flash(220, 255, 236, 170);
+        break;
+      case 'horn':
+        for (let k = 0; k < 4; k++) {
+          const note = this.add.text(gd.x + 30, gd.y - 20, k % 2 ? '♫' : '♪', { fontFamily: 'serif', fontSize: '40px', color: '#342f29' }).setDepth(D.fx).setOrigin(0.5);
+          this.tweens.add({ targets: note, x: gd.x + 60 + k * 26, y: gd.y - 120 - k * 20, alpha: 0, angle: 20 - k * 10, duration: 900, delay: k * 120, onComplete: () => note.destroy() });
+        }
+        break;
+      case 'bell':
+      case 'dial':
+        for (let k = 0; k < 3; k++) {
+          const ring = this.add.graphics().setDepth(D.fx).setPosition(gd.x, gd.y);
+          ring.lineStyle(5, 0xf1d391, 1).strokeCircle(0, 0, 60);
+          this.tweens.add({ targets: ring, scale: 1.8, alpha: 0, duration: 700, delay: k * 180, onComplete: () => ring.destroy() });
+        }
+        break;
+      case 'crank':
+      case 'spinner': {
+        const image = this.gadgets[i].image;
+        if (image) this.tweens.add({ targets: image, angle: image.angle + 360, duration: 900, ease: 'Cubic.easeOut' });
+        break;
+      }
+      case 'lever':
+        if (!calm) this.cameras.main.shake(160, 0.004);
+        break;
+      case 'lights':
+        this.chase = 2.4;
+        break;
+    }
+  }
+
+  private chase = 0;
+
+  private drawMarks(dt: number): void {
+    const g = this.marks;
+    g.clear();
+    // a gold star on each gadget that has been tried
+    this.def.gadgets.forEach((gd, i) => {
+      if (!this.state.has(i)) return;
+      const sx = gd.x + 50;
+      const sy = gd.y - 50;
+      const pts: Phaser.Math.Vector2[] = [];
+      for (let k = 0; k < 10; k++) {
+        const a = -Math.PI / 2 + (k * Math.PI) / 5;
+        const r = k % 2 ? 10 : 22;
+        pts.push(new Phaser.Math.Vector2(sx + Math.cos(a) * r, sy + Math.sin(a) * r));
+      }
+      g.fillStyle(0x342f29, 0.5);
+      g.fillPoints(pts.map((p) => new Phaser.Math.Vector2(p.x + 2, p.y + 2)), true);
+      g.fillStyle(0xf1c40f, 1);
+      g.fillPoints(pts, true);
+      g.lineStyle(2, 0x8a5f17, 1);
+      g.strokePoints(pts, true, true);
+    });
+    // progress lamps in the drawer: one lights for each new gadget, up to the number needed
+    const need = this.def.need;
+    const lit = Math.min(this.state.size, need);
+    const lg = this.lamps;
+    lg.clear();
+    for (let k = 0; k < need; k++) {
+      const x = TRAY.x + (k - (need - 1) / 2) * 74;
+      const y = TRAY.y - 4;
+      const on = k < lit;
+      if (on) {
+        lg.fillStyle(0xfff3b0, 0.35);
+        lg.fillCircle(x, y, 30);
+      }
+      lg.fillStyle(on ? 0xffd86b : 0x5a4a3a, 1);
+      lg.fillCircle(x, y - 4, 20);
+      lg.lineStyle(3, 0x342f29, 1);
+      lg.strokeCircle(x, y - 4, 20);
+      lg.fillStyle(0xbca16a, 1);
+      lg.fillRoundedRect(x - 11, y + 14, 22, 12, 3);
+    }
+    // the lights gadget sets off a chase of coloured bulbs round the board
+    if (this.chase > 0) {
+      this.chase = Math.max(0, this.chase - dt);
+      const n = 28;
+      const head = Math.floor(this.time.now / 70);
+      for (let k = 0; k < n; k++) {
+        const f = k / n;
+        const p = f < 0.25 ? { x: 205 + f * 4 * 870, y: 132 } : f < 0.5 ? { x: 1075, y: 132 + (f - 0.25) * 4 * 384 } : f < 0.75 ? { x: 1075 - (f - 0.5) * 4 * 870, y: 516 } : { x: 205, y: 516 - (f - 0.75) * 4 * 384 };
+        const bright = (head - k) % 4 === 0;
+        g.fillStyle([0xf1c40f, 0x77a99f, 0xd9a0a0, 0xa7b77f][k % 4], bright ? 1 : 0.35);
+        g.fillCircle(p.x, p.y, bright ? 10 : 7);
+      }
+    }
   }
 
   protected refresh(): void {}
 
   protected tick(dt: number): void {
+    this.drawMarks(dt);
     this.def.gadgets.forEach((gd, i) => {
       const v = this.gadgets[i];
       v.on = Math.max(0, v.on - dt);
@@ -227,8 +368,8 @@ export class BusyRoom extends RoomBase<'busy'> {
       if (v.image) {
         const image = v.image;
         image.setFrame(atlasFrame(this, image.texture.key, v.index + (v.on > 0 ? 9 : 0), 3, 6, true));
-        image.setScale(image.getData('restScale') * (v.on > 0 ? 1 + Math.sin(v.on * 16) * 0.035 : 1));
-        if (gd.art === 'spinner' && v.on > 0) image.angle += dt * 180;
+        image.setScale(image.getData('restScale') * (v.on > 0 ? 1 + Math.sin(v.on * 16) * 0.08 : 1));
+        if ((gd.art === 'bell' || gd.art === 'dial') && !this.tweens.isTweening(image)) image.angle = v.on > 0 ? Math.sin(v.on * 30) * 12 * v.on : 0;
         return;
       }
       const { x, y } = gd;

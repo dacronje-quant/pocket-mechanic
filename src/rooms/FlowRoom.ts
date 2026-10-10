@@ -194,7 +194,15 @@ export class FlowRoom extends RoomBase<'flow'> {
     if (this.style.autoRotate) p.rot = this.bestRot(p.kind, cell);
     this.drawPart(p);
     this.tweens.killTweensOf(p.obj);
-    this.tweens.add({ targets: p.obj, x: t.x, y: t.y, scale: 1, angle: 0, duration: 110, ease: 'Back.easeOut' });
+    // If the helper turned the piece, show it turning from the way it looked in the hand
+    // (each quarter turn is +90°), instead of jumping.
+    const turned = (p.rot - prevRot + 4) % 4;
+    p.obj.setAngle(-turned * 90);
+    this.tweens.add({ targets: p.obj, x: t.x, y: t.y, scale: 1, duration: 110, ease: 'Back.easeOut' });
+    if (turned) {
+      sfx.ratchet(1);
+      this.tweens.add({ targets: p.obj, angle: 0, delay: 120, duration: 220 * turned, ease: 'Sine.easeInOut' });
+    } else p.obj.setAngle(0);
     p.obj.setDepth(D.mech + 1);
     this.syncSlots();
     this.clunkAt(t.x, t.y);
@@ -400,6 +408,36 @@ export class FlowRoom extends RoomBase<'flow'> {
     p.g.clear();
     const t: Tile = { kind: p.kind, rot: p.rot, rotatable: false, toggle: false, state: true, required: false, forbidden: false, bright: false, slot: false };
     this.drawTile(p.g, t, 0, 0, -1);
+    // a bright stud on every end that connects, so the piece's direction reads at a glance (also in the tray)
+    const h = this.S / 2;
+    for (const d of ports(t)) {
+      const sx = DX[d] * h * 0.8;
+      const sy = DY[d] * h * 0.8;
+      p.g.fillStyle(0x342f29, 0.9);
+      p.g.fillCircle(sx, sy, this.S * 0.09);
+      p.g.fillStyle(0xf1d391, 1);
+      p.g.fillCircle(sx, sy, this.S * 0.06);
+    }
+    if (p.cell !== null && !this.fixed) this.drawTurnBadge(p.g, h * 0.62, -h * 0.62);
+  }
+
+  /** A "tap to turn" badge: a cream disc with a curved arrow. */
+  private drawTurnBadge(g: Phaser.GameObjects.Graphics, x: number, y: number): void {
+    const r = Math.max(11, this.S * 0.13);
+    g.fillStyle(0x342f29, 0.35);
+    g.fillCircle(x + 2, y + 2, r);
+    g.fillStyle(0xf4ebd5, 1);
+    g.fillCircle(x, y, r);
+    g.lineStyle(2, 0x8a5f17, 1);
+    g.strokeCircle(x, y, r);
+    g.lineStyle(3, 0x79503d, 1);
+    g.beginPath();
+    g.arc(x, y, r * 0.55, -Math.PI * 0.85, Math.PI * 0.35);
+    g.strokePath();
+    const ex = x + Math.cos(Math.PI * 0.35) * r * 0.55;
+    const ey = y + Math.sin(Math.PI * 0.35) * r * 0.55;
+    g.fillStyle(0x79503d, 1);
+    g.fillTriangle(ex - r * 0.4, ey - r * 0.05, ex + r * 0.25, ey - r * 0.3, ex + r * 0.05, ey + r * 0.4);
   }
 
   private drawTiles(): void {
@@ -409,17 +447,15 @@ export class FlowRoom extends RoomBase<'flow'> {
       if (!t) return;
       const c = this.cellCenter(i);
       if (t.slot) {
-        g.lineStyle(3, 0xf4ebd5, 0.5);
+        // an empty socket: a lit, dashed-looking frame with a soft fill so it reads as "a part goes here"
+        g.fillStyle(0xf4ebd5, 0.12);
+        g.fillRoundedRect(c.x - this.S / 2 + 6, c.y - this.S / 2 + 6, this.S - 12, this.S - 12, 10);
+        g.lineStyle(4, 0xf1d391, 0.85);
         g.strokeRoundedRect(c.x - this.S / 2 + 6, c.y - this.S / 2 + 6, this.S - 12, this.S - 12, 10);
         return; // the placed part draws itself
       }
       this.drawTile(g, t, c.x, c.y, i);
-      if (t.rotatable && !this.fixed) {
-        g.lineStyle(2, 0xffffff, 0.35);
-        g.beginPath();
-        g.arc(c.x + this.S * 0.32, c.y - this.S * 0.32, 8, -Math.PI * 0.9, Math.PI * 0.3);
-        g.strokePath();
-      }
+      if (t.rotatable && !this.fixed) this.drawTurnBadge(g, c.x + this.S * 0.31, c.y - this.S * 0.31);
     });
     for (const p of this.parts) this.drawPart(p);
   }
@@ -444,6 +480,17 @@ export class FlowRoom extends RoomBase<'flow'> {
       for (const ch of chans) {
         if (ch.length < 2) {
           for (const d of ch) this.drawRail(g, x, y, d, d, t.kind === 'E');
+          continue;
+        }
+        if (ch.length > 2) {
+          // a junction: straight rails between opposite ends, and a curve from each side branch to
+          // the ends it joins, so a junction never looks like a plain curve
+          const set = new Set<number>(ch);
+          for (const d of ch) if (d < 2 && set.has((d + 2) % 4)) this.drawRail(g, x, y, d, (d + 2) % 4, false);
+          for (const d of ch) {
+            if (set.has((d + 2) % 4)) continue;
+            for (const e of ch) if (e !== d && (e + 2) % 4 !== d) this.drawRail(g, x, y, d, e, false);
+          }
           continue;
         }
         const [a, b] = ch;

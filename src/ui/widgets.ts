@@ -379,6 +379,10 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
   private who: CharId = 'nana';
   private bw: number;
   private t = 0;
+  private replayIcon: Phaser.GameObjects.Text;
+  private hit: Phaser.GameObjects.Zone;
+  /** The last line said, so a child who missed it can hear it again. */
+  private lastLine?: { msg: string; opts: { who?: CharId; id?: string; ms?: number; silent?: boolean } };
 
   constructor(scene: Phaser.Scene, x: number, y: number, width: number) {
     super(scene, x, y);
@@ -386,14 +390,33 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
     this.bg = scene.add.graphics();
     this.wave = scene.add.graphics();
     this.text = scene.add
-      .text(-width / 2 + 82, 0, '', { fontFamily: FONT, fontSize: '22px', color: CM_CSS.ink, wordWrap: { width: width - 100 }, lineSpacing: 3 })
+      .text(-width / 2 + 82, 0, '', { fontFamily: FONT, fontSize: '22px', color: CM_CSS.ink, wordWrap: { width: width - 128 }, lineSpacing: 3 })
       .setOrigin(0, 0.5);
-    this.add([this.bg, this.wave, this.text]);
+    // tap the bubble (or its speaker) to hear the line again
+    this.replayIcon = scene.add.text(0, 0, '🔊', { fontFamily: FONT, fontSize: '24px' }).setOrigin(0.5);
+    this.hit = scene.add.zone(0, 0, width, 76).setOrigin(0, 0.5);
+    this.hit.on('pointerup', () => {
+      if (this.alpha > 0.2) this.replay();
+    });
+    this.add([this.bg, this.wave, this.text, this.replayIcon, this.hit]);
     this.setAlpha(0);
     scene.add.existing(this);
   }
 
+  /** Say the last line again (nothing to repeat yet: false). */
+  replay(): boolean {
+    if (!this.lastLine) return false;
+    this.say(this.lastLine.msg, this.lastLine.opts);
+    return true;
+  }
+
+  /** Is a line on show right now? */
+  get showing(): boolean {
+    return this.alpha > 0.2;
+  }
+
   say(msg: string, opts: { who?: CharId; id?: string; ms?: number; silent?: boolean } = {}): void {
+    this.lastLine = { msg, opts: { ...opts, silent: false } };
     const who = opts.who ?? 'nana';
     if (!this.face || this.who !== who) {
       this.face?.destroy();
@@ -408,6 +431,8 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
     this.bg.clear();
     drawPanel(this.bg, -this.bw / 2, -h / 2, w, h, CM.cream, CM.copperDark);
     this.wave.setVisible(!words);
+    this.replayIcon.setPosition(-this.bw / 2 + w - 26, 0);
+    this.hit.setPosition(-this.bw / 2, 0).setSize(w, h).setInteractive({ useHandCursor: true });
     this.scene.tweens.killTweensOf(this);
     this.setAlpha(0).setScale(0.9);
     this.scene.tweens.add({ targets: this, alpha: 1, scale: 1, duration: 220, ease: 'Back.easeOut' });
@@ -431,7 +456,7 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
   }
 
   hide(): void {
-    this.scene.tweens.add({ targets: this, alpha: 0, duration: 250 });
+    this.scene.tweens.add({ targets: this, alpha: 0, duration: 250, onComplete: () => this.hit.disableInteractive() });
   }
 
   preDestroy(): void {

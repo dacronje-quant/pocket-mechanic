@@ -498,11 +498,12 @@ export const RULES: { [K in RoomKind]: KindRules<K> } = {
     initial: () => ({ oiled: new Set(), turns: 0, pawl: false }),
     solution: (d) => ({ oiled: new Set(d.parts.filter((p) => p.required).map((p) => p.id)), turns: d.crank?.turns ?? 0, pawl: !!d.pawl }),
     solved: (d, s) => oilSolved(d, s),
+    // Little Tinkers oil every squeaky part too (one drop each, nothing can go wrong); only the
+    // crank winding is shortened and the pawl is done for them.
     simplify: (d) => {
-      const firstReq = d.parts.find((p) => p.required);
       return {
         ...d,
-        parts: d.parts.map((p) => ({ ...p, required: p === firstReq && !d.crank })),
+        parts: d.parts.map((p) => ({ ...p, required: p.required && !d.crank })),
         crank: d.crank ? { ...d.crank, turns: Math.min(d.crank.turns, 2) } : undefined,
         pawl: undefined,
       };

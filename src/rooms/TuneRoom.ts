@@ -190,15 +190,51 @@ export class TuneRoom extends RoomBase<'tune'> {
       }
       // the mode's machine
       if (mode === 'comb') {
-        const tip = { x: v.knob.x, y: v.knob.y };
+        // one steel comb: a heavy back with a tapered tooth per note; a dashed outline shows the
+        // straight tooth to aim for
+        if (v.i === 0) {
+          const xs = this.dials.map((q) => q.a.x + (q.b.x - q.a.x) * 0.5);
+          const left = Math.min(...xs) - 70;
+          const right = Math.max(...xs) + 70;
+          g.fillStyle(0x000000, 0.3);
+          g.fillRoundedRect(left + 4, 474, right - left, 44, 10);
+          g.fillStyle(0x6c7a76, 1);
+          g.fillRoundedRect(left, 468, right - left, 44, 10);
+          g.fillStyle(0xc9d1cf, 1);
+          g.fillRoundedRect(left + 6, 472, right - left - 12, 10, 5);
+          for (const sx of [left + 18, right - 18]) {
+            g.fillStyle(0x342f29, 1);
+            g.fillCircle(sx, 494, 6);
+          }
+        }
+        const tip = { x: v.knob.x, y: v.knob.y + 20 };
         const base = { x: v.a.x + (v.b.x - v.a.x) * 0.5, y: 470 };
         const ring = tuned ? Math.sin(this.t * 40) * 2 : 0;
-        g.lineStyle(26, 0x868e96, 1);
-        g.lineBetween(base.x, base.y, tip.x + ring, tip.y + 20);
-        g.lineStyle(16, 0xdee2e6, 1);
-        g.lineBetween(base.x, base.y, tip.x + ring, tip.y + 20);
-        g.fillStyle(0x60736d, 1);
-        g.fillRect(base.x - 40, 470, 80, 30);
+        const straight = { x: v.a.x + (v.b.x - v.a.x) * d.target, y: tip.y };
+        if (!tuned) {
+          g.lineStyle(4, 0x342f29, 0.55);
+          for (let k = 0; k < 10; k += 2) {
+            const f0 = k / 10;
+            const f1 = (k + 1) / 10;
+            g.lineBetween(base.x + (straight.x - base.x) * f0, base.y + (straight.y - base.y) * f0, base.x + (straight.x - base.x) * f1, base.y + (straight.y - base.y) * f1);
+          }
+        }
+        const tx = tip.x + ring;
+        const len = Math.hypot(tx - base.x, tip.y - base.y) || 1;
+        const nx = -(tip.y - base.y) / len;
+        const ny = (tx - base.x) / len;
+        const tooth = [
+          new Phaser.Math.Vector2(base.x + nx * 16, base.y + ny * 16),
+          new Phaser.Math.Vector2(tx + nx * 7, tip.y + ny * 7),
+          new Phaser.Math.Vector2(tx - nx * 7, tip.y - ny * 7),
+          new Phaser.Math.Vector2(base.x - nx * 16, base.y - ny * 16),
+        ];
+        g.fillStyle(0x4f5b58, 1);
+        g.fillPoints(tooth.map((p) => new Phaser.Math.Vector2(p.x + 3, p.y + 3)), true);
+        g.fillStyle(tuned ? 0xe9f3ee : 0xc9d1cf, 1);
+        g.fillPoints(tooth, true);
+        g.lineStyle(2, 0x4f5b58, 1);
+        g.strokePoints(tooth, true, true);
       } else if (mode === 'whistle') {
         const h = 90 + v.i * 26;
         g.fillStyle(0xbca16a, 1);

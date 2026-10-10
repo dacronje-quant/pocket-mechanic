@@ -124,6 +124,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
   private soundBtn!: Phaser.GameObjects.Container;
   private beamG!: Phaser.GameObjects.Graphics;
   private hintG!: Phaser.GameObjects.Graphics;
+  private dropG!: Phaser.GameObjects.Graphics;
   private dark?: Phaser.GameObjects.RenderTexture;
   private hands?: Phaser.GameObjects.Graphics;
   private torch = { x: 640, y: 360 };
@@ -350,6 +351,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       .setDepth(D.banner + 2);
     this.beamG = this.add.graphics().setDepth(D.drag - 1).setBlendMode(Phaser.BlendModes.ADD);
     this.hintG = this.add.graphics().setDepth(D.drag - 2);
+    this.dropG = this.add.graphics().setDepth(D.drag - 3);
     this.ghostG = this.add.graphics().setDepth(D.parts - 1);
     this.peekOverlay = this.add.rectangle(0, 0, 1280, 720, PALETTES[this.def.theme].peek, 0.66).setOrigin(0).setDepth(D.peek).setVisible(false);
     this.blueprint = this.add.graphics().setDepth(D.blueprint).setVisible(false);
@@ -774,32 +776,54 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       g.lineBetween(0, 16, 2, 26);
       c.setAngle(25);
     } else {
+      // a soft halo behind the glint, so it reads on light and dark scenery
+      g.fillStyle(0xfff3b0, 0.35);
+      g.fillCircle(0, 0, 22);
+      g.fillStyle(0x342f29, 0.35);
+      for (let i = 0; i < 4; i++) {
+        const a = (i / 4) * Math.PI * 2;
+        g.fillTriangle(Math.cos(a) * 29, Math.sin(a) * 29, Math.cos(a + 1.3) * 8, Math.sin(a + 1.3) * 8, Math.cos(a - 1.3) * 8, Math.sin(a - 1.3) * 8);
+      }
       g.fillStyle(kind === 'treasure' ? 0xff8fab : kind === 'blueprint' ? 0x7fd3ff : 0xf1d391, 1);
       for (let i = 0; i < 4; i++) {
         const a = (i / 4) * Math.PI * 2;
-        g.fillTriangle(Math.cos(a) * 18, Math.sin(a) * 18, Math.cos(a + 1.3) * 4, Math.sin(a + 1.3) * 4, Math.cos(a - 1.3) * 4, Math.sin(a - 1.3) * 4);
+        g.fillTriangle(Math.cos(a) * 26, Math.sin(a) * 26, Math.cos(a + 1.3) * 6, Math.sin(a + 1.3) * 6, Math.cos(a - 1.3) * 6, Math.sin(a - 1.3) * 6);
       }
-      g.fillCircle(0, 0, 4);
+      g.fillCircle(0, 0, 6);
     }
     c.add(g);
     c.setSize(70, 70);
     c.setInteractive({ useHandCursor: true });
     c.on('pointerup', () => {
-      if (!c.active) return;
+      if (!c.active || c.getData('found')) return;
+      c.setData('found', true);
       this.tweens.add({ targets: c, scale: 2, alpha: 0, duration: 400, onComplete: () => c.destroy() });
       onFind();
     });
     this.spots.push({ obj: c, kind });
   }
 
+  /**
+   * Hidden finds rest as a faint glint and every few seconds twinkle brightly (a flash, a swell and
+   * a few sparks), each on its own beat, so a child playing the board notices them.
+   */
   private updateSpots(): void {
-    const tinker = this.style.id === 'tinker';
+    const style = this.style.id;
+    const calm = settings().calm;
+    const period = 2.2;
     for (const s of this.spots) {
-      if (!s.obj.active) continue;
-      const base = s.kind === 'mark' ? 0.75 : this.peeking ? 0.95 : tinker ? 0.35 : 0.06;
-      s.obj.setAlpha(base * (0.7 + Math.sin(this.elapsed * 4 + s.obj.x) * 0.3));
+      if (!s.obj.active || s.obj.getData('found')) continue;
+      const rest =s.kind === 'mark' ? 0.75 : this.peeking ? 0.95 : style === 'tinker' ? 0.6 : style === 'engineer' ? 0.28 : 0.42;
+      const t = (this.elapsed + (s.obj.x * 0.0037 + s.obj.y * 0.0021) * period) % period;
+      const flash = t < 0.7 ? Math.sin((t / 0.7) * Math.PI) : 0;
+      const shimmer = 0.85 + Math.sin(this.elapsed * 5 + s.obj.x) * 0.15;
+      s.obj.setAlpha(Math.min(1, rest * shimmer + flash * (1 - rest)));
+      s.obj.setScale(1 + flash * 0.8);
+      const was = s.obj.getData('flashing') as boolean | undefined;
+      if (flash > 0 && !was && !calm && !this.peeking) this.sparks.explode(4, s.obj.x, s.obj.y);
+      s.obj.setData('flashing', flash > 0);
       s.obj.setDepth(this.peeking ? D.blueprint + 2 : D.spots);
-      if (s.kind !== 'mark') s.obj.rotation += 0.01;
+      if (s.kind !== 'mark') s.obj.rotation += 0.01 + flash * 0.06;
     }
   }
 
@@ -834,7 +858,11 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       roundButton(this, x, 52, '?', () => this.requestHint(), { fontSize: 38 }).setDepth(D.hud);
     }
     x -= 90;
-    roundButton(this, x, 52, '💬', () => this.bubble.say(this.def.intro, { id: roomVoiceId(this.def, this.style.id, 'intro') }), { fontSize: 28, say: '' }).setDepth(D.hud);
+    // Hear it again: replays whatever was said last (a hint you missed); pressed while a line is
+    // showing, or before anything was said, it gives the room's main instruction.
+    roundButton(this, x, 52, '💬', () => {
+      if (this.bubble.showing || !this.bubble.replay()) this.bubble.say(this.def.intro, { id: roomVoiceId(this.def, this.style.id, 'intro') });
+    }, { fontSize: 28, say: '' }).setDepth(D.hud);
     if (tessUnlocked(profile()) && settings().coop !== 'hands') {
       x -= 90;
       roundButton(this, x, 52, '👥', () => this.toggleTess(), { fontSize: 28 }).setDepth(D.hud);
@@ -845,7 +873,12 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
         .setOrigin(0.5)
         .setDepth(D.hud);
     }
-    this.bubble = new SpeechBubble(this, 640, 150, 700).setDepth(D.bubble);
+    // Dock the bubble in the top bar, between the gear counter and the leftmost button on the
+    // right, so it never covers the top of the puzzle while the goal is being explained.
+    const left = 262;
+    const right = x - 44;
+    const width = Math.max(400, Math.min(700, right - left));
+    this.bubble = new SpeechBubble(this, left + width / 2, 58, width).setDepth(D.bubble);
   }
 
   private refreshGold(): void {
@@ -1057,11 +1090,38 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
 
   // ───────────────────────────── per frame ─────────────────────────────
 
+  /** While something is carried, every place it can go pulses, and the one it would snap to glows. */
+  private drawDropTargets(): void {
+    const g = this.dropG;
+    g.clear();
+    if (!this.dragging.size) return;
+    const pulse = 0.55 + Math.sin(this.elapsed * 6) * 0.25;
+    for (const d of this.dragging.values()) {
+      const o = d.spec.obj;
+      const near = this.nearestTarget(d.spec, o.x, o.y);
+      for (const t of d.spec.targets()) {
+        if (d.spec.accepts && !d.spec.accepts(t)) continue;
+        const hot = near?.id === t.id;
+        if (hot) {
+          g.fillStyle(0xfff3b0, 0.35);
+          g.fillCircle(t.x, t.y, 58);
+        }
+        // a dark edge under a bright ring, so it reads on light wood and dark boards alike
+        const r = hot ? 58 : 50 + pulse * 6;
+        g.lineStyle(hot ? 10 : 8, 0x342f29, hot ? 0.6 : 0.45);
+        g.strokeCircle(t.x, t.y, r);
+        g.lineStyle(hot ? 6 : 4, hot ? 0xfff3b0 : 0xf1d391, hot ? 1 : 0.6 + pulse * 0.4);
+        g.strokeCircle(t.x, t.y, r);
+      }
+    }
+  }
+
   update(_time: number, deltaMs: number): void {
     const dt = Math.min(deltaMs, 50) / 1000;
     this.elapsed += this.fixed ? 0 : dt;
     this.updateHints(dt);
     this.tick(dt);
+    this.drawDropTargets();
     this.drawBeams();
     this.drawPath(dt);
     this.updateSpots();
