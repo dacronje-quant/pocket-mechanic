@@ -9,8 +9,8 @@ import * as sfx from '../audio/sfx';
 import { playMelody } from '../audio/music';
 import { Kip } from '../art/Kip';
 import { drawRoomBackdrop } from '../art/backgrounds';
-import { CM, drawLeafSprig, drawPatina, drawTimber } from '../art/copperMoss';
-import { rivet } from '../art/finish';
+import { CM } from '../art/copperMoss';
+import { paintedObject } from '../art/sprites';
 import { FURNITURE, type Furniture } from '../content/cosmetics';
 import { MARKS } from '../content/repairs';
 import { SONGS } from '../content/songs';
@@ -20,11 +20,12 @@ import { persist, profile } from '../core/save';
 import { blocker, card, FONT, roundButton, SERIF, scrollGrid, showWords, tile, toast } from '../ui/widgets';
 import { HUD, MetaScene } from './MetaScene';
 
+// floor spots stand on the painted floorboards; the last two hang on the wall
 const SPOTS = [
-  { x: 230, y: 646 },
-  { x: 470, y: 652 },
-  { x: 1050, y: 646 },
-  { x: 820, y: 652 },
+  { x: 230, y: 606 },
+  { x: 470, y: 614 },
+  { x: 1050, y: 606 },
+  { x: 820, y: 614 },
   { x: 380, y: 300 },
   { x: 900, y: 300 },
 ];
@@ -53,7 +54,7 @@ export class NookScene extends MetaScene {
     this.backButton();
     this.heading(["Kip's Matchbox", "Kip's Tin-Can Cottage", "Kip's Clockwork House"][level]);
     this.counters();
-    this.kip = new Kip(this, 640, 640, p.look).setDepth(30).setScale(1.6);
+    this.kip = new Kip(this, 640, 616, p.look).setDepth(30).setScale(1.6);
     this.kip.minX = 160;
     this.kip.maxX = 1120;
     this.shade = this.add.rectangle(0, 0, 1280, 720, 0x0b0805, 0).setOrigin(0).setDepth(HUD - 3);
@@ -72,52 +73,21 @@ export class NookScene extends MetaScene {
   }
 
   private room(level: number): void {
+    // the painted home shows through; each size of house only shifts the light a little
     drawRoomBackdrop(this, 'home', 640).setDepth(0);
     const g = this.add.graphics().setDepth(2);
-    if (level === 0) {
-      g.fillStyle(CM.copperDark, 0.35);
-      g.fillRect(0, 0, 1280, 720);
-      g.fillStyle(CM.paper, 0.55);
-      g.fillRect(60, 80, 1160, 600);
-      g.fillStyle(CM.woodDark, 0.12);
-      for (let x = 60; x < 1220; x += 40) g.fillRect(x, 80, 2, 600);
-      g.lineStyle(2, CM.ink, 0.5);
-      g.strokeRect(60, 80, 1160, 600);
-    } else if (level === 1) {
-      g.fillStyle(CM.tealLight, 0.5);
-      g.fillRect(0, 0, 1280, 720);
-      g.lineStyle(2, CM.tealDark, 0.3);
-      for (let y = 0; y < 720; y += 24) g.lineBetween(0, y, 1280, y);
-    } else {
-      g.fillStyle(CM.wood, 0.38);
-      g.fillRect(0, 0, 1280, 720);
-      for (let i = 0; i < 20; i++) {
-        g.fillStyle(i % 2 ? CM.wood : CM.woodLight, 0.22);
-        g.fillRect(i * 64, 0, 64, 720);
-      }
-      g.fillStyle(CM.glow, 0.18);
-      g.fillCircle(1100, 140, 90);
-      g.fillCircle(160, 160, 60);
+    const tint = [
+      { c: CM.copperDark, a: 0.14 }, // the matchbox: snug and dim
+      { c: CM.tealLight, a: 0.12 }, // the tin-can cottage: cool and bright
+      { c: CM.glow, a: 0.1 }, // the clockwork house: warm
+    ][level];
+    g.fillStyle(tint.c, tint.a);
+    g.fillRect(0, 0, 1280, 720);
+    // a soft dark edge draws the eye to the room
+    for (let k = 0; k < 6; k++) {
+      g.lineStyle(40, 0x1a120c, 0.05);
+      g.strokeRect(-20 + k * 14, -20 + k * 14, 1320 - k * 28, 760 - k * 28);
     }
-    // floor and a round window
-    drawPatina(g, 65, 85, 1150, 550, 778 + level, 1.2);
-    drawTimber(g, 0, 640, 1280, 80, 104, CM.woodDark);
-    g.fillStyle(CM.copperDark, 1);
-    g.fillCircle(640, 220, 90);
-    g.lineStyle(2.5, CM.ink, 0.8);
-    g.strokeCircle(640, 220, 90);
-    g.lineStyle(2, CM.copperLight, 0.8);
-    g.strokeCircle(640, 220, 84);
-    g.fillStyle(CM.tealDark, 1);
-    g.fillCircle(640, 220, 76);
-    g.fillStyle(0xfff3bf, 1);
-    g.fillCircle(670, 200, 18);
-    g.fillStyle(0xffffff, 0.8);
-    for (let i = 0; i < 9; i++) g.fillCircle(590 + ((i * 37) % 100), 180 + ((i * 53) % 90), 1.6);
-    for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) rivet(g, 640 + Math.cos(a) * 85, 220 + Math.sin(a) * 85);
-    drawLeafSprig(g, 65, 112, 390, 513, 1);
-    drawLeafSprig(g, 1207, 118, 380, 204, 1);
-    drawLeafSprig(g, 723, 138, 130, 444, 0.8);
   }
 
   private spot(i: number): void {
@@ -126,16 +96,19 @@ export class NookScene extends MetaScene {
     const id = p.nook[i];
     const c = this.add.container(s.x, s.y).setDepth(20);
     const g = this.add.graphics();
-    if (id) drawFurniture(g, id);
+    if (id) drawFurniture(g, id, 0, 0, 1.45);
     else {
-      g.lineStyle(3, 0xf4ebd5, 0.5);
-      g.strokeCircle(0, -30, 34);
-      g.fillStyle(0xf4ebd5, 0.5);
-      g.fillRect(-3, -46, 6, 32);
-      g.fillRect(-16, -33, 32, 6);
+      // an empty spot: a dashed circle with a plus, inviting a tap
+      g.fillStyle(0x342f29, 0.35);
+      g.fillCircle(0, -40, 38);
+      g.lineStyle(4, 0xf4ebd5, 0.85);
+      g.strokeCircle(0, -40, 38);
+      g.fillStyle(0xf4ebd5, 0.9);
+      g.fillRect(-4, -60, 8, 40);
+      g.fillRect(-20, -44, 40, 8);
     }
     c.add(g);
-    c.setSize(150, 130).setInteractive({ useHandCursor: true });
+    c.setSize(200, 170).setInteractive({ useHandCursor: true });
     c.on('pointerup', () => (id ? this.use(id, c) : this.picker(i)));
     let held: Phaser.Time.TimerEvent | undefined;
     c.on('pointerdown', () => (held = this.time.delayedCall(700, () => this.picker(i))));
@@ -306,87 +279,217 @@ function pinsToNotes(pins: string[]): number[] {
   return Array.from({ length: len }, (_, i) => steps.get(i) ?? -1);
 }
 
-/** Furniture made from spare parts. */
+/**
+ * Furniture made from spare parts, standing on (x, y). Drawn with an ink outline and simple
+ * light and shade so each piece reads as the household thing it was made from (a thimble, a
+ * cotton reel, bottle caps…). The music box and the lamp use their paintings when loaded.
+ */
 export function drawFurniture(g: Phaser.GameObjects.Graphics, id: string, x = 0, y = 0, s = 1): void {
-  const R = (dx: number, dy: number, w: number, h: number, c: number, r = 6) => {
+  const P = (dx: number, dy: number) => new Phaser.Math.Vector2(x + dx * s, y + dy * s);
+  const ink = (w = 2.2) => g.lineStyle(Math.max(1, w * s), CM.ink, 0.75);
+  const R = (dx: number, dy: number, w: number, h: number, c: number, r = 6, line = true) => {
     g.fillStyle(c, 1);
     g.fillRoundedRect(x + dx * s, y + dy * s, w * s, h * s, Math.min(r, w / 2, h / 2) * s);
+    if (line) {
+      ink();
+      g.strokeRoundedRect(x + dx * s, y + dy * s, w * s, h * s, Math.min(r, w / 2, h / 2) * s);
+    }
   };
-  const C = (dx: number, dy: number, r: number, c: number) => {
+  const C = (dx: number, dy: number, r: number, c: number, line = false) => {
     g.fillStyle(c, 1);
     g.fillCircle(x + dx * s, y + dy * s, r * s);
+    if (line) {
+      ink();
+      g.strokeCircle(x + dx * s, y + dy * s, r * s);
+    }
+  };
+  const E = (dx: number, dy: number, w: number, h: number, c: number, line = true) => {
+    g.fillStyle(c, 1);
+    g.fillEllipse(x + dx * s, y + dy * s, w * s, h * s);
+    if (line) {
+      ink();
+      g.strokeEllipse(x + dx * s, y + dy * s, w * s, h * s);
+    }
+  };
+  const poly = (pts: Array<[number, number]>, c: number, line = true) => {
+    const v = pts.map(([px, py]) => P(px, py));
+    g.fillStyle(c, 1);
+    g.fillPoints(v, true);
+    if (line) {
+      ink();
+      g.strokePoints(v, true, true);
+    }
+  };
+  const shadow = (w: number) => {
+    g.fillStyle(0x000000, 0.22);
+    g.fillEllipse(x, y, w * s, 12 * s);
+  };
+  const gearPts = (cx: number, cy: number, teeth: number, r0: number, r1: number): Array<[number, number]> => {
+    const pts: Array<[number, number]> = [];
+    for (let k = 0; k < teeth * 2; k++) {
+      const a = (k / (teeth * 2)) * Math.PI * 2;
+      const r = k % 2 ? r0 : r1;
+      pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    }
+    return pts;
   };
   switch (id) {
-    case 'matchbox-bed':
-      R(-70, -30, 140, 40, 0xad6b51);
-      R(-64, -40, 128, 22, 0xe9dcc0);
-      R(-60, -46, 40, 16, 0xffffff);
-      R(-20, -42, 76, 18, 0x6c4a8f);
+    case 'matchbox-bed': {
+      // a matchbox drawer for a bed: striker strip on the side, a pillow and a striped sock blanket
+      shadow(160);
+      R(-74, -40, 148, 40, 0xb5442c, 4);
+      R(-74, -40, 148, 9, 0x5e3a2a, 2);
+      for (let k = 0; k < 10; k++) C(-66 + k * 14, -35.5, 1.6, 0x8a6a52);
+      R(-68, -58, 136, 22, 0xe8d3b0, 4);
+      R(-64, -70, 44, 20, 0xffffff, 9);
+      poly([[-22, -66], [64, -66], [68, -42], [-22, -42]], 0x6c4a8f);
+      for (let k = 0; k < 4; k++) poly([[-14 + k * 20, -66], [-4 + k * 20, -66], [-4 + k * 20, -42], [-14 + k * 20, -42]], 0xd9a0a0, false);
       break;
-    case 'thimble-chair':
-      R(-24, -60, 48, 56, 0xa9b7ad, 10);
-      for (let k = 0; k < 4; k++) for (let j = 0; j < 3; j++) C(-14 + k * 9, -50 + j * 14, 2, 0x82938c);
+    }
+    case 'thimble-chair': {
+      // an upside-down thimble with a button cushion on top
+      shadow(90);
+      poly([[-34, 0], [34, 0], [26, -62], [-26, -62]], 0xb9c4bd);
+      g.fillStyle(0xffffff, 0.25);
+      g.fillPoints([P(-28, -4), P(-16, -4), P(-12, -58), P(-22, -58)], true);
+      for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) C(-20 + k * 8 + r * 0.8, -52 + r * 13, 1.8, 0x7d8c84);
+      E(0, -64, 60, 14, 0xa0aca5);
+      E(0, -70, 64, 18, 0xb5442c);
+      for (const dx of [-8, 8]) for (const dy of [-73, -67]) C(dx * 0.6, dy, 1.6, 0x5e1e14);
       break;
-    case 'spool-table':
-      R(-40, -70, 80, 14, 0xa36d40);
-      R(-22, -56, 44, 44, 0xa57168, 4);
-      R(-40, -14, 80, 14, 0xa36d40);
-      break;
-    case 'cap-rug':
-      g.fillStyle(0xf1c40f, 1);
-      g.fillEllipse(x, y - 6 * s, 150 * s, 36 * s);
-      for (let k = 0; k < 7; k++) C(-54 + k * 18, -6, 6, [0xad6b51, 0x537a72, 0x78815a][k % 3]);
-      break;
-    case 'mini-musicbox':
-      R(-36, -50, 72, 46, 0x856c50);
-      R(-40, -60, 80, 14, 0xa36d40);
-      C(0, -26, 10, 0xbca16a);
-      g.fillStyle(0x667a6a, 1);
-      g.fillCircle(x + 30 * s, y - 80 * s, 5 * s);
-      g.fillRect(x + 33 * s, y - 100 * s, 3 * s, 20 * s);
-      break;
-    case 'button-lamp':
-      R(-4, -90, 8, 86, 0x6c7a89, 2);
-      g.fillStyle(0xf1d391, 1);
-      g.fillTriangle(x - 30 * s, y - 80 * s, x + 30 * s, y - 80 * s, x, y - 112 * s);
-      C(0, -6, 18, 0xa57168);
-      C(-6, -8, 3, 0x9c2c5c);
-      C(6, -8, 3, 0x9c2c5c);
-      break;
-    case 'gear-clock':
-      C(0, -50, 40, 0xbca16a);
-      C(0, -50, 30, 0xe9dcc0);
-      g.lineStyle(4 * s, 0x342f29, 1);
-      g.lineBetween(x, y - 50 * s, x, y - 72 * s);
-      g.lineBetween(x, y - 50 * s, x + 14 * s, y - 50 * s);
-      break;
-    case 'sock-blanket':
-      R(-60, -24, 120, 24, 0x83a49a, 10);
-      for (let k = 0; k < 5; k++) R(-56 + k * 24, -24, 10, 24, 0xffffff, 2);
-      break;
-    case 'cork-stool':
-      R(-20, -44, 40, 44, 0xc89a62, 8);
-      for (let k = 0; k < 6; k++) C(-12 + (k % 3) * 12, -34 + Math.floor(k / 3) * 16, 2, 0x9c7444);
-      break;
-    case 'teaspoon-shelf':
-      R(-60, -60, 120, 8, 0x856c50);
-      for (let k = 0; k < 4; k++) {
-        g.fillStyle(0xa9b7ad, 1);
-        g.fillEllipse(x + (-42 + k * 28) * s, y - 76 * s, 12 * s, 18 * s);
+    }
+    case 'spool-table': {
+      // a cotton reel: wooden flanges, wound thread, a lace doily on top
+      shadow(110);
+      E(0, -6, 96, 18, 0x8a5a34);
+      R(-34, -76, 68, 70, 0xc0605a, 4);
+      g.lineStyle(1.2 * s, 0x8e3f3a, 0.8);
+      for (let k = 0; k < 9; k++) g.lineBetween(x - 34 * s, y + (-72 + k * 8) * s, x + 34 * s, y + (-70 + k * 8) * s);
+      E(0, -80, 104, 20, 0xb07a48);
+      E(0, -84, 104, 20, 0xc89a62);
+      E(0, -86, 70, 12, 0xf4ebd5, false);
+      for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2;
+        C(Math.cos(a) * 34, -86 + Math.sin(a) * 6, 3, 0xf4ebd5);
       }
       break;
-    case 'stamp-frame':
-      R(-40, -90, 80, 70, 0x856c50);
-      R(-32, -82, 64, 54, 0xf4ebd5);
-      C(0, -55, 16, 0xb5442c);
+    }
+    case 'cap-rug': {
+      // a round rug of bottle caps
+      E(0, -8, 170, 40, 0xd9c7a0);
+      const caps: Array<[number, number, number]> = [[-60, -8, 0xb5442c], [-36, -14, 0x537a72], [-36, -2, 0xc2a168], [-12, -18, 0x78815a], [-12, -6, 0xb5442c], [12, -18, 0xc2a168], [12, -6, 0x537a72], [36, -14, 0xb5442c], [36, -2, 0x78815a], [60, -8, 0x537a72], [-12, 6, 0x78815a], [12, 6, 0xb5442c]];
+      for (const [cx, cy, col] of caps) {
+        E(cx, cy, 22, 11, col);
+        g.fillStyle(0xffffff, 0.35);
+        g.fillEllipse(x + (cx - 3) * s, y + (cy - 2) * s, 8 * s, 3 * s);
+      }
       break;
-    case 'plant-pot':
-      R(-22, -36, 44, 36, 0xa9b7ad, 6);
-      g.fillStyle(0x78815a, 1);
-      g.fillEllipse(x - 14 * s, y - 52 * s, 20 * s, 34 * s);
-      g.fillEllipse(x + 12 * s, y - 56 * s, 20 * s, 40 * s);
+    }
+    case 'mini-musicbox': {
+      shadow(110);
+      if (paintedObject(g, 'musicbox', x, y - 52 * s, 1.15 * s)) break;
+      R(-44, -54, 88, 50, 0x856c50);
+      poly([[-48, -54], [48, -54], [40, -84], [-40, -84]], 0xa36d40);
+      C(0, -30, 10, 0xbca16a, true);
       break;
+    }
+    case 'button-lamp': {
+      shadow(80);
+      if (paintedObject(g, 'nightlight', x, y - 58 * s, 1.15 * s)) break;
+      E(0, -8, 54, 16, 0xa57168);
+      C(-8, -9, 3, 0x6e2c3c);
+      C(8, -9, 3, 0x6e2c3c);
+      R(-3, -92, 6, 84, 0x6c7a89, 2);
+      poly([[-34, -82], [34, -82], [16, -116], [-16, -116]], 0xf1d391);
+      break;
+    }
+    case 'gear-clock': {
+      // a big brass gear with a clock face
+      poly(gearPts(0, -56, 12, 40, 48), 0xbca16a);
+      C(0, -56, 32, 0xf4ebd5, true);
+      for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2;
+        C(Math.cos(a) * 26, -56 + Math.sin(a) * 26, k % 3 ? 1.5 : 3, CM.ink);
+      }
+      g.lineStyle(4 * s, CM.ink, 1);
+      g.lineBetween(x, y - 56 * s, x, y - 78 * s);
+      g.lineBetween(x, y - 56 * s, x + 15 * s, y - 50 * s);
+      C(0, -56, 4, 0xb5442c);
+      break;
+    }
+    case 'sock-blanket': {
+      // a striped wool sock folded into a blanket, heel and toe showing
+      shadow(140);
+      poly([[-66, -4], [50, -4], [66, -14], [62, -30], [44, -34], [-66, -34]], 0x83a49a);
+      for (let k = 0; k < 6; k++) poly([[-60 + k * 20, -34], [-50 + k * 20, -34], [-50 + k * 20, -4], [-60 + k * 20, -4]], 0xf4ebd5, false);
+      E(52, -18, 30, 26, 0xd9a0a0);
+      R(-70, -38, 12, 38, 0x6c8a80, 4);
+      break;
+    }
+    case 'cork-stool': {
+      // a bottle cork: oval top, speckled sides
+      shadow(70);
+      R(-24, -50, 48, 50, 0xc89a62, 6);
+      E(0, -50, 48, 14, 0xdcb27c);
+      for (let k = 0; k < 14; k++) C(-18 + ((k * 13) % 36), -42 + ((k * 7) % 38), 1.8, 0x9c7444);
+      for (let k = 0; k < 5; k++) C(-14 + ((k * 11) % 28), -51 + (k % 2) * 2, 1.6, 0xa9835a);
+      break;
+    }
+    case 'teaspoon-shelf': {
+      // a wooden shelf on brackets, with teaspoons hanging below and jars on top
+      R(-70, -66, 140, 10, 0x856c50, 3);
+      for (const bx of [-50, 50]) poly([[bx - 4, -56], [bx + 4, -56], [bx + 4, -40], [bx - 4, -48]], 0x6e5236);
+      R(-56, -92, 22, 26, 0xc1d3c6, 4);
+      R(-58, -96, 26, 6, 0xad6b51, 2);
+      R(30, -86, 30, 20, 0xc89a62, 3);
+      for (let k = 0; k < 4; k++) {
+        const sx = -30 + k * 20;
+        R(sx - 1.5, -56, 3, 26, 0xb9c4bd, 1, false);
+        E(sx, -26, 12, 18, 0xb9c4bd);
+        g.fillStyle(0xffffff, 0.4);
+        g.fillEllipse(x + (sx - 2) * s, y - 29 * s, 4 * s, 8 * s);
+      }
+      break;
+    }
+    case 'stamp-frame': {
+      // a framed postage stamp with a perforated edge and a gear picture
+      R(-46, -104, 92, 84, 0x856c50, 4);
+      R(-38, -96, 76, 68, 0xe9dcc0, 2, false);
+      for (let k = 0; k <= 8; k++) {
+        C(-34 + k * 8.5, -96, 2.4, 0x856c50);
+        C(-34 + k * 8.5, -28, 2.4, 0x856c50);
+      }
+      for (let k = 0; k <= 7; k++) {
+        C(-38, -92 + k * 9, 2.4, 0x856c50);
+        C(38, -92 + k * 9, 2.4, 0x856c50);
+      }
+      R(-28, -88, 56, 52, 0xb5442c, 3, false);
+      poly(gearPts(0, -62, 8, 13, 17), 0xf1d391, false);
+      C(0, -62, 6, 0xb5442c);
+      break;
+    }
+    case 'plant-pot': {
+      // a thimble pot with a leafy sprout
+      shadow(70);
+      poly([[-24, 0], [24, 0], [28, -40], [-28, -40]], 0xb9c4bd);
+      for (let r = 0; r < 3; r++) for (let k = 0; k < 5; k++) C(-16 + k * 8, -32 + r * 11, 1.6, 0x7d8c84);
+      R(-2, -78, 4, 40, 0x5b6b42, 2, false);
+      for (const [lx, ly, a] of [[-18, -62, -0.6], [18, -70, 0.6], [-14, -86, -0.4], [12, -92, 0.4]] as Array<[number, number, number]>) {
+        const c = P(lx, ly);
+        const pts = [0, 1, 2, 3, 4, 5, 6, 7].map((k) => {
+          const t = (k / 8) * Math.PI * 2;
+          const px = Math.cos(t) * 16;
+          const py = Math.sin(t) * 7;
+          return new Phaser.Math.Vector2(c.x + (px * Math.cos(a) - py * Math.sin(a)) * s, c.y + (px * Math.sin(a) + py * Math.cos(a)) * s);
+        });
+        g.fillStyle(0x78815a, 1);
+        g.fillPoints(pts, true);
+        ink(1.6);
+        g.strokePoints(pts, true, true);
+      }
+      break;
+    }
     default:
-      C(0, -30, 20, 0xbca16a);
+      C(0, -30, 20, 0xbca16a, true);
   }
 }
