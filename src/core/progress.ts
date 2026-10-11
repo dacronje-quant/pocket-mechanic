@@ -5,10 +5,9 @@ import { ADDED_ROOM_IDS } from '../content/rooms/variety';
  */
 import { ATTIC_OBJECTS, atticRoomId } from '../content/attic';
 import { GADGET_UNLOCKS, STARTER_GADGETS, type GadgetKind } from '../content/bench';
-import { COSMETICS, type Cosmetic } from '../content/cosmetics';
+import { type Cosmetic } from '../content/cosmetics';
 import { getRoom, STORY_ROOMS } from '../content/index';
 import { MARK_ROOMS, repairById, REPAIRS, TREASURES } from '../content/repairs';
-import { QUICK_FIXES } from '../content/quickfixes';
 import { SONGS } from '../content/songs';
 import { STAMPS, type StampDef } from '../content/stamps';
 import type { Family, QuickFixDef, RepairDef, ToolId } from '../content/types';
@@ -247,9 +246,6 @@ export function buyCosmetic(p: Profile, c: Cosmetic): boolean {
   return true;
 }
 
-export function ownedCosmetics(p: Profile): Cosmetic[] {
-  return COSMETICS.filter((c) => cosmeticOwned(p, c));
-}
 
 export function benchGadgets(p: Profile): GadgetKind[] {
   const out = [...STARTER_GADGETS];
@@ -320,9 +316,6 @@ export function whatWeLearned(p: Profile, now = Date.now()): string {
   return `This week, ${name} ${uniq.join('; ')}${songs}. That's ${week.length} fix${week.length > 1 ? 'es' : ''}!`;
 }
 
-export function quickFixesOpen(p: Profile): QuickFixDef[] {
-  return QUICK_FIXES.filter((q) => quickOpen(p, q));
-}
 
 /** Kip's Nook grows with Golden Gears: matchbox (0) → tin-can cottage (1) → clockwork house (2). */
 export function nookLevel(p: Profile): number {

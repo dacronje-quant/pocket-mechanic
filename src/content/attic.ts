@@ -29,12 +29,6 @@ export const ATTIC_OBJECTS: AtticObjectDef[] = [
   { id: 'lighthouselens', title: 'Lighthouse Lens', kinds: ['light', 'circuit', 'light'], clue: '✦', history: 'Lighthouse lenses are made of many glass rings that bend all the lamp light into one strong beam for ships far out at sea.' },
 ];
 
-export const MYSTERY_BOX = {
-  id: 'mysterybox',
-  title: 'The Mystery Box',
-  history: 'Puzzle boxes have hidden ways in: sliding panels, secret catches and special orders of moves. Nana built this one when she was young.',
-};
-
 /** The four clue symbols whose order opens the Mystery Box's final dials. */
 export const BOX_COMBINATION = ['☾', '♪', '✦', '★'];
 

@@ -28,7 +28,6 @@ export const DY = [-1, 0, 1, 0];
 export const opp = (d: number): Dir => ((d + 2) % 4) as Dir;
 const rotDir = (d: number, r: number): Dir => ((((d + r) % 4) + 4) % 4) as Dir;
 
-export const TILE_LETTERS = '#_ILT+XEWKVZYBOQMFSP';
 export type TileKind =
   | '#' | '_' | 'I' | 'L' | 'T' | '+' | 'X' | 'E' | 'W' | 'K' | 'V' | 'Z' | 'Y' | 'B' | 'O' | 'Q' | 'M' | 'F' | 'S' | 'P';
 

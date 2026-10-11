@@ -22,7 +22,6 @@ export function loadArtManifest(): Promise<void> {
   return loaded;
 }
 
-export const hasArt = (id: string): boolean => !!images[id];
 export const artTextureKey = (id: string): string => `art:${id}`;
 
 function generation(scene: Phaser.Scene): number {
