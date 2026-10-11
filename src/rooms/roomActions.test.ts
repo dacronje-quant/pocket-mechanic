@@ -142,23 +142,31 @@ describe('classic room input regressions', () => {
     expect(room.state).toEqual(new Set(['0:0']));
   });
 
-  it('matching pendulum lengths removes old phase drift from the completed bridge', () => {
+  it('equal pendulum lengths keep their independent phases until a shared release', () => {
     const room = scene(new PendulumRoom());
     room.def = { goal: 'sync', maxNotch: 9, minNotch: 1, pendulums: [{ id: 'a', notch: 5, fixed: true }, { id: 'b', notch: 2 }] };
     room.state = { pushed: false, pallet: false, notches: { a: 5, b: 5 } }; room.g = fake.object();
-    room.views = [{ id: 'a', px: 450, py: 130, phase: 1.2, amp: .3, bob: fake.object() }, { id: 'b', px: 830, py: 130, phase: 3.8, amp: .38, bob: fake.object() }];
+    room.views = [{ id: 'a', px: 450, py: 165, motion: { angle: -.2, velocity: .1 }, bob: fake.object() }, { id: 'b', px: 830, py: 165, motion: { angle: .15, velocity: -.1 }, bob: fake.object() }];
     room.tick(.016);
-    expect(room.views[0].phase).toBeCloseTo(room.views[1].phase);
+    expect(room.views[0].motion.angle).not.toBeCloseTo(room.views[1].motion.angle);
+    expect(room.fixed).toBe(false);
+    const beforeRelease = room.views.map((v: any) => v.motion.angle);
+    room.releaseTogether();
+    expect(room.views.map((v: any) => v.motion.angle)).toEqual(beforeRelease);
+    expect(room.state.pushed).toBe(false);
+    for (let i = 0; i < 300; i++) room.tick(1 / 120);
+    expect(room.views[0].motion).toEqual(room.views[1].motion);
     expect(room.views[0].bob.y).toBeCloseTo(room.views[1].bob.y);
+    expect(room.fixed).toBe(true);
   });
 
   it('pushing the second Tinker bob also starts the reference bob that drives the clock', () => {
     const room = scene(new PendulumRoom());
     room.def = { goal: 'push', pallet: false };
-    room.state = { pushed: false, pallet: false, notches: { a: 5, b: 2 } };
-    room.views = [{ id: 'a', phase: 1.2, amp: 0, fixed: true }, { id: 'b', phase: 3.8, amp: 0, fixed: false }];
+    room.state = { pushed: false, pallet: false, notches: { a: 5, b: 5 } };
+    room.views = [{ id: 'a', motion: { angle: 0, velocity: 0 }, fixed: true }, { id: 'b', motion: { angle: 0, velocity: 0 }, fixed: false }];
     room.push(room.views[1]);
-    expect(room.views.every((view: any) => view.amp === .38)).toBe(true);
+    expect(room.views.every((view: any) => view.motion.velocity > 0 && view.motion.angle === 0)).toBe(true);
     expect(room.state.pushed).toBe(true);
   });
 });

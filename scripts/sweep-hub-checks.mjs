@@ -23,10 +23,11 @@ const { REPAIRS } = await load('src/content/repairs.ts');
 const { atticRooms } = await load('src/content/attic.ts');
 const { effective } = await load('src/rules/index.ts');
 const { roomVoice } = await load('src/content/roomVoice.ts');
+const captionIds = opt('caption-ids', '').split(',').filter(Boolean);
 const longInstructions = [...STORY_ROOMS, ...QUICK_FIXES.map(fix => fix.room), ...atticRooms()].map(room => {
   const voice = roomVoice(effective(room, 'engineer'), 'engineer');
   return { roomId: room.id, longest: Math.max(voice.intro.text.length, ...voice.hints.map(line => line.text.length)) };
-}).sort((a, b) => b.longest - a.longest).slice(0, 18);
+}).filter(room => !captionIds.length || captionIds.includes(room.roomId)).sort((a, b) => b.longest - a.longest).slice(0, 18);
 const atticIds = atticRooms().map(room => room.id);
 const fixture = { rooms: [...STORY_ROOMS, ...QUICK_FIXES.map(fix => fix.room), ...atticRooms()].map(room => room.id), atticIds, pedia: PEDIA.map(entry => entry.id) };
 const report = { started: new Date().toISOString(), input: 'real mouse clicks, drags and wheel events; save/scene fixtures only', cases: [], errors: [] };

@@ -9,7 +9,7 @@ export async function driveClassic(h) {
       case 'cards': return { parts: s.views.map(p => ({ card: p.card, slot: p.slot, ...point(p.obj) })), slots: s.slotPos, buttons: s.partyBtns.map(b => ({ move: b.move, ...point(b.btn) })) };
       case 'chain': return { parts: s.parts.map(p => ({ id: p.id, at: p.at, ...point(p.obj) })), slots: s.pos };
       case 'music': return { x0: s.x0, y0: s.y0, cw: s.cw, ch: s.ch, pins: [...s.state] };
-      case 'pendulum': return { views: s.views.map(v => ({ id: v.id, fixed: v.fixed, px: v.px, py: v.py, ...point(v.bob) })), pallet: s.pallet ? point(s.pallet) : null, escape: s.escape };
+      case 'pendulum': return { views: s.views.map(v => ({ id: v.id, fixed: v.fixed, px: v.px, py: v.py, ...point(v.bob), targets: Array.from({length: s.def.maxNotch - s.def.minNotch + 1}, (_, i) => ({notch: i + s.def.minNotch, ...s.notchPoint(v, i + s.def.minNotch)})) })), pallet: s.pallet ? point(s.pallet) : null, escape: s.escape };
       case 'tune': return { dials: s.dials.map(d => ({ id: d.id, a: d.a, b: d.b, ...point(d.knob) })) };
       case 'hunt': return { lifted: [...s.state] };
       case 'busy': return { pressed: [...s.state] };
@@ -115,8 +115,9 @@ export async function driveClassic(h) {
         for (const [id, notch] of Object.entries(def.solution.notches ?? {})) {
           ui = await read();
           const bob = ui.views.find(v => v.id === id);
-          await h.drag(bob, { x: bob.px, y: bob.py + 80 + Number(notch) * 30 });
+          await h.drag(bob, bob.targets.find(target => target.notch === Number(notch)));
         }
+        if (def.goal === 'sync') await h.click(1180, 600);
       }
       return true;
     }

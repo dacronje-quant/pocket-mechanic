@@ -52,8 +52,8 @@ export const PEDIA: PediaEntry[] = [
   e('bearing', 'Bearing', 'springs', 'A bearing is a ring of tiny balls that lets a wheel spin easily.', 'Skateboard wheels spin fast because of their bearings.', 'Spin a skateboard or scooter wheel.'),
   // pendulums & timing
   e('pendulum', 'Pendulum', 'pendulums', 'A pendulum is a weight on a rod that swings back and forth. A longer pendulum swings slower!', 'Grandfather clocks keep time with a long pendulum.', 'Tie a washer to a string and count its swings.'),
-  e('metronome', 'Metronome', 'pendulums', 'A metronome ticks a steady beat so musicians play in time.', 'Sliding the weight up makes the beat faster; down makes it slower.', 'Clap along to a steady beat in a song.'),
-  e('sync', 'In Sync', 'pendulums', 'Two pendulums of the same length swing together, side by side.', 'Long ago, people noticed clocks on the same wall slowly start to tick together.', 'Swing two strings of the same length together.'),
+  e('metronome', 'Metronome', 'pendulums', 'A metronome ticks a steady beat so musicians play in time.', 'Match our clock pendulum to its beat: a longer pendulum ticks more slowly.', 'Clap along to a steady beat in a song.'),
+  e('sync', 'In Sync', 'pendulums', 'Equal-length pendulums have the same beat. Release them together so they swing side by side.', 'Clocks can influence each other through tiny movements of their shared support.', 'Hold two equal-length strings to one side and release them together.'),
   // pins, cams & music
   e('cam', 'Cam', 'music', 'A cam is a bumpy wheel. As it turns, the bumps push things up and down.', 'Car engines use cams to open and close valves.', 'Look inside a moving toy that bobs up and down.'),
   e('follower', 'Cam Follower', 'music', 'The follower rides on the cam and goes up and down with its bumps.', 'Automata and dancing toys use followers to make figures move.', 'Watch a bobbing toy and guess the cam shape.'),

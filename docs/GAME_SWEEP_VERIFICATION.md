@@ -94,7 +94,10 @@ are preserved. API format details are documented by
 The original sweep's source test run passed 268 tests in 18 files. The subsequent
 [weight and balance follow-up](BALANCE_PHYSICS_VERIFICATION.md) corrects live lever
 motion, pulley topology, stale trial results and the comparison scale; its source
-suite passes 295 tests in 20 files. TypeScript checking,
+suite passes 295 tests in 20 files. The subsequent
+[pendulum follow-up](PENDULUM_PHYSICS_VERIFICATION.md) replaces forced phases and
+clunky bob adjustment with gravity-based motion and an explicit shared release;
+the current suite passes 306 tests in 21 files. TypeScript checking,
 production build and `git diff --check` pass. Media coverage is checked separately
 by `scripts/check-audio.mjs`.
 

@@ -266,6 +266,7 @@ export interface PendulumState {
 }
 
 export function pendulumSolved(def: Effective<PendulumRoomDef>, s: PendulumState): boolean {
+  if (!def.pendulums.length || def.pendulums.some(p => !Number.isInteger(s.notches[p.id]) || s.notches[p.id] < def.minNotch || s.notches[p.id] > def.maxNotch || (p.fixed && s.notches[p.id] !== p.notch))) return false;
   if (def.pallet && !s.pallet) return false;
   if (def.goal === 'push') return s.pushed;
   if (def.goal === 'tempo') {
@@ -273,7 +274,7 @@ export function pendulumSolved(def: Effective<PendulumRoomDef>, s: PendulumState
     return tempoMatches(s.notches[p.id], def.bpm ?? 60);
   }
   const vals = def.pendulums.map((p) => s.notches[p.id]);
-  return vals.every((v) => v === vals[0]);
+  return s.pushed && vals.every((v) => v === vals[0]);
 }
 
 export interface BalanceState {
@@ -493,7 +494,7 @@ export const RULES: { [K in RoomKind]: KindRules<K> } = {
       notches: { ...Object.fromEntries(d.pendulums.map((p) => [p.id, p.notch])), ...(d.solution.notches ?? {}) },
     }),
     solved: (d, s) => pendulumSolved(d, s),
-    simplify: (d) => ({ ...d, goal: 'push', pallet: false }),
+    simplify: (d) => ({ ...d, goal: 'push', pallet: false, pendulums: d.pendulums.map(p => ({ ...p, notch: d.pendulums[0].notch })) }),
   },
   balance: {
     initial: (d) => ({ fulcrum: d.lever?.fulcrum ?? 0, weights: [], wheels: 0, pulled: false }),

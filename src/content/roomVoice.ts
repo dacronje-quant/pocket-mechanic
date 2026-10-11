@@ -146,6 +146,29 @@ export function roomVoice(room: RoomDef | Effective<RoomDef>, style: PlayStyleId
       hints = [hints[0], hints[1], `${hints[2]} ${action}`];
     }
   }
+  if (room.kind === 'pendulum') {
+    if (room.goal === 'sync') {
+      set('Match the two pendulum lengths. Then press the triangular button to release them together and form the bridge.',
+        'Longer pendulums swing more slowly. Equal lengths have the same beat.',
+        'Slide the brass bob to the same distance below its pivot as the green bob.',
+        'Match the bob lengths, then press the triangular button to release both together.');
+    } else if (room.goal === 'tempo') {
+      const target = Math.round(room.bpm ?? 60);
+      set('Slide the brass bob along its rod to match the green reference: ' + target + ' ticks a minute. Then watch three ticks.',
+        'The bob pauses while you hold it. Let go to hear the new beat.',
+        'Longer swings are slower. Shorter swings are faster. Weight does not set the beat.',
+        'Slide the bob to notch ' + room.solution.notches?.[room.pendulums.find(p => !p.fixed)!.id] + ', let go and watch it swing.');
+    } else if (room.pendulums.length > 1) {
+      set('The two pendulums are ready. Tap either round bob to start them together and form the bridge.',
+        'The bobs are already at equal lengths.', 'Tap either bob to give both a gentle push.',
+        'Tap a round bob, then watch both swing together.');
+    } else if (room.pallet) {
+      set('Fit the copper anchor from the drawer under the toothed wheel. Then tap the round bob to start the clock.',
+        'The missing anchor catches one wheel tooth at each tick.',
+        'Fit the copper anchor into its glowing space under the wheel.',
+        'Fit the anchor, then tap the round bob and watch three ticks.');
+    }
+  }
   if (room.kind === 'difference') {
     intro = `${room.intro} Touch each difference on the right-hand picture.`;
     hints = [hints[0], hints[1], `${hints[2]} Touch the changed parts on the right-hand picture.`];
