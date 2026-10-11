@@ -9,11 +9,12 @@ import * as sfx from '../audio/sfx';
 import { ensureGearTexture, type GearVariant } from '../art/textures';
 import { CM } from '../art/copperMoss';
 import { rivet } from '../art/finish';
+import { TONE, LINE, landSquash, toyDialFace, toyDisc, toyRod } from '../art/style';
 import { meshPhase, pitchRadius, MODULE } from '../mechanism/graph';
 import type { GearOutput, GearPlacement } from '../content/types';
 import { canPlaceGear, evalGears, gearId, type GearEval } from '../rules';
 import { setFlag } from '../core/progress';
-import { profile, persistSoon } from '../core/save';
+import { profile, persistSoon, settings } from '../core/save';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
 import { FONT } from '../ui/widgets';
 import { withArt } from '../art/generated';
@@ -67,12 +68,7 @@ export class GearRoom extends RoomBase<'gear'> {
     // output arbors and widgets
     for (const out of def.outputs) {
       const s = def.shafts.find((q) => q.id === out.shaft)!;
-      arbors.lineStyle(14, 0x554638, 1);
-      arbors.lineBetween(s.x, s.y, out.at.x, out.at.y);
-      arbors.lineStyle(8, 0xbca16a, 1);
-      arbors.lineBetween(s.x, s.y, out.at.x, out.at.y);
-      arbors.lineStyle(2, 0xf4ebd5, 0.5);
-      arbors.lineBetween(s.x, s.y - 2, out.at.x, out.at.y - 2);
+      toyRod(arbors, s.x, s.y, out.at.x, out.at.y);
       const g = this.add.graphics().setDepth(D.widget);
       const w = { out, g, a: Math.random() * Math.PI * 2, b: 0.3, beat: 0, label: undefined as Phaser.GameObjects.Text | undefined, toy: undefined as Phaser.GameObjects.Image | undefined };
       // a Quick Fix toy: the gears drive the real toy (Pip's mouse, the bath boat, the top…)
@@ -100,19 +96,10 @@ export class GearRoom extends RoomBase<'gear'> {
     // pegs and fixed gears
     const pegG = this.add.graphics().setDepth(D.mech - 2);
     for (const s of def.shafts) {
-      pegG.fillStyle(0x000000, 0.35);
-      pegG.fillCircle(s.x + 2, s.y + 4, 13);
-      pegG.fillStyle(0x79503d, 1);
-      pegG.fillCircle(s.x, s.y, 13);
-      pegG.fillStyle(s.peg ? 0xe7bb55 : 0xb88a2c, 1);
-      pegG.fillCircle(s.x, s.y, 9);
-      pegG.lineStyle(1.3, CM.ink, 0.8);
-      pegG.strokeCircle(s.x, s.y, 13);
-      pegG.lineStyle(1, CM.cream, 0.5);
-      pegG.strokeCircle(s.x - 1, s.y - 1, 10);
+      toyDisc(pegG, s.x, s.y, 13, s.peg ? TONE.pegFace : TONE.pegFaceDim);
       rivet(pegG, s.x, s.y, 3);
       if ((s.layers ?? [0]).length > 1) {
-        pegG.lineStyle(3, 0xf4ebd5, 0.8);
+        pegG.lineStyle(LINE.bold, TONE.highlight, 0.8);
         pegG.strokeCircle(s.x, s.y, 17);
       }
       for (const gdef of s.gears ?? []) {
@@ -213,6 +200,7 @@ export class GearRoom extends RoomBase<'gear'> {
     this.tweens.killTweensOf(v.img);
     this.tweens.add({ targets: v.img, x: s.x, y: s.y, scale: 1, duration: 110, ease: 'Back.easeOut' });
     v.img.setDepth(D.mech + 1 + layer * 2);
+    if (!settings().calm) landSquash(this, v.img);
     this.clunkAt(s.x, s.y);
     this.act(() => {
       v.shaft = undefined;
@@ -349,13 +337,13 @@ export class GearRoom extends RoomBase<'gear'> {
       if (here) continue;
       const s = this.def.shafts.find((q) => q.id === p.shaft)!;
       const r = pitchRadius(p.teeth);
-      g.fillStyle(0xf4ebd5, alpha * 0.4);
+      g.fillStyle(TONE.highlight, alpha * 0.4);
       g.fillCircle(s.x, s.y, r);
-      g.lineStyle(3, 0xf4ebd5, alpha + 0.2);
+      g.lineStyle(LINE.bold, TONE.highlight, alpha + 0.2);
       g.strokeCircle(s.x, s.y, r + MODULE * 0.8);
       for (let i = 0; i < p.teeth; i++) {
         const a = (i / p.teeth) * Math.PI * 2 + this.time.now / 3000;
-        g.fillStyle(0xf4ebd5, alpha + 0.2);
+        g.fillStyle(TONE.highlight, alpha + 0.2);
         g.fillCircle(s.x + Math.cos(a) * (r + MODULE * 0.8), s.y + Math.sin(a) * (r + MODULE * 0.8), 2.5);
       }
     }
@@ -365,24 +353,24 @@ export class GearRoom extends RoomBase<'gear'> {
     const sol = this.evalR.sol;
     for (const n of this.evalR.nodes) {
       const powered = (sol.omega.get(n.id) ?? 0) !== 0;
-      g.lineStyle(3, powered ? 0xf1d391 : 0x7fd3ff, powered ? 0.95 : 0.6);
+      g.lineStyle(3, powered ? TONE.power : TONE.idle, powered ? 0.95 : 0.6);
       g.strokeCircle(n.x, n.y, pitchRadius(n.teeth));
-      g.fillStyle(powered ? 0xf1d391 : 0x7fd3ff, 0.9);
+      g.fillStyle(powered ? TONE.power : TONE.idle, 0.9);
       g.fillCircle(n.x, n.y, 5);
     }
     for (const [a, b] of sol.powerEdges) {
       const na = this.evalR.nodes.find((q) => q.id === a)!;
       const nb = this.evalR.nodes.find((q) => q.id === b)!;
-      g.lineStyle(12, 0xd3a278, 0.25);
+      g.lineStyle(12, CM.copperLight, 0.25);
       g.lineBetween(na.x, na.y, nb.x, nb.y);
-      g.lineStyle(4, 0xfff0a0, 0.95);
+      g.lineStyle(4, TONE.powerHot, 0.95);
       g.lineBetween(na.x, na.y, nb.x, nb.y);
     }
     this.evalR.outputs.forEach((o, i) => {
       const out = this.def.outputs[i];
       const s = this.def.shafts.find((q) => q.id === out.shaft)!;
       if (o.omega !== 0) {
-        g.lineStyle(4, 0xfff0a0, 0.95);
+        g.lineStyle(4, TONE.powerHot, 0.95);
         g.lineBetween(s.x, s.y, out.at.x, out.at.y);
       }
     });
@@ -393,9 +381,9 @@ export class GearRoom extends RoomBase<'gear'> {
       if (!empty) continue;
       const near = this.evalR.nodes.some((n) => (sol.omega.get(n.id) ?? 0) !== 0 && Math.hypot(n.x - s.x, n.y - s.y) < 260);
       if (!near && s.id !== this.def.driver.shaft) continue;
-      g.fillStyle(0xd3a278, 0.25 + pulse * 0.35);
+      g.fillStyle(CM.copperLight, 0.25 + pulse * 0.35);
       g.fillCircle(s.x, s.y, 16 + pulse * 12);
-      g.lineStyle(3, 0xffffff, 0.4 + pulse * 0.5);
+      g.lineStyle(LINE.bold, TONE.highlight, 0.4 + pulse * 0.5);
       g.strokeCircle(s.x, s.y, 22 + pulse * 10);
     }
   }
@@ -503,27 +491,21 @@ export class GearRoom extends RoomBase<'gear'> {
     const top = Math.max(goal * 3, 2);
     const ang = (v: number) => Math.PI + Math.min(1, v / top) * Math.PI;
     const R = 46;
-    g.fillStyle(0x342f29, 1);
-    g.slice(x, y, R + 8, Math.PI, 0, false);
-    g.fillPath();
-    g.fillStyle(0xe9dcc0, 1);
-    g.slice(x, y, R, Math.PI, 0, false);
-    g.fillPath();
+    toyDialFace(g, x, y, R);
     // the goal zone
     const tol = out.tol ?? 0.06;
     const z0 = out.ratio !== undefined ? goal * (1 - tol) : out.maxRatio !== undefined ? 0 : goal;
     const z1 = out.ratio !== undefined ? goal * (1 + tol) : out.maxRatio !== undefined ? goal : top;
-    g.fillStyle(0x51cf66, 0.85);
+    g.fillStyle(TONE.ok, 0.9);
     g.slice(x, y, R - 4, ang(z0), ang(Math.max(z1, z0 + top * 0.03)), false);
     g.fillPath();
-    g.fillStyle(0xe9dcc0, 1);
+    g.fillStyle(TONE.face, 1);
     g.fillCircle(x, y, R - 22);
     // the needle
     const a = ang(ratio);
-    g.lineStyle(5, 0xd64541, 1);
+    g.lineStyle(5, TONE.warn, 1);
     g.lineBetween(x, y, x + Math.cos(a) * (R - 6), y + Math.sin(a) * (R - 6));
-    g.fillStyle(0x342f29, 1);
-    g.fillCircle(x, y, 7);
+    toyDisc(g, x, y, 7, CM.copperLight, TONE.outline);
   }
 
   /**
