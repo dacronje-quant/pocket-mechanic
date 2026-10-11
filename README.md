@@ -34,13 +34,17 @@ for the visual guide and [`docs/BUILD_PLAN.md` §8](docs/BUILD_PLAN.md#8-status)
   medals), Parts Drawers (Part-o-pedia with "How It Really Works" and "Spot It at Home!"), Kip's
   Nook (matchbox → tin-can cottage → clockwork house, furniture, a mini music box, the Job Book of
   stamps), Paint & Polish (10 cosmetic slots, polish mini-game, saved looks, Tess's corner), the
-  Window Seat (Brasswick comes back to life as you fix things), the Invention Bench, the Quick
+  Window Seat (Brasswick comes back to life as you fix things), the Music Box, the Quick
   Fixes basket and the Attic.
 - **30 Quick Fixes** (the original 24 plus six preserved story puzzles) and **the Mystery Attic** — 23 antique machines with three generated rooms each
   (deterministic, solvable by construction) and the Mystery Box.
-- **The Invention Bench** — free build on the same gear engine, 30 Contraption Cards, Contraption
-  Codes to share a machine by typing a short code on another device (no internet), saved machines,
-  a Peek Lens power view, the Little Tinker Toy Box, and Magnus's Nest Studio.
+- **My Music Box** — make a tune with ten coloured keys and a sixteen-beat brass roll. Add chords,
+  rests, change the tempo, listen or loop, undo edits, and save tunes to play again in the Nook.
+  Drafts survive reloads, old Pin Garden songs keep every note, and Magnus's Nest Studio remains
+  accessible. The former bench's saved machines are retained in profiles.
+- **Kip and Tess accessories** — 104 choices with modular painted bodies, hats, winding keys,
+  badges, shoes and tools. Brass heirlooms, colourful enamel and botanical details share the
+  Copper & Moss world; existing saved looks and unlocks remain compatible.
 - **Secrets** — three Golden Gears per room, Lost Treasures returned to their owners, Magnus Marks,
   Blueprints, fiddle toys everywhere, songs, 66 stamps.
 - **Family play** — up to six local profiles (a colour and letter-stamp initials, no names or free
@@ -78,12 +82,14 @@ Wi-Fi, open the *Network* address `npm run dev` prints.
 | `npm run check:pages` | Verify the published game code, all art and all audio match the source build |
 | `npm run check:audio` | Decode the production recordings and verify recorded/device-speech catalogue coverage |
 | `npm run check:offline` | Check fresh first-visit offline startup and all ten new puzzle kinds (Playwright required) |
+| `npm run check:accessories` | Check every Kip/Tess accessory, saved looks and fresh-install offline art |
+| `node scripts/check-music-box.mjs` | Check composer editing, playback, persistence and Nook playback with real browser input |
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run playthrough` | Headless Chromium plays the whole story from an empty save (see below) |
 | `npm run assets` | Generate optional painted art with Gemini |
 
 Debug routes (handy while building): `?room=2-3&style=engineer` opens a room directly,
-`?scene=bench` opens a scene. `window.pm` exposes the current room's `solve()` for automated tests;
+`?scene=bench` opens My Music Box (the old route is retained). `window.pm` exposes the current room's `solve()` for automated tests;
 it never changes how the game plays.
 
 ## Voices, music and sound effects (ElevenLabs)
@@ -98,12 +104,12 @@ synthesized notes, tuning tones and timing.
 - **Voices**: preserved recordings for story, hints, rooms, Part-o-pedia, Attic,
   treasures, cards and spoken button labels. Identical words from the same actor share
   one file. Pudding gets a recorded cat meow. New puzzle instructions have separate ids
-  for each age mode and use device speech until those recordings exist, so replaced
-  rooms never play their former puzzle instructions.
+  for each age mode. All 2,497 expected spoken IDs have recordings; device speech remains
+  a recovery fallback, so replaced rooms never play their former puzzle instructions.
 - **Music**: 14 gentle instrumental themes. The approved workshop audition is reused.
   Themes crossfade on repeat and become clearer as repairs progress; Wind-Down keeps
   them quieter and warmer.
-- **Mechanical effects**: 44 cues, including three variations of the refined brass
+- **Mechanical effects**: 52 cues, including three variations of the refined brass
   gear click. Approved bell, steam, spring, clock and ratchet sounds are reused.
   Short clock ticks and ratchet clicks are cut from the approved recordings so
   puzzle actions retain their original timing. Soft Clockwork lowers volume, rounds
@@ -201,7 +207,7 @@ src/
   core/              saves & profiles, progress & rewards, the repair journey, session timers
   rooms/             RoomBase + one scene per room kind
   scenes/            title, shop hub, story, Test Run, rewards, festival, shelf, town,
-                     Part-o-pedia, Paint & Polish, Nook, Invention Bench, Attic, Quick Fixes, grown-ups
+                     Part-o-pedia, Paint & Polish, Nook, Music Box, Attic, Quick Fixes, grown-ups
   art/               code-drawn Kip/Tess, portraits, machines, parts, shop, backdrops; optional
                      generated pictures
   audio/             Web Audio engine, recorded effects and adaptive music, voice player

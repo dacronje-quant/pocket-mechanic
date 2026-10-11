@@ -63,7 +63,7 @@ export function installSeparation(scene: Phaser.Scene): void {
         if (object instanceof Phaser.GameObjects.Container) walk(object.list);
         else if (object instanceof Phaser.GameObjects.Image) {
           const key = object.texture.key;
-          if (/^(gear-|art:(kip-dimensional|tess-dimensional|portrait-|item-|busy-gadgets|puzzle-props))/.test(key) && !object.getData('separation')) separateSprite(object);
+          if (/^(gear-|art:(kip-dimensional|tess-dimensional|kip-modular|tess-modular|portrait-|item-|busy-gadgets|puzzle-props))/.test(key) && !object.getData('separation')) separateSprite(object);
         }
       }
     };

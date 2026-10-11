@@ -11,6 +11,8 @@ import { drawRoomBackdrop } from '../art/backgrounds';
 import { CM, drawPatina } from '../art/copperMoss';
 import { collectionFrame, rivet } from '../art/finish';
 import { Kip } from '../art/Kip';
+import { accessoryIcon } from '../art/Accessories';
+import { SLOT_EXAMPLE } from '../art/accessoryCatalog';
 import { drawSmallObject } from '../art/objects';
 import { drawPart } from '../art/parts';
 import { drawPadlock } from '../art/shop';
@@ -98,13 +100,16 @@ export class PaintScene extends MetaScene {
       this.big.celebrate();
     });
 
-    SLOTS.forEach(([slot, icon], i) => {
-      const b = roundButton(this, 600 + i * 64, 130, icon, () => this.showSlot(slot), { r: 28, fontSize: 24, color: slot === this.slot ? 0xd3a278 : 0xbca16a }).setDepth(HUD);
+    SLOTS.forEach(([slot], i) => {
+      const b = roundButton(this, 600 + i * 64, 130, '', () => this.showSlot(slot), { r: 28, fontSize: 24, color: slot === this.slot ? 0xd3a278 : 0xbca16a }).setDepth(HUD);
+      b.add(accessoryIcon(this,0,0,SLOT_EXAMPLE[slot],30));
       this.slotBtns.push(b);
       this.hot(`slot-${slot}`, () => this.showSlot(slot));
     });
     if (tessUnlocked(p)) {
-      roundButton(this, 120, 160, this.who === 'tess' ? '🤖' : '👧', () => this.scene.restart({ who: this.who === 'tess' ? 'kip' : 'tess' }), { r: 30, fontSize: 26, say: this.who === 'tess' ? 'Kip' : 'Tess' }).setDepth(HUD);
+      const other=this.who==='tess'?'kip':'tess';
+      const switcher=roundButton(this,120,160,'',()=>this.scene.restart({who:other}),{r:30,say:other==='kip'?'Kip':'Tess'}).setDepth(HUD);
+      switcher.add(new Kip(this,0,20,other==='kip'?p.look:p.tessLook,other).setScale(.45));
     }
     this.showSlot('finish');
     this.savedLooks();
@@ -112,6 +117,7 @@ export class PaintScene extends MetaScene {
   }
 
   private showSlot(slot: CosmeticSlot): void {
+    if (this.pending) this.big.setLook(this.look());
     this.slot = slot;
     this.pending = null;
     this.grid?.destroy();
@@ -123,11 +129,11 @@ export class PaintScene extends MetaScene {
       const owned = cosmeticOwned(p, c);
       const wearing = (this.look() as unknown as Record<string, string>)[slot] === c.id;
       const t = tile(this, x, y, 126, 140, () => this.pick(c), { selected: wearing, locked: !owned && c.source.kind !== 'shiny', captionSize: 11, caption: showWords() ? c.name : undefined });
-      if (slot === 'voice') t.add(this.add.text(0, -20, '🔊', { fontFamily: FONT, fontSize: '40px' }).setOrigin(0.5));
-      else {
-        const preview: KipLook = { ...this.look(), [slot]: c.id } as KipLook;
-        t.add(new Kip(this, 0, showWords() ? 26 : 40, preview, this.who).setScale(slot === 'feet' ? 1 : 0.95));
+      if(showWords()) {
+        const caption=t.list.find(item=>item instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text|undefined;
+        caption?.setWordWrapWidth(108).setFontSize(13).setY(36);
       }
+      t.add(accessoryIcon(this,0,showWords()?-22:0,c.id,slot==='eyes'?80:showWords()?62:78,this.who));
       if (!owned) this.addSourceBadge(t, c);
       this.hot(`item-${c.id}`, () => this.pick(c));
       return t;

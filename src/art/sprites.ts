@@ -7,6 +7,12 @@ import { artTextureKey } from './generated';
  * as whole figures instead of cell rectangles.
  */
 const FIGURE_SHEETS: Record<string, [number, number]> = {
+  'art:accessory-hats': [3,3],
+  'art:accessory-keys': [5,2],
+  'art:accessory-plates': [4,3],
+  'art:accessory-toppers': [5,4],
+  'art:accessory-feet': [4,2],
+  'art:accessory-workshop': [4,3],
   'art:portrait-cast': [4, 4],
   'art:portrait-clementine': [4, 3],
   'art:portrait-creatures': [4, 3],
@@ -28,7 +34,7 @@ const OVERSIZE: Record<string, Record<number, [number, number, number, number]>>
  * they are cut on first use as before.
  */
 export function warmFigures(game: Phaser.Game): void {
-  const keys = Object.keys(FIGURE_SHEETS);
+  const keys = Object.keys(FIGURE_SHEETS).filter(key=>!key.startsWith('art:accessory-'));
   const next = (i: number) => {
     if (i >= keys.length) return;
     const key = keys[i];

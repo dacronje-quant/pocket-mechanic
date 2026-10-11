@@ -92,7 +92,7 @@ export function preloadCoreArt(scene: Phaser.Scene, budgetMs = 2500): Promise<vo
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, finish);
     void loadArtManifest().then(() => {
       if (finished || !live()) return finish();
-      const ids = ['title', 'title-logo', 'copper-kip-shell', 'portrait-nana', 'kip-dimensional', 'tess-dimensional', 'portrait-cast', 'portrait-creatures', 'portrait-clementine', 'busy-gadgets', 'puzzle-props', 'item-atlas', 'item-musicbox', 'item-atlas-extra', 'ui-surfaces'];
+      const ids = ['title', 'title-logo', 'copper-kip-shell', 'portrait-nana', 'kip-modular', 'tess-modular', 'accessory-keys', 'accessory-toppers', 'accessory-feet', 'portrait-cast', 'portrait-creatures', 'portrait-clementine', 'busy-gadgets', 'puzzle-props', 'item-atlas', 'item-musicbox', 'item-atlas-extra', 'ui-surfaces'];
       const pending = ids.filter((id) => images[id] && !scene.textures.exists(artTextureKey(id)));
       if (!pending.length) return finish();
       scene.load.once(Phaser.Loader.Events.COMPLETE, finish);

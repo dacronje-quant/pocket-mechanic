@@ -43,6 +43,14 @@
     "tess-dimensional": "tess-dimensional-atlas-v2.webp",
     "portrait-clementine": "portrait-clementine-v3.webp",
     "item-musicbox": "item-musicbox-v3.webp",
-    "puzzle-props": "puzzle-props-v4.webp"
+    "puzzle-props": "puzzle-props-v4.webp",
+    "kip-modular": "accessories/kip-modular.webp",
+    "tess-modular": "accessories/tess-modular.webp",
+    "accessory-hats": "accessories/accessory-hats.webp",
+    "accessory-keys": "accessories/accessory-keys.webp",
+    "accessory-plates": "accessories/accessory-plates.webp",
+    "accessory-toppers": "accessories/accessory-toppers.webp",
+    "accessory-feet": "accessories/accessory-feet.webp",
+    "accessory-workshop": "accessories/accessory-workshop.webp"
   }
 }

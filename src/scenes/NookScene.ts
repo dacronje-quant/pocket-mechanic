@@ -6,7 +6,9 @@
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
-import { playMelody } from '../audio/music';
+import { stopMusic } from '../audio/music';
+import { playComposition, playFoundTune, type MusicPlayback } from '../audio/composer';
+import { stopVoice } from '../audio/voice';
 import { Kip } from '../art/Kip';
 import { drawRoomBackdrop } from '../art/backgrounds';
 import { CM } from '../art/copperMoss';
@@ -37,6 +39,7 @@ export class NookScene extends MetaScene {
   private panel: Phaser.GameObjects.GameObject[] = [];
   private lampOn = true;
   private shade!: Phaser.GameObjects.Rectangle;
+  private ownTune?: MusicPlayback;
 
   constructor() {
     super('nook');
@@ -46,6 +49,8 @@ export class NookScene extends MetaScene {
     const p = profile();
     this.items = [];
     this.panel = [];
+    this.ownTune?.stop(); this.ownTune = undefined;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { this.ownTune?.stop(); this.ownTune = undefined; });
     this.lampOn = true;
     const level = nookLevel(p);
     this.room(level);
@@ -154,6 +159,7 @@ export class NookScene extends MetaScene {
   }
 
   private close(): void {
+    this.ownTune?.stop(); this.ownTune = undefined;
     this.panel.forEach((o) => o.destroy());
     this.panel = [];
   }
@@ -225,14 +231,15 @@ export class NookScene extends MetaScene {
     const add = this.overlay(900, 520);
     this.sayQuiet('nook.music');
     const found = SONGS.filter((s) => p.songs.includes(s.id)).map((s) => ({ name: s.name, notes: s.notes, tempo: s.tempo }));
-    const mine = p.composed.map((c) => ({ name: c.name, notes: pinsToNotes(c.pins), tempo: 3 }));
+    const mine = p.composed.map((c) => ({ name: c.name, notes: [], tempo: 3 }));
     const all = [...found, ...mine];
     if (!all.length) add(this.add.text(640, 370, '♪ ?', { fontFamily: SERIF, fontSize: '64px', color: '#9a8a72' }).setOrigin(0.5));
     add(
       scrollGrid(this, 230, 150, 820, 440, all.length, { w: 205, h: 110, cols: 4 }, (i, x, y) => {
         const s = all[i];
         const t = tile(this, x, y, 190, 96, () => {
-          playMelody(s.notes, s.tempo, 'sine');
+          this.ownTune?.stop(); this.bubble.hide(); stopVoice(); stopMusic();
+          this.ownTune = i >= found.length ? playComposition(p.composed[i - found.length]) : playFoundTune(s.notes, s.tempo);
           this.kip.celebrate();
         }, { caption: showWords() ? s.name : undefined, captionSize: 13, fill: i >= found.length ? 0xd4ded2 : undefined });
         t.add(this.add.text(0, showWords() ? -14 : 0, i >= found.length ? '🎼' : '♪', { fontFamily: FONT, fontSize: '32px', color: '#537a72' }).setOrigin(0.5));
@@ -267,16 +274,6 @@ export class NookScene extends MetaScene {
       add(this.add.text(380 + i * 80, 620, got ? '🪶' : '·', { fontFamily: FONT, fontSize: '34px' }).setOrigin(0.5).setAlpha(got ? 1 : 0.4));
     });
   }
-}
-
-function pinsToNotes(pins: string[]): number[] {
-  const steps = new Map<number, number>();
-  for (const k of pins) {
-    const [s, n] = k.split(':').map(Number);
-    if (!steps.has(s)) steps.set(s, n);
-  }
-  const len = Math.max(0, ...steps.keys()) + 1;
-  return Array.from({ length: len }, (_, i) => steps.get(i) ?? -1);
 }
 
 /**

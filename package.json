@@ -20,6 +20,7 @@
     "check:puzzles": "node scripts/visual-puzzle-sweep.mjs --all",
     "check:visuals": "node scripts/sweep-visual-capture.mjs",
     "check:menus": "node scripts/sweep-hub-checks.mjs",
+    "check:accessories": "node scripts/check-accessories.mjs",
     "check:offline": "node scripts/check-offline.mjs",
     "audition:player": "node scripts/build-audition-player.mjs"
   },

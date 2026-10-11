@@ -11,7 +11,8 @@ import { Kip } from '../art/Kip';
 import { coverImage, withArt } from '../art/generated';
 import { CM, drawPatina } from '../art/copperMoss';
 import { mulberry32 } from '../mechanism/rng';
-import { drawSmallObject } from '../art/objects';
+import { drawSmallObject, MachineArt } from '../art/objects';
+import { etchedPlate } from '../art/finish';
 import { badge, Portrait } from '../art/portraits';
 import {
   drawBasket,
@@ -23,7 +24,6 @@ import {
   drawNookHome,
   drawPadlock,
   drawPaintStation,
-  drawPegboard,
   drawShelfBoards,
   drawShopWall,
   drawWindow,
@@ -85,7 +85,7 @@ export class ShopScene extends MetaScene {
     this.door();
     this.jobBoard();
     this.shelf();
-    this.pegboard();
+    this.musicBox();
     this.window();
     this.spot('paint', 950, 520, 120, 190, (g) => drawPaintStation(g), () => goScene(this, 'paint', { who: 'kip' }), 'paint');
     this.spot('pedia', 1130, 500, 220, 210, (g) => drawDrawers(g), () => goScene(this, 'pedia'), 'pedia');
@@ -144,7 +144,7 @@ export class ShopScene extends MetaScene {
     draw(g);
     c.add(g);
     // The painted shop supplies these static props. Homes and display objects still evolve live.
-    if (area !== 'nook') this.scenery.push(g);
+    if (area !== 'nook' && area !== 'bench') this.scenery.push(g);
     const unlocked = areaOpen(p, area);
     // Wind-Down (GDD §26.2): quiet things only — no new repairs, Tune-Ups, bench or attic
     const winddownLocked = windDownActive() && (area === 'shelf' || area === 'bench' || area === 'attic');
@@ -314,8 +314,18 @@ export class ShopScene extends MetaScene {
     c.addAt(objects, c.list.indexOf(boards) + 1);
   }
 
-  private pegboard(): void {
-    this.spot('bench', 650, 370, 300, 150, (g) => drawPegboard(g, 300, 150), () => goScene(this, 'bench'), 'bench');
+  private musicBox(): void {
+    const c = this.spot('bench', 650, 365, 300, 150, (g) => {
+      etchedPlate(g, -150, -75, 300, 150, CM.tealDark, 1, 551);
+      g.lineStyle(1, CM.brass, .7);
+      for (let row = 0; row < 5; row++) g.lineBetween(23, -30 + row * 11, 127, -30 + row * 11);
+      for (const [x, y] of [[39, 4], [67, -7], [99, -19]]) {
+        g.fillStyle(CM.cream).fillEllipse(x, y, 11, 8);
+        g.lineStyle(2, CM.cream).lineBetween(x + 5, y, x + 5, y - 25);
+      }
+    }, () => goScene(this, 'bench'), 'bench').setName('shop:musicbox');
+    c.addAt(new MachineArt(this, -71, 49, 'musicbox', .4).setAlpha(areaOpen(profile(), 'bench') ? 1 : .55), 1);
+    if (showWords()) c.add(this.add.text(75, 51, 'Music Box', { fontFamily: FONT, fontSize: '18px', color: '#f4ebd5' }).setOrigin(.5));
   }
 
   private window(): void {

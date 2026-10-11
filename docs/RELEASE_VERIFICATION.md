@@ -1,4 +1,10 @@
-# Integrated audio and visual release — 2026-10-10
+# Release verification
+
+The current main/docs release is documented in [PAGES_RELEASE_2026-10-11.md](PAGES_RELEASE_2026-10-11.md):
+Kip/Tess accessories and My Music Box, 322 passing tests, 48 art files and 1,206 audio files.
+The following record preserves the earlier integrated release evidence.
+
+## Integrated audio and visual release — 2026-10-10
 
 The release combines the production audio update, recovered/generated Copper & Moss artwork and ten new puzzle kinds. It includes the latest main changes through `f24b7ee`, retaining the configured GitHub Pages source `main /docs` and refreshing the committed game under `docs/play/`.
 

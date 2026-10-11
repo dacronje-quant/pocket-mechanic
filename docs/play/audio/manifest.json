@@ -85,7 +85,7 @@
     "shop.pedia": "voice/4cb470ad326dad5910b0.mp3",
     "shop.nook": "voice/93ab0b81d48061a9cc9c.mp3",
     "shop.paint": "voice/d79d39ef604931d71ea6.mp3",
-    "shop.bench": "voice/64401a173be677bdbe0e.mp3",
+    "shop.bench": "voice/a62606c5ad76d2f41699.mp3",
     "shop.window": "voice/3dff64d0aca7c8c0e93c.mp3",
     "shop.attic": "voice/00ac31313889eb7f3e00.mp3",
     "room.fixed": "voice/e359ead6037225cd222c.mp3",
@@ -97,7 +97,7 @@
     "room.treasure": "voice/6e75848d2517bc7359d5.mp3",
     "room.mark": "voice/5cedeedf1bb21818a23c.mp3",
     "room.jam": "voice/120a39847324ab12822a.mp3",
-    "shop.done": "voice/507da3f5c9363ab8fc02.mp3",
+    "shop.done": "voice/88bb875018b0a98d7acd.mp3",
     "shop.tess": "voice/096db0802913544d1614.mp3",
     "shop.closed": "voice/bed599428eb853ec9fe2.mp3",
     "title.who": "voice/34f5fdc92cdcc44bd457.mp3",
@@ -3152,7 +3152,13 @@
     "qf-metronome.engineer.intro.guided": "voice/db03a2f5f8dbd54b8783.mp3",
     "qf-metronome.hint.2.guided": "voice/3e31323eb67f2cb2e061.mp3",
     "qf-metronome.engineer.hint.2.guided": "voice/3e31323eb67f2cb2e061.mp3",
-    "ui.release-together": "voice/644a70e6aa5a7f844137.mp3"
+    "ui.release-together": "voice/644a70e6aa5a7f844137.mp3",
+    "musicbox.empty": "voice/8f816a6c27369aab3e4f.mp3",
+    "musicbox.help": "voice/8f9767e20fa987dbc00e.mp3",
+    "musicbox.saved": "voice/91b3d78f8ce33081bfd4.mp3",
+    "musicbox.keep": "voice/bf8c910aef07ceea4829.mp3",
+    "ui.silent-beat": "voice/5e694bd3577c17cdf5fd.mp3",
+    "ui.help": "voice/23466183de7158eaf67e.mp3"
   },
   "music": {
     "shop": "music/elevenlabs-shop.mp3",

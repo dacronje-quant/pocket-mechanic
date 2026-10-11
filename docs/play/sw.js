@@ -6,7 +6,7 @@
 // launch); everything else (hashed JS, icons, audio and art files) is
 // cache-first, so the game keeps working offline.
 // Bump VERSION if you ever need to force-clear old caches.
-const VERSION = 'pm-v7-variety-offline';
+const VERSION = 'pm-v8-accessory-workshop';
 
 // Cache the complete audio catalogue in the background, including lines the
 // player has not heard yet. Keep downloads bounded and retry on next launch.

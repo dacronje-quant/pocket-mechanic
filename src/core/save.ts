@@ -5,6 +5,7 @@
  */
 import { DEFAULT_LOOK, TESS_LOOK, type KipLook } from '../content/cosmetics';
 import type { Family, PlayStyleId, ToolId } from '../content/types';
+import { musicDraft, type MusicDraft } from '../mechanism/composer';
 
 export interface Settings {
   music: number;
@@ -90,7 +91,8 @@ export interface Profile {
   blueprints: string[];
   tools: ToolId[];
   songs: string[];
-  composed: Array<{ name: string; pins: string[] }>;
+  composed: Array<{ name: string; pins: string[]; bpm?: number; steps?: number }>;
+  musicBox: MusicDraft;
   stamps: string[];
   flags: string[];
   seen: string[];
@@ -136,6 +138,7 @@ export function newProfile(initials: string, avatar: number, style: PlayStyleId)
     tools: ['beam'],
     songs: [],
     composed: [],
+    musicBox: musicDraft(),
     stamps: [],
     flags: [],
     seen: [],
@@ -174,6 +177,7 @@ function repairProfile(p: Partial<Profile>): Profile {
   out.tessLook = { ...TESS_LOOK, ...(p.tessLook ?? {}) };
   out.bench = { ...base.bench, ...(p.bench ?? {}) };
   out.attic = { ...base.attic, ...(p.attic ?? {}) };
+  out.musicBox = musicDraft(p.musicBox);
   return out;
 }
 

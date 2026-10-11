@@ -3,6 +3,8 @@ import { cosmeticById, DEFAULT_LOOK, TESS_LOOK, type KipLook } from '../content/
 import { CM } from './copperMoss';
 import { withArt } from './generated';
 import { atlasFrame, kipFinishTexture } from './sprites';
+import { AccessoryRig } from './Accessories';
+import { trailTexture } from './accessoryMaterials';
 
 /**
  * Kip, the thumb-sized wind-up automaton (GDD §5), etched in copper and moss and
@@ -21,6 +23,7 @@ export class Kip extends Phaser.GameObjects.Container {
   private shellArt?: Phaser.GameObjects.Image;
   private dimensional?: Phaser.GameObjects.Image;
   private dimensionalKey?: string;
+  private accessories: AccessoryRig;
   private hands!: Phaser.GameObjects.Graphics;
   private shadow!: Phaser.GameObjects.Graphics;
   private poseUntil = 0;
@@ -81,6 +84,7 @@ export class Kip extends Phaser.GameObjects.Container {
       hands.fillEllipse(side * 29 - 2, 6, 3, 5);
     }
     this.torso.add([this.keyG, this.bulb, this.shell, this.plateG, this.plateText, this.eyesG, this.pupils, this.lids, this.hatG, hands]);
+    this.accessories = new AccessoryRig(scene, this.torso, this.variant);
     this.add([this.legL, this.legR, this.torso]);
     this.shadow = scene.add.graphics();
     this.shadow.fillStyle(0x171a17, 0.16).fillEllipse(0, 3, 60, 13);
@@ -95,11 +99,11 @@ export class Kip extends Phaser.GameObjects.Container {
       this.torso.addAt(this.shellArt, 3);
       this.updateShellArt();
     });
-    withArt(scene, this.variant === 'tess' ? 'tess-dimensional' : 'kip-dimensional', (key) => {
+    withArt(scene, this.variant === 'tess' ? 'tess-modular' : 'kip-modular', (key) => {
       if (!this.active || !this.scene) return;
       this.dimensionalKey = key;
-      this.dimensional = scene.add.image(0, 32, key, atlasFrame(scene, key, 0, 4, 2)).setOrigin(0.5, 1).setDisplaySize(94, 94).setName(`${this.variant}:dimensional`);
-      this.torso.addAt(this.dimensional, 0);
+      this.dimensional = scene.add.image(0, 32, key, atlasFrame(scene, key, 0, 4, 2)).setOrigin(0.5, 1).setDisplaySize(94, 94).setName(`${this.variant}:modular`);
+      this.torso.addAt(this.dimensional, 1);
       this.updateShellArt();
     });
     // Keep the handle: a looping timer that outlives a destroyed Kip used to throw on
@@ -478,6 +482,7 @@ export class Kip extends Phaser.GameObjects.Container {
 
     // trail
     this.setupTrail(L.trail);
+    this.accessories.setLook(L);
   }
 
   private updateShellArt(): void {
@@ -487,16 +492,8 @@ export class Kip extends Phaser.GameObjects.Container {
       const key = kipFinishTexture(this.scene, this.dimensionalKey, L.finish, cosmeticById(L.finish)?.color ?? CM.copper, baseLook.finish);
       this.dimensional.setTexture(key, atlasFrame(this.scene, key, this.pose, 4, 2)).setDisplaySize(94, 94);
       this.shell.setVisible(false); this.shellArt?.setVisible(false); this.hands.setVisible(false);
-      this.legL.setVisible(L.feet !== DEFAULT_LOOK.feet); this.legR.setVisible(L.feet !== DEFAULT_LOOK.feet);
-      this.keyG.setVisible(L.key !== baseLook.key);
-      this.bulb.setVisible(L.bulb !== DEFAULT_LOOK.bulb);
-      this.eyesG.setVisible(L.eyes !== DEFAULT_LOOK.eyes); this.pupils.setVisible(L.eyes !== DEFAULT_LOOK.eyes); this.lids.setVisible(false);
-      this.plateG.setVisible(L.plate !== DEFAULT_LOOK.plate); this.plateText.setVisible(L.plate !== DEFAULT_LOOK.plate);
-      this.eyesG.y = this.pupils.y = -14; this.plateG.y = this.plateText.y = -4;
-      this.eyesG.x = this.pupils.x = 12;
-      this.eyesG.setScale(1.12); this.pupils.setScale(1.12);
-      this.plateG.x = this.plateText.x = 12;
-      this.hatG.setPosition(12, -12);
+      for (const part of [this.legL,this.legR,this.keyG,this.bulb,this.eyesG,this.pupils,this.lids,this.plateG,this.plateText,this.hatG]) part.setVisible(false);
+      this.accessories.setVisible(true);
       return;
     }
     // The painted case shares the live rig: lenses, lids, key, hands and feet still animate.
@@ -571,13 +568,12 @@ export class Kip extends Phaser.GameObjects.Container {
     this.trail?.destroy();
     this.trail = undefined;
     if (!trail || trail === 'trail-none' || !this.scene) return;
-    const key = trail === 'trail-notes' ? 'note' : trail === 'trail-gears' ? 'minigear' : trail === 'trail-steam' ? 'puff' : trail === 'trail-stars' ? 'star' : 'spark';
-    if (!this.scene.textures.exists(key)) return;
+    const key = trailTexture(this.scene, trail);
     this.trail = this.scene.add.particles(0, 0, key, {
       lifespan: 900,
       speedY: { min: -40, max: -10 },
       speedX: { min: -20, max: 20 },
-      scale: { start: key === 'puff' ? 0.8 : 0.6, end: 0 },
+      scale: { start: trail === 'trail-steam' ? 0.18 : 0.10, end: 0 },
       alpha: { start: 0.9, end: 0 },
       rotate: { min: 0, max: 360 },
       emitting: false,
@@ -704,6 +700,7 @@ export class Kip extends Phaser.GameObjects.Container {
   /** Peek: the lens-eyes push forward like binoculars. */
   peek(): void {
     if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
+    if (this.dimensional) { this.pose = 7; this.poseUntil = this.t + .65; return; }
     this.scene.tweens.add({ targets: [this.eyesG, this.pupils], scale: 1.3, duration: 160, yoyo: true, hold: 300 });
   }
 
@@ -731,6 +728,7 @@ export class Kip extends Phaser.GameObjects.Container {
     if (this.dimensional) {
       if (this.t > this.poseUntil) this.pose = walking ? 2 + Math.floor(this.t * 8) % 2 : Math.abs(this.pupilDx) > 1 ? 7 : 0;
       this.dimensional.setFrame(atlasFrame(this.scene, this.dimensional.texture.key, this.pose, 4, 2));
+      this.accessories.update(this.pose,this.t,walking,this.keySpeed,this.pupilDx);
       this.shadow.setScale(walking ? 0.9 : 1).setAlpha(this.busy ? 0.6 : 1);
     }
     const swing = walking ? Math.sin(this.t * 18) * 0.5 : 0;

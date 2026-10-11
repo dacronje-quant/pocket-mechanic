@@ -15,7 +15,7 @@ player experiences**, with code-generated stand-ins where a studio would hand-ma
 | All 53 rooms + 8 Big Fixes across 25 room kinds and the 10 mechanical families | Voices: ElevenLabs pre-generated files; device speech as fallback | 3D diorama camera (2D cutaways instead) |
 | Shop hub, town map (Window Seat), Display Shelf, Tune-Ups + medals | Music: ElevenLabs themes pre-generated; synthesized fallback | 12-language localisation (English only) |
 | 30 Quick Fixes (24 originals + 6 preserved puzzles), Attic (23 objects, generated rooms) + Mystery Box | Foley: recorded ElevenLabs effects with synthesized fallbacks | Online sharing, Classroom Edition, physical toys |
-| Invention Bench + Contraption Cards + Contraption Codes | | One-switch scanning mode (later) |
+| My Music Box: free composition, chords, tempo, saved tunes and Nook playback | Former bench data preserved | One-switch scanning mode (later) |
 | Paint & Polish (Kip + Tess), Kip's Nook, Part-o-pedia, stamps | | |
 | Local profiles (up to 6), Play Styles, grown-up settings, Closing Time, Wind-Down | | |
 | Co-op: Tess on screen + multi-touch; "Outside Hands" flashlight in dark rooms | | |
@@ -43,7 +43,7 @@ src/
   ui/                         buttons, panels, scroll lists, speech bubble, parental gate, toasts
   rooms/                      RoomBase + 25 room kinds; SpatialPuzzleRooms and ReasoningPuzzleRooms share live drawing/input helpers
   content/                    repairs, rooms data, story scripts, quick fixes, attic generator, parts, cosmetics, stamps, contraption cards
-  scenes/                     Title/Profiles, Shop (hub), Story, Reveal/Return, Town, Shelf, Partopedia, PaintPolish, Nook, InventionBench, Attic, QuickFixes, GrownUps
+  scenes/                     Title/Profiles, Shop (hub), Story, Reveal/Return, Town, Shelf, Partopedia, PaintPolish, Nook, MusicBox, Attic, QuickFixes, GrownUps
 ```
 
 Rules:
@@ -175,10 +175,10 @@ at Engineer difficulty; each gives a clue symbol for the Mystery Box.
 
 Production audio uses scripts/generate-elevenlabs.mjs (npm run assets:audio), with a local ignored ELEVENLABS_API_KEY in .env. The game receives only static media and retains immediate synthesized/device-speech fallbacks.
 
-- **Voices:** All 2,491 expected spoken line IDs are recorded. Instructions and hints cover all 25 room kinds, each effective play style and guided variants; replay speaks the visible caption. Same words from the same actor share a file; the active bank has 1,107 unique spoken recordings plus Pudding's recorded meow. The established cast is preserved; see `VOICE_CASTING.md`. Young roles use natural adult performers because ElevenLabs restricts child-like voice creation. Device speech remains a runtime recovery fallback, but no authored line is exempt from recording checks. Archived puzzles keep their unchanged instruction IDs.
+- **Voices:** All 2,497 expected spoken line IDs are recorded. Instructions and hints cover all 25 room kinds, each effective play style and guided variants; replay speaks the visible caption. Same words from the same actor share a file; the active bank has 1,113 unique spoken recordings plus Pudding's recorded meow. The established cast is preserved; see `VOICE_CASTING.md`. Young roles use natural adult performers because ElevenLabs restricts child-like voice creation. Device speech remains a runtime recovery fallback, but no authored line is exempt from recording checks. Archived puzzles keep their unchanged instruction IDs.
 - **Music:** 14 instrumental themes, including the approved workshop theme. Playback crossfades repeats and adjusts filtering as repairs progress.
 - **Effects:** 52 cues in 54 files, including three brass gear click variations and eight dedicated ElevenLabs performances for repaired objects. Pressing a repaired landmark or Shelf object replays its matching sound and animation. Replay and scene changes cancel the object's previous performance. Approved clock, spring, steam, bell and ratchet recordings are reused. Pitch-sensitive musical puzzle tones remain exact synthesis.
-- **Processing:** normalized MP3, a peak limiter, resumable raw response cache, bounded decoding caches, and background offline catalogue caching. New object performances use stereo 44.1 kHz/192 kbps files, two-pass loudness normalization and filenames keyed to their prompts and processing. `node scripts/check-audio.mjs` checks coverage and fully decodes all 1,200 referenced files, including revised balance, sorting and pendulum instruction recordings. Human listening is still needed to judge pronunciation and artistry.
+- **Processing:** normalized MP3, a peak limiter, resumable raw response cache, bounded decoding caches, and background offline catalogue caching. New object performances use stereo 44.1 kHz/192 kbps files, two-pass loudness normalization and filenames keyed to their prompts and processing. `node scripts/check-audio.mjs` checks coverage and fully decodes all 1,206 referenced files, including revised balance, sorting, pendulum and Music Box recordings. Human listening is still needed to judge pronunciation and artistry.
 - **Painted art:** Recovered illustrations and generated character, busy-board, object, UI and puzzle assets are catalogued in `public/art/manifest.json`. Exact puzzle geometry, animation, text and input remain live. The approved visual treatment and fallback policy are in `ART_DIRECTION.md`; the optional legacy Gemini generator remains separate.
 - **Secrets:** API keys stay in the ignored root .env or environment and never enter the browser bundle.
 
@@ -211,11 +211,13 @@ Production audio uses scripts/generate-elevenlabs.mjs (npm run assets:audio), wi
 - [x] Content: 53 rooms + 8 Big Fixes, story scripts, 30 Quick Fixes, 23-object Attic + Mystery Box, Part-o-pedia, cosmetics, stamps, Contraption Cards
 - [x] Puzzle variety: all ten kinds, three genuine age variants, preserved archives and save-compatible gates (`PUZZLE_VARIETY.md`)
 - [x] Age-specific instructions and stable voice ids; all new puzzle instructions, hints and computed control labels are recorded
-- [x] Hub & meta scenes (title/profiles, shop, story, Test Run, rewards, festival, shelf + Tune-Ups, town, Part-o-pedia, Paint & Polish, Nook + Job Book, Invention Bench, Attic, Quick Fixes, grown-ups)
+- [x] Hub & meta scenes (title/profiles, shop, story, Test Run, rewards, festival, shelf + Tune-Ups, town, Part-o-pedia, Paint & Polish, Nook + Job Book, My Music Box, Attic, Quick Fixes, grown-ups)
 - [x] Generated media tooling and players; production ElevenLabs audio and recovered painted originals bundled locally (see section 6)
-- [x] Engine/content/voice/UI/audio verification suite: 306 tests passing; all authored solutions checked in every age mode
+- [x] Engine/content/voice/UI/audio verification suite: 322 tests passing; all authored solutions checked in every age mode
+- [x] Modular Kip/Tess bodies and complete accessory pack: 207 cosmetic/character combinations, saved looks, real purchases, all poses and fresh-install offline coverage (`ACCESSORY_OVERHAUL_VERIFICATION.md`)
 - [x] Live lever and pulley physics, alternative balance solutions, trial cancellation and comparison-scale follow-up (`BALANCE_PHYSICS_VERIFICATION.md`)
 - [x] Physical pendulum motion, attached clock escapement, stable bob adjustment, true shared release and matching narration (PENDULUM_PHYSICS_VERIFICATION.md)
+- [x] My Music Box replaces the Invention Bench: free melody/chord editing, rests, tempo, looping, unlimited undo, draft persistence, saved-tune and Nook playback, matching ElevenLabs narration (`MUSIC_BOX_VERIFICATION.md`)
 - [x] Full visual/puzzle/voice sweep, Settings layering, actual Town object art and eight replayable ElevenLabs object sounds (`GAME_SWEEP_VERIFICATION.md`)
 - [x] Final 61-room browser and visual/touch evidence: record the completed checks in `VISUAL_OVERHAUL_VERIFICATION.md`
 - [x] Release build, README

@@ -16,7 +16,7 @@ import { ShadowRoom, SlideRoom, SymmetryRoom, PackingRoom, TiltRoom } from '../r
 import { SortingRoom, SudokuRoom, JugsRoom, LayersRoom, DifferenceRoom } from '../rooms/ReasoningPuzzleRooms';
 import { TuneRoom } from '../rooms/TuneRoom';
 import { AtticScene } from './AtticScene';
-import { BenchScene } from './BenchScene';
+import { MusicBoxScene } from './MusicBoxScene';
 import { FestivalScene } from './FestivalScene';
 import { GrownUpsScene } from './GrownUpsScene';
 import { NookScene } from './NookScene';
@@ -65,7 +65,7 @@ export const META_SCENES: Array<typeof Phaser.Scene> = [
   PediaScene,
   PaintScene,
   NookScene,
-  BenchScene,
+  MusicBoxScene,
   GrownUpsScene,
 ];
 
