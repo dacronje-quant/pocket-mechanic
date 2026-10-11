@@ -324,7 +324,6 @@ export type RoomDef =
   | Styled<NestRoomDef>
   | { [K in VarietyKind]: Styled<Extract<VarietyRoomDef, { kind: K }>> }[VarietyKind];
 
-export type RoomOf<K extends RoomKind> = Extract<RoomDef, { kind: K }>;
 
 // ─────────────────────────────── people & story ───────────────────────────────
 

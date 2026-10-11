@@ -7,7 +7,6 @@
  */
 
 export type Signal = 'turn' | 'push' | 'pull' | 'spark' | 'steam' | 'water' | 'light' | 'marble' | 'sound';
-export const SIGNALS: Signal[] = ['turn', 'push', 'pull', 'spark', 'steam', 'water', 'light', 'marble', 'sound'];
 
 export type ChainFamily = 'gears' | 'levers' | 'springs' | 'pendulums' | 'music' | 'tracks' | 'circuits' | 'pipes' | 'logic' | 'light';
 

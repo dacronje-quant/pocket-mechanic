@@ -21,6 +21,23 @@ const OVERSIZE: Record<string, Record<number, [number, number, number, number]>>
   'art:portrait-creatures': { 10: [684, 772, 494, 310] },
 };
 
+/**
+ * Cut the character sheets ahead of time, one sheet at a time with a pause between, so the
+ * one-off cut (about a tenth of a second per sheet) happens on the title screen rather than as a
+ * hitch the first time a character appears in a room. Sheets that haven't loaded are skipped;
+ * they are cut on first use as before.
+ */
+export function warmFigures(game: Phaser.Game): void {
+  const keys = Object.keys(FIGURE_SHEETS);
+  const next = (i: number) => {
+    if (i >= keys.length) return;
+    const key = keys[i];
+    if (game.textures.exists(key)) cutFigures(game.textures.get(key), ...FIGURE_SHEETS[key]);
+    window.setTimeout(() => next(i + 1), 250);
+  };
+  window.setTimeout(() => next(0), 400);
+}
+
 /** Split authored atlases at runtime; the original art files remain untouched. */
 export function atlasFrame(scene: Phaser.Scene, key: string, index: number, cols: number, rows: number, trim = false): string {
   const texture = scene.textures.get(key);
@@ -62,52 +79,39 @@ function cutFigures(texture: Phaser.Textures.Texture, cols: number, rows: number
     return false;
   }
   // Label solid shapes; soft edges (alpha < 160) are joined back on afterwards.
-  const SOLID = 160;
-  const label = new Int32Array(W * H).fill(-1), queue = new Int32Array(W * H);
-  const boxes: Array<[number, number, number, number]> = [];
-  const sizes: number[] = [];
-  for (let p = 0; p < W * H; p++) {
-    if (label[p] >= 0 || data[p * 4 + 3] < SOLID) continue;
-    const id = sizes.length;
-    let head = 0, tail = 1, minX = W, minY = H, maxX = 0, maxY = 0;
-    queue[0] = p; label[p] = id;
-    while (head < tail) {
-      const q = queue[head++], xx = q % W, yy = (q / W) | 0;
-      if (xx < minX) minX = xx; if (xx > maxX) maxX = xx; if (yy < minY) minY = yy; if (yy > maxY) maxY = yy;
-      for (const n of [xx > 0 ? q - 1 : -1, xx < W - 1 ? q + 1 : -1, yy > 0 ? q - W : -1, yy < H - 1 ? q + W : -1]) {
-        if (n < 0 || label[n] >= 0 || data[n * 4 + 3] < SOLID) continue;
-        label[n] = id; queue[tail++] = n;
-      }
-    }
-    boxes.push([minX, minY, maxX, maxY]);
-    sizes.push(tail);
-  }
+  const { label, boxes, sizes, count } = labelShapes(data, W, H, 160);
   const cellW = W / cols, cellH = H / rows;
   const key = texture.key;
+  const inside = new Int32Array(count);
+  const touched: number[] = [];
   for (let index = 0; index < cols * rows; index++) {
     const over = OVERSIZE[key]?.[index];
     const sx = W / 1448, sy = H / 1086;
     const cell = over
       ? { x: Math.round(over[0] * sx), y: Math.round(over[1] * sy), w: Math.round(over[2] * sx), h: Math.round(over[3] * sy) }
       : { x: Math.floor((index % cols) * cellW), y: Math.floor(Math.floor(index / cols) * cellH), w: Math.floor(cellW), h: Math.floor(cellH) };
-    // how much of each shape lies inside this cell
-    const inside = new Map<number, number>();
-    for (let yy = cell.y; yy < cell.y + cell.h; yy++) for (let xx = cell.x; xx < cell.x + cell.w; xx++) {
-      const id = label[yy * W + xx];
-      if (id >= 0) inside.set(id, (inside.get(id) ?? 0) + 1);
+    // how much of each shape lies inside this cell (in first-seen order, like a Map)
+    for (const id of touched) inside[id] = 0;
+    touched.length = 0;
+    for (let yy = cell.y; yy < cell.y + cell.h; yy++) {
+      const row = yy * W;
+      for (let xx = cell.x; xx < cell.x + cell.w; xx++) {
+        const id = label[row + xx];
+        if (id < 0) continue;
+        if (inside[id]++ === 0) touched.push(id);
+      }
     }
     let main = -1;
-    for (const [id, n] of inside) if (main < 0 || n > inside.get(main)!) main = id;
+    for (const id of touched) if (main < 0 || inside[id] > inside[main]) main = id;
     if (main < 0) continue;
     const keep = new Set<number>([main]);
-    for (const [id, n] of inside) if (id !== main && sizes[id] >= 24 && n >= sizes[id] * 0.7) keep.add(id);
+    for (const id of touched) if (id !== main && sizes[id] >= 24 && inside[id] >= sizes[id] * 0.7) keep.add(id);
     // the figure's box: its shapes' boxes, allowed to hang a little way out of the cell
     const pad = over ? 0 : 0.45;
     const lim = { x0: cell.x - cell.w * pad, y0: cell.y - cell.h * pad, x1: cell.x + cell.w * (1 + pad), y1: cell.y + cell.h * (1 + pad) };
     let x0 = W, y0 = H, x1 = 0, y1 = 0;
     for (const id of keep) {
-      const b = boxes[id];
-      x0 = Math.min(x0, b[0]); y0 = Math.min(y0, b[1]); x1 = Math.max(x1, b[2]); y1 = Math.max(y1, b[3]);
+      x0 = Math.min(x0, boxes[id * 4]); y0 = Math.min(y0, boxes[id * 4 + 1]); x1 = Math.max(x1, boxes[id * 4 + 2]); y1 = Math.max(y1, boxes[id * 4 + 3]);
     }
     x0 = Math.max(0, Math.floor(Math.max(x0, lim.x0)) - 2); y0 = Math.max(0, Math.floor(Math.max(y0, lim.y0)) - 2);
     x1 = Math.min(W - 1, Math.ceil(Math.min(x1, lim.x1)) + 2); y1 = Math.min(H - 1, Math.ceil(Math.min(y1, lim.y1)) + 2);
@@ -150,26 +154,60 @@ export function trimCell(source: CanvasImageSource, x: number, y: number, w: num
     return null;
   }
   // Select the main silhouette; atlas neighbours can leave tiny edge fragments.
-  const label = new Int32Array(w * h).fill(-1), queue = new Int32Array(w * h);
-  let left = w, top = h, right = 0, bottom = 0, biggest = 0;
-  for (let p = 0, id = 0; p < w * h; p++) {
-    if (label[p] >= 0 || data[p * 4 + 3] < 64) continue;
-    let head = 0, tail = 1, minX = w, minY = h, maxX = 0, maxY = 0;
-    queue[0] = p; label[p] = id;
-    while (head < tail) {
-      const q = queue[head++], xx = q % w, yy = Math.floor(q / w);
-      minX = Math.min(minX, xx); minY = Math.min(minY, yy); maxX = Math.max(maxX, xx); maxY = Math.max(maxY, yy);
-      for (const n of [xx > 0 ? q - 1 : -1, xx < w - 1 ? q + 1 : -1, yy > 0 ? q - w : -1, yy < h - 1 ? q + w : -1]) {
-        if (n < 0 || label[n] >= 0 || data[n * 4 + 3] < 64) continue;
-        label[n] = id; queue[tail++] = n;
-      }
-    }
-    if (tail > biggest) { biggest = tail; left = minX; top = minY; right = maxX; bottom = maxY; }
-    id++;
-  }
+  const { boxes, sizes, count } = labelShapes(data, w, h, 64);
+  let best = -1;
+  for (let id = 0; id < count; id++) if (best < 0 || sizes[id] > sizes[best]) best = id;
+  if (best < 0) return null;
+  const left = boxes[best * 4], top = boxes[best * 4 + 1], right = boxes[best * 4 + 2], bottom = boxes[best * 4 + 3];
   if (right <= left || bottom <= top) return null;
   return { left, top, w: right - left + 1, h: bottom - top + 1 };
 }
+
+/**
+ * Connected solid shapes in RGBA pixels (4-neighbour flood fill on alpha ≥ threshold): each
+ * pixel's shape id (-1 for clear), each shape's box (minX, minY, maxX, maxY) and pixel count.
+ * Written without per-pixel allocations, since it runs over whole atlas sheets.
+ */
+function labelShapes(data: Uint8ClampedArray, w: number, h: number, threshold: number): { label: Int32Array; boxes: Int32Array; sizes: Int32Array; count: number } {
+  const n = w * h;
+  const label = new Int32Array(n).fill(-1);
+  const queue = new Int32Array(n);
+  let boxes = new Int32Array(256 * 4);
+  let sizes = new Int32Array(256);
+  let count = 0;
+  for (let p = 0; p < n; p++) {
+    if (label[p] >= 0 || data[p * 4 + 3] < threshold) continue;
+    const id = count++;
+    if (id >= sizes.length) {
+      const nb = new Int32Array(boxes.length * 2); nb.set(boxes); boxes = nb;
+      const ns = new Int32Array(sizes.length * 2); ns.set(sizes); sizes = ns;
+    }
+    let head = 0, tail = 1, minX = w, minY = h, maxX = 0, maxY = 0;
+    queue[0] = p; label[p] = id;
+    while (head < tail) {
+      const q = queue[head++];
+      const yy = (q / w) | 0, xx = q - yy * w;
+      if (xx < minX) minX = xx;
+      if (xx > maxX) maxX = xx;
+      if (yy < minY) minY = yy;
+      if (yy > maxY) maxY = yy;
+      let m = q - 1;
+      if (xx > 0 && label[m] < 0 && data[m * 4 + 3] >= threshold) { label[m] = id; queue[tail++] = m; }
+      m = q + 1;
+      if (xx < w - 1 && label[m] < 0 && data[m * 4 + 3] >= threshold) { label[m] = id; queue[tail++] = m; }
+      m = q - w;
+      if (yy > 0 && label[m] < 0 && data[m * 4 + 3] >= threshold) { label[m] = id; queue[tail++] = m; }
+      m = q + w;
+      if (yy < h - 1 && label[m] < 0 && data[m * 4 + 3] >= threshold) { label[m] = id; queue[tail++] = m; }
+    }
+    boxes[id * 4] = minX; boxes[id * 4 + 1] = minY; boxes[id * 4 + 2] = maxX; boxes[id * 4 + 3] = maxY;
+    sizes[id] = tail;
+  }
+  return { label, boxes, sizes, count };
+}
+
+/** One reused matrix for followGraphic's per-frame update (Phaser would allocate a new one). */
+const followMatrix = new Phaser.GameObjects.Components.TransformMatrix();
 
 /** A painted illustration follows a Graphics owner's transform, visibility and lifecycle. */
 export function followGraphic(g: Phaser.GameObjects.Graphics, image: Phaser.GameObjects.Image, x: number, y: number, w: number, h: number): void {
@@ -195,7 +233,7 @@ export function followGraphic(g: Phaser.GameObjects.Graphics, image: Phaser.Game
   const update = () => {
     if (!g.scene || !image.scene) return;
     place();
-    const at = g.getLocalTransformMatrix().transformPoint(x, y);
+    const at = g.getLocalTransformMatrix(followMatrix).transformPoint(x, y);
     image.setPosition(at.x, at.y).setScale(w / image.width * g.scaleX, h / image.height * g.scaleY)
       .setRotation(g.rotation).setAlpha(g.alpha).setVisible(g.visible);
   };

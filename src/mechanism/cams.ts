@@ -19,7 +19,6 @@ export const CAM_PROFILES: Record<CamShape, number[]> = {
   star: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0],
 };
 
-export const CAM_SHAPES = Object.keys(CAM_PROFILES) as CamShape[];
 
 /** The follower's motion over one turn, starting `phase` steps into the profile. */
 export function followerPattern(shape: CamShape, phase = 0): number[] {
