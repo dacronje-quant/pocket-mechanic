@@ -21,6 +21,23 @@ import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
 import { FONT, roundButton } from '../ui/widgets';
 import { cardsSolved } from '../rules';
 
+/** Repeat cards: teal repeats one card, gold repeats two (or more), so they never look alike. */
+function repeatColor(span: number): number {
+  return span > 1 ? 0xe9c97e : 0xc1d3c6;
+}
+
+/** `span` little cards side by side: how many cards a repeat card loops over. */
+function drawSpanBoxes(g: Phaser.GameObjects.Graphics, cx: number, cy: number, span: number, s: number): void {
+  const w = 13 * s, h = 20 * s, gap = 5 * s;
+  const x0 = cx - (span * w + (span - 1) * gap) / 2;
+  for (let k = 0; k < span; k++) {
+    g.fillStyle(0xf4ebd5, 1);
+    g.fillRoundedRect(x0 + k * (w + gap), cy - h / 2, w, h, 3 * s);
+    g.lineStyle(2, 0x1c3d6e, 1);
+    g.strokeRoundedRect(x0 + k * (w + gap), cy - h / 2, w, h, 3 * s);
+  }
+}
+
 const MOVE_COLOR: Record<Move, number> = { stepL: 0x648995, stepR: 0x8a9b69, spin: 0x917d96, clap: 0xc2a168, wave: 0xbb785b, jump: 0x669891 };
 /** The dance score's first row (room is left above it for the repeat brackets). */
 const SCORE_Y = 196;
@@ -274,8 +291,8 @@ export class CardsRoom extends RoomBase<'cards'> {
    * How the dance folds into fewer cards, read from the authored solution: which steps a
    * repeat card covers (and how many times) and which step the music card decides.
    */
-  private foldMarks(): { repeats: Array<{ start: number; len: number; times: number }>; music: number[] } {
-    const repeats: Array<{ start: number; len: number; times: number }> = [];
+  private foldMarks(): { repeats: Array<{ start: number; len: number; times: number; span: number }>; music: number[] } {
+    const repeats: Array<{ start: number; len: number; times: number; span: number }> = [];
     const music: number[] = [];
     const sol = this.def.solution;
     let at = 0;
@@ -287,7 +304,7 @@ export class CardsRoom extends RoomBase<'cards'> {
         inner.forEach((q, k) => {
           if (q.type === 'if') for (let t = 0; t < c.times; t++) music.push(at + t * span + k);
         });
-        repeats.push({ start: at, len: span * c.times, times: c.times });
+        repeats.push({ start: at, len: span * c.times, times: c.times, span });
         at += span * c.times;
         i += span;
       } else {
@@ -318,13 +335,15 @@ export class CardsRoom extends RoomBase<'cards'> {
       g.lineBetween(xb, y, xb, y + 8);
       // the repeat badge looks like the repeat card itself: 🔁×N
       const cx = (xa + xb) / 2;
-      g.fillStyle(0xc1d3c6, 1);
-      g.fillRoundedRect(cx - 38, y - 17, 76, 34, 9);
+      // same colour and same card-boxes as the repeat card, so the right one is easy to spot
+      g.fillStyle(repeatColor(r.span), 1);
+      g.fillRoundedRect(cx - 56, y - 17, 112, 34, 9);
       g.lineStyle(2, 0x1c3d6e, 1);
-      g.strokeRoundedRect(cx - 38, y - 17, 76, 34, 9);
+      g.strokeRoundedRect(cx - 56, y - 17, 112, 34, 9);
+      drawSpanBoxes(g, cx + 32, y, r.span, 0.8);
       const key = `${r.start}`;
       if (!this.foldLabels.has(key)) {
-        this.foldLabels.set(key, this.add.text(cx, y, `🔁×${r.times}`, { fontFamily: FONT, fontSize: '22px', color: '#1c3d6e', fontStyle: 'bold' }).setOrigin(0.5).setDepth(D.mech + 1.5));
+        this.foldLabels.set(key, this.add.text(cx - 14, y, `🔁×${r.times}`, { fontFamily: FONT, fontSize: '22px', color: '#1c3d6e', fontStyle: 'bold' }).setOrigin(0.5).setDepth(D.mech + 1.5));
       }
     }
     if (rows.length > 1) {
@@ -431,7 +450,7 @@ export class CardsRoom extends RoomBase<'cards'> {
     const g = this.add.graphics();
     g.fillStyle(0x000000, 0.25);
     g.fillRoundedRect(-86, -22, 176, 50, 8);
-    g.fillStyle(card.type === 'move' ? CM.paper : card.type === 'repeat' ? 0xc1d3c6 : 0xd1c5ce, 1);
+    g.fillStyle(card.type === 'move' ? CM.paper : card.type === 'repeat' ? repeatColor(card.span ?? 1) : 0xd1c5ce, 1);
     g.fillRoundedRect(-88, -25, 176, 50, 8);
     g.lineStyle(1.3, CM.copperDark, 0.8);
     g.strokeRoundedRect(-88, -25, 176, 50, 8);
@@ -449,8 +468,10 @@ export class CardsRoom extends RoomBase<'cards'> {
       g.fillRoundedRect(-34, -24, 68, 46, 8);
       drawMove(g, card.move, 0, -1, 1);
     } else if (card.type === 'repeat') {
-      c.add(this.add.text(-40, -3, '🔁', { fontFamily: FONT, fontSize: '24px' }).setOrigin(0.5));
-      c.add(this.add.text(14, -3, `×${card.times}${card.span && card.span > 1 ? `  ⇣${card.span}` : ''}`, { fontFamily: FONT, fontSize: '24px', color: '#1c3d6e', fontStyle: 'bold' }).setOrigin(0.5));
+      // how many cards it repeats is drawn as that many little cards: ▭ or ▭▭
+      c.add(this.add.text(-52, -3, '🔁', { fontFamily: FONT, fontSize: '26px' }).setOrigin(0.5));
+      c.add(this.add.text(-8, -3, `×${card.times}`, { fontFamily: FONT, fontSize: '28px', color: '#1c3d6e', fontStyle: 'bold' }).setOrigin(0.5));
+      drawSpanBoxes(g, 50, -3, Math.max(1, card.span ?? 1), 1.15);
     } else {
       // the music card: fast music → first move, slow music → second move
       this.drawMusic(g, -66, -2, true);
