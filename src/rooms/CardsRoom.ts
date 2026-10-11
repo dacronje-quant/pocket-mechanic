@@ -22,6 +22,8 @@ import { FONT, roundButton } from '../ui/widgets';
 import { cardsSolved } from '../rules';
 
 const MOVE_COLOR: Record<Move, number> = { stepL: 0x648995, stepR: 0x8a9b69, spin: 0x917d96, clap: 0xc2a168, wave: 0xbb785b, jump: 0x669891 };
+/** The dance score's first row (room is left above it for the repeat brackets). */
+const SCORE_Y = 196;
 const MOVES: Move[] = ['stepL', 'stepR', 'spin', 'clap', 'wave', 'jump'];
 
 /**
@@ -137,6 +139,7 @@ export class CardsRoom extends RoomBase<'cards'> {
   private bertieArt?: Phaser.GameObjects.Image;
   private bubbleG!: Phaser.GameObjects.Graphics;
   private spritesG!: Phaser.GameObjects.Graphics;
+  private foldLabels = new Map<string, Phaser.GameObjects.Text>();
   private scoreG!: Phaser.GameObjects.Graphics;
   private stageX = 880;
   private stageY = 390;
@@ -176,6 +179,7 @@ export class CardsRoom extends RoomBase<'cards'> {
     this.step = -1;
     this.row = 0;
     this.bertieArt = undefined;
+    this.foldLabels = new Map();
     this.marks = this.def.scenarios.map((s) => new Array(s.moves.length).fill(undefined));
     this.liveCheck = false;
     const tinker = this.style.id === 'tinker';
@@ -202,7 +206,7 @@ export class CardsRoom extends RoomBase<'cards'> {
     withArt(this, 'portrait-clementine', (key) => {
       if (!this.bertie.active) return;
       const img = this.add.image(this.stageX, this.stageY + 128, key, atlasFrame(this, key, 6, 4, 3, true)).setOrigin(0.5, 1).setDepth(D.mech + 2);
-      img.setScale(250 / img.height).setData('base', img.scaleX);
+      img.setScale(225 / img.height).setData('base', img.scaleX);
       this.bertieArt = img;
     });
     roundButton(this, this.stageX + 160, 480, '👀', () => this.showDemo(), { r: 34, fontSize: 28, say: 'Watch the dance' }).setDepth(D.hud);
@@ -228,7 +232,7 @@ export class CardsRoom extends RoomBase<'cards'> {
       const music = rows.length > 1 || !!s.sensors;
       const w = n * cell + (music ? 56 : 0);
       const x0 = this.stageX - w / 2 + (music ? 56 : 0);
-      const y = 158 + r * 66;
+      const y = SCORE_Y + r * 66;
       // Little Tinkers always see which step to copy next
       const active = (this.demoing || this.playing || (this.style.id === 'tinker' && !this.fixed)) && this.row === r;
       g.fillStyle(0x342f29, active ? 0.92 : 0.75);
@@ -263,6 +267,74 @@ export class CardsRoom extends RoomBase<'cards'> {
         }
       });
     });
+    this.drawFoldMarks(g);
+  }
+
+  /**
+   * How the dance folds into fewer cards, read from the authored solution: which steps a
+   * repeat card covers (and how many times) and which step the music card decides.
+   */
+  private foldMarks(): { repeats: Array<{ start: number; len: number; times: number }>; music: number[] } {
+    const repeats: Array<{ start: number; len: number; times: number }> = [];
+    const music: number[] = [];
+    const sol = this.def.solution;
+    let at = 0;
+    for (let i = 0; i < sol.length; i++) {
+      const c = sol[i];
+      if (c.type === 'repeat') {
+        const span = c.span ?? 1;
+        const inner = sol.slice(i + 1, i + 1 + span);
+        inner.forEach((q, k) => {
+          if (q.type === 'if') for (let t = 0; t < c.times; t++) music.push(at + t * span + k);
+        });
+        repeats.push({ start: at, len: span * c.times, times: c.times });
+        at += span * c.times;
+        i += span;
+      } else {
+        if (c.type === 'if') music.push(at);
+        at++;
+      }
+    }
+    return { repeats, music };
+  }
+
+  /** Brackets over the repeated parts, and a dashed link on steps the music card decides. */
+  private drawFoldMarks(g: Phaser.GameObjects.Graphics): void {
+    if (this.style.id === 'tinker' || !this.def.solution.some((c) => c.type !== 'move')) return;
+    const rows = this.def.scenarios;
+    const n = rows[0].moves.length;
+    const cell = 58;
+    const music = rows.length > 1 || !!rows[0].sensors;
+    const w = n * cell + (music ? 56 : 0);
+    const x0 = this.stageX - w / 2 + (music ? 56 : 0);
+    const { repeats, music: musicSteps } = this.foldMarks();
+    for (const r of repeats) {
+      const xa = x0 + r.start * cell + 6;
+      const xb = x0 + (r.start + r.len) * cell - 6;
+      const y = SCORE_Y - 46;
+      g.lineStyle(4, 0x1c3d6e, 1);
+      g.lineBetween(xa, y + 8, xa, y);
+      g.lineBetween(xa, y, xb, y);
+      g.lineBetween(xb, y, xb, y + 8);
+      // the repeat badge looks like the repeat card itself: 🔁×N
+      const cx = (xa + xb) / 2;
+      g.fillStyle(0xc1d3c6, 1);
+      g.fillRoundedRect(cx - 38, y - 17, 76, 34, 9);
+      g.lineStyle(2, 0x1c3d6e, 1);
+      g.strokeRoundedRect(cx - 38, y - 17, 76, 34, 9);
+      const key = `${r.start}`;
+      if (!this.foldLabels.has(key)) {
+        this.foldLabels.set(key, this.add.text(cx, y, `🔁×${r.times}`, { fontFamily: FONT, fontSize: '22px', color: '#1c3d6e', fontStyle: 'bold' }).setOrigin(0.5).setDepth(D.mech + 1.5));
+      }
+    }
+    if (rows.length > 1) {
+      for (const s of musicSteps) {
+        const cx = x0 + s * cell + cell / 2;
+        // this step is the music card's: a glowing frame round it in both rows
+        g.lineStyle(4, 0xf1d391, 0.6 + Math.sin(this.t * 4) * 0.3);
+        g.strokeRoundedRect(cx - 29, SCORE_Y - 29, 58, 66 + 58, 10);
+      }
+    }
   }
 
   /** Fast music: three bouncing notes; slow music: one note. */

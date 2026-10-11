@@ -53,8 +53,9 @@ export const D = {
   parts: 20,
   widget: 24,
   fx: 30,
-  kip: 36,
   tray: 40,
+  /** Kip and Tess stand in front of the drawer (but under the parts in it) */
+  kip: 43,
   trayPart: 46,
   spots: 50,
   dark: 54,
@@ -234,7 +235,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     this.drawTray();
     this.buildFx();
 
-    this.kip = new Kip(this, 1150, FLOOR_Y, profile().look).setDepth(D.kip);
+    this.kip = new Kip(this, 1150, FLOOR_Y, profile().look).setDepth(D.kip).setScale(1.25);
     this.kip.setInteractive(new Phaser.Geom.Rectangle(-5, -45, 80, 100), Phaser.Geom.Rectangle.Contains);
     this.kip.on('pointerup', () => {
       sfx.beeps('boop', profile().look.voice);
@@ -242,7 +243,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       else this.togglePeek();
     });
     if (s.coop === 'tess' && tessUnlocked(profile())) {
-      this.tess = new Kip(this, 140, FLOOR_Y, profile().tessLook, 'tess').setDepth(D.kip);
+      this.tess = new Kip(this, 140, FLOOR_Y, profile().tessLook, 'tess').setDepth(D.kip).setScale(1.25);
       this.tess.minX = 60;
       this.tess.maxX = 1220;
     }
@@ -901,7 +902,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       this.tess = undefined;
       s.coop = 'off';
     } else {
-      this.tess = new Kip(this, 140, FLOOR_Y, profile().tessLook, 'tess').setDepth(D.kip);
+      this.tess = new Kip(this, 140, FLOOR_Y, profile().tessLook, 'tess').setDepth(D.kip).setScale(1.25);
       this.tess.celebrate();
       s.coop = 'tess';
     }
