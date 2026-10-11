@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kip Lab</title>
+  <style>
+    body { margin: 0; background: #2b2722; color: #f4ebd5; font: 14px system-ui, sans-serif; }
+    h1 { font-size: 18px; margin: 12px 16px 4px; }
+    p { margin: 0 16px 10px; color: #c5b38e; }
+    #wrap { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 16px; }
+    canvas { display: block; border-radius: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Kip Lab: current (painted Kip + vector accessories) vs. code-drawn prototype</h1>
+  <p>Each look: current in-game Kip on the left, prototype on the right. Dev-only page; not part of the build.</p>
+  <div id="wrap"><div id="current"></div><canvas id="proto"></canvas></div>
+  <script type="module" src="/src/lab/kipLab.ts"></script>
+</body>
+</html>
