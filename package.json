@@ -22,6 +22,7 @@
     "check:menus": "node scripts/sweep-hub-checks.mjs",
     "check:polish": "node scripts/check-game-polish.mjs",
     "check:recordings": "node scripts/check-recorded-audio.mjs",
+    "check:mobile-audio": "node scripts/check-mobile-audio.mjs",
     "check:accessories": "node scripts/check-accessories.mjs",
     "check:offline": "node scripts/check-offline.mjs",
     "audition:player": "node scripts/build-audition-player.mjs"

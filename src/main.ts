@@ -3,6 +3,9 @@ import { pm } from './debug';
 import { keepScaleFresh } from './platform';
 import { BootScene } from './scenes/BootScene';
 import { ALL_SCENES } from './scenes/index';
+import { installAudioUnlock } from './audio/engine';
+
+installAudioUnlock();
 
 window.addEventListener('error', (e) => pm.errors.push(String(e.message)));
 window.addEventListener('unhandledrejection', (e) => pm.errors.push(String(e.reason)));
@@ -40,6 +43,7 @@ const game = new Phaser.Game({
   },
   render: { antialias: true, roundPixels: false },
   input: { activePointers: 3 }, // Kip, Tess / Outside Hands, and one spare finger
+  audio: { noAudio: true }, // the recorded players share their own AudioContext
   scene: [BootScene, ...ALL_SCENES],
 });
 

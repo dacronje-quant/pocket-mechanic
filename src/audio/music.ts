@@ -6,7 +6,7 @@
  * fixed, so the generated music still tells the player their progress.
  */
 import type { ThemeId } from '../content/types';
-import { ac, audioFile, bus, loadBuffer, whenUnlocked } from './engine';
+import { ac, audioFile, bus, isAudioReady, loadBuffer, whenAudioReady } from './engine';
 
 type Scale = number[];
 const MAJOR: Scale = [0, 2, 4, 5, 7, 9, 11];
@@ -48,6 +48,7 @@ export const THEMES: Record<ThemeId | 'festival' | 'title', MusicTheme> = {
 };
 
 let current: { id: string; theme: MusicTheme } | null = null;
+let cancelStart: (() => void) | null = null;
 /** A generated loop playing: crossfaded repeats through a low-pass filter that opens with progress. */
 let file: { buf: AudioBuffer; filter: BiquadFilterNode; out: GainNode; voices: Array<{ src: AudioBufferSourceNode; gain: GainNode }>; timer: ReturnType<typeof setTimeout> | null } | null = null;
 let fileProgress = 1;
@@ -162,9 +163,9 @@ export function playMusic(id: keyof typeof THEMES, progress = 1, windDown = fals
   }
   stopMusic();
   current = { id, theme: THEMES[id] };
-  const c0 = ac();
-  if (!c0) {
-    whenUnlocked(() => {
+  if (!isAudioReady()) {
+    cancelStart = whenAudioReady(() => {
+      cancelStart = null;
       if (current?.id !== id) return;
       current = null;
       playMusic(id, progress, windDown);
@@ -196,6 +197,8 @@ export function setMusicProgress(progress: number): void {
 }
 
 export function stopMusic(): void {
+  cancelStart?.();
+  cancelStart = null;
   stopFile();
   current = null;
 }

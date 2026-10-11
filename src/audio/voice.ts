@@ -8,7 +8,7 @@
 import { VOICES } from '../content/voices';
 import { voiceRecordingIds } from '../content/voicelines';
 import type { CharId } from '../content/types';
-import { ac, audioFile, bus, loadBuffer, soundFiles, voiceLevel } from './engine';
+import { ac, audioFile, bus, isAudioReady, loadBuffer, soundFiles, voiceLevel, whenAudioReady } from './engine';
 import { robotCue } from '../content/soundCues';
 
 let playing: AudioBufferSourceNode | null = null;
@@ -57,6 +57,23 @@ export async function speak(who: CharId, text: string, id?: string): Promise<voi
   if (voiceLevel() <= 0) {
     await wait(lineDuration(text), token);
     return;
+  }
+  if (!isAudioReady()) {
+    const ready = await new Promise<boolean>(resolve => {
+      let unlisten = () => {};
+      const finish = (allowed = false) => {
+        clearTimeout(cap);
+        unlisten();
+        if (cancelPending === cancel) cancelPending = null;
+        resolve(allowed);
+      };
+      const cancel = () => finish();
+      const cap = setTimeout(cancel, 4000);
+      cancelPending = cancel;
+      unlisten = whenAudioReady(() => finish(true));
+    });
+    if (token !== generation) return;
+    if (!ready) { await wait(lineDuration(text), token); return; }
   }
   const file = v?.beeps ? soundFiles(robotCue(who === 'tess' ? tessChip : chip))[0] : id ? voiceRecordingIds(who, text, id).map(candidate => audioFile('voice', candidate)).find(Boolean) : undefined;
   if (file) {

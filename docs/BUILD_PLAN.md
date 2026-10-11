@@ -214,7 +214,7 @@ Production audio uses scripts/generate-elevenlabs.mjs (npm run assets:audio), wi
 - [x] Hub & meta scenes (title/profiles, shop, story, Test Run, rewards, festival, shelf + Tune-Ups, town, Part-o-pedia, Paint & Polish, Nook + Job Book, My Music Box, Attic, Quick Fixes, grown-ups)
 - [x] Removed device speech, mechanical effect, object performance and background music fallbacks; missing recordings stay silent. Authored musical puzzle tones remain live instruments; Kip/Tess robot chips use recorded performances.
 - [x] Generated media tooling and players; production ElevenLabs audio and recovered painted originals bundled locally (see section 6)
-- [x] Engine/content/voice/UI/audio verification suite: 344 tests passing; all authored solutions checked in every age mode
+- [x] Engine/content/voice/UI/audio verification suite: 350 tests passing; all authored solutions checked in every age mode
 - [x] Modular Kip/Tess bodies and complete accessory pack: 207 cosmetic/character combinations, saved looks, real purchases, all poses and fresh-install offline coverage (`ACCESSORY_OVERHAUL_VERIFICATION.md`)
 - [x] Live lever and pulley physics, alternative balance solutions, trial cancellation and comparison-scale follow-up (`BALANCE_PHYSICS_VERIFICATION.md`)
 - [x] Physical pendulum motion, attached clock escapement, stable bob adjustment, true shared release and matching narration (PENDULUM_PHYSICS_VERIFICATION.md)
@@ -223,6 +223,7 @@ Production audio uses scripts/generate-elevenlabs.mjs (npm run assets:audio), wi
 - [x] Full-game polish: attached bulb/stalk, single Bertie in the Return, complete finale cast, narration replay/pacing, visible awakenings and interrupted-story recovery (`FULL_GAME_POLISH_VERIFICATION.md`)
 - [x] Puzzle/input performance: compatible snap targets, fixed pointer allocation, true menu pause, cached dance scores/chain cards/still objects and corrected portrait outlines (`FULL_GAME_POLISH_VERIFICATION.md`)
 - [x] Complete recording audit: 2,497 spoken IDs, all six robot chips, 61 effect cues and 1,215 decodable audio files; failed-download recovery and recorded robot dialogue cancellation (`FULL_GAME_POLISH_VERIFICATION.md`)
+- [x] Mobile audio startup: native tap capture, late-catalogue music/voice recovery, interrupted-context resume, single shared context and real-touch output checks with normal autoplay restrictions (`MOBILE_AUDIO_VERIFICATION.md`)
 - [x] Final 61-room browser and visual/touch evidence: record the completed checks in `VISUAL_OVERHAUL_VERIFICATION.md`
 - [x] Release build, README
 

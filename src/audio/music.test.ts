@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mock = vi.hoisted(() => ({ file: undefined as string | undefined, load: vi.fn(), context: { createOscillator: vi.fn(), createBufferSource: vi.fn() } }));
-vi.mock('./engine', () => ({ ac: () => mock.context, bus: () => ({}), audioFile: () => mock.file, loadBuffer: mock.load, whenUnlocked: vi.fn() }));
+vi.mock('./engine', () => ({ ac: () => mock.context, bus: () => ({}), audioFile: () => mock.file, loadBuffer: mock.load, isAudioReady: () => true, whenAudioReady: vi.fn() }));
 import { playMusic, stopMusic } from './music';
 beforeEach(() => { stopMusic(); vi.clearAllMocks(); mock.file = undefined; });
 describe('recorded background music', () => {

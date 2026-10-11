@@ -2,16 +2,34 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mock = vi.hoisted(() => {
   const source = { buffer: null, playbackRate: { value: 1 }, connect: vi.fn(), disconnect: vi.fn(), start: vi.fn(), stop: vi.fn(), onended: null as (() => void) | null };
-  return { source, load: vi.fn(), level: 1, context: { createBufferSource: vi.fn(() => source) } };
+  return { source, load: vi.fn(), level: 1, ready: true, readyListener: null as (() => void) | null, context: { createBufferSource: vi.fn(() => source) } };
 });
-vi.mock('./engine', () => ({ ac: () => mock.context, audioFile: (_kind: string, id: string) => id, soundFiles: (id: string) => [id], bus: () => ({}), loadBuffer: mock.load, voiceLevel: () => mock.level }));
+vi.mock('./engine', () => ({ ac: () => mock.context, audioFile: (_kind: string, id: string) => id, soundFiles: (id: string) => [id], bus: () => ({}), loadBuffer: mock.load, voiceLevel: () => mock.level, isAudioReady: () => mock.ready, whenAudioReady: (fn: () => void) => { mock.readyListener = fn; return () => { mock.readyListener = null; }; } }));
 vi.mock('./sfx', () => ({ beeps: vi.fn() }));
 import { setVoiceChip, speak, stopVoice, voiceToken } from './voice';
 import { beeps } from './sfx';
 
-beforeEach(() => { vi.useFakeTimers(); vi.clearAllMocks(); mock.level = 1; setVoiceChip('voice-classic'); vi.stubGlobal('window', { speechSynthesis: { cancel: vi.fn() } }); stopVoice(); });
+beforeEach(() => { vi.useFakeTimers(); vi.clearAllMocks(); mock.level = 1; mock.ready = true; mock.readyListener = null; setVoiceChip('voice-classic'); vi.stubGlobal('window', { speechSynthesis: { cancel: vi.fn() } }); stopVoice(); });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 describe('recorded voice cancellation', () => {
+  it('plays the current first caption after a late catalogue and audio permission', async () => {
+    mock.ready = false; mock.load.mockResolvedValue({ duration: 1 });
+    const pending = speak('nana', 'Hello, little one.', 'first');
+    expect(mock.load).not.toHaveBeenCalled();
+    mock.ready = true; mock.readyListener?.();
+    await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    expect(mock.source.start).toHaveBeenCalledOnce();
+    stopVoice(); await pending;
+    expect(mock.readyListener).toBeNull();
+  });
+  it('cancels an old caption waiting for the first permitted phone tap', async () => {
+    mock.ready = false;
+    const pending = speak('nana', 'Old caption.', 'old');
+    stopVoice(); await pending;
+    expect(mock.readyListener).toBeNull();
+    expect(mock.source.start).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
   it('loads Tess recorded robot voice and cancels it with the dialogue', async () => {
     mock.load.mockResolvedValue({ duration: 1.2 });
     setVoiceChip('voice-retro', 'voice-chirpy');

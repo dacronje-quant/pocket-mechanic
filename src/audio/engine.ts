@@ -6,12 +6,35 @@
 
 let ctx: AudioContext | null = null;
 let unlocked = false;
+let primed = false;
 const onUnlock: Array<() => void> = [];
+const onReady = new Set<() => void>();
 
 /** Run something once sound is allowed (after the first tap). */
 export function whenUnlocked(fn: () => void): void {
-  if (unlocked) fn();
+  if (ctx?.state === 'running') fn();
   else onUnlock.push(fn);
+}
+
+/** Both the browser's tap permission and the recorded catalogue are ready. */
+export function isAudioReady(): boolean {
+  return manifestLoaded && ctx?.state === 'running';
+}
+
+/** Cancel a pending request when its scene or narration is replaced. */
+export function whenAudioReady(fn: () => void): () => void {
+  if (isAudioReady()) fn();
+  else onReady.add(fn);
+  return () => { onReady.delete(fn); };
+}
+
+function flushReady(): void {
+  if (ctx?.state !== 'running') return;
+  for (const fn of onUnlock.splice(0)) fn();
+  if (!isAudioReady()) return;
+  const pending = [...onReady];
+  onReady.clear();
+  for (const fn of pending) fn();
 }
 let master: GainNode | null = null;
 const buses: Partial<Record<'sfx' | 'music' | 'voice', GainNode>> = {};
@@ -21,6 +44,12 @@ export function ac(): AudioContext | null {
   if (!unlocked) return null;
   try {
     if (!ctx) {
+      // Safari otherwise treats Web Audio as ambient sound on some phones.
+      // Feature detection keeps Android and older Safari on their normal path.
+      try {
+        const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+        if (session) session.type = 'playback';
+      } catch { /* optional platform API */ }
       const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return null;
       ctx = new Ctor();
@@ -32,8 +61,10 @@ export function ac(): AudioContext | null {
         buses[k] = g;
       }
       applyLevels();
+      ctx.addEventListener('statechange', flushReady);
     }
-    if (ctx.state === 'suspended') Promise.resolve(ctx.resume()).catch(() => undefined); // autoplay denied: carry on silently
+    // Safari uses "interrupted" after calls, screen locks and app switching.
+    if (ctx.state !== 'running' && ctx.state !== 'closed') Promise.resolve(ctx.resume()).then(flushReady, () => undefined);
     return ctx;
   } catch {
     return null;
@@ -66,15 +97,37 @@ export function voiceLevel(): number {
   return levels.muted ? 0 : levels.voice;
 }
 
-/** Call from the first pointer event so mobile browsers allow sound. */
+/** Call inside the native tap so mobile browsers allow sound. */
 export function unlockAudio(): void {
-  if (unlocked) {
-    ac();
-    return;
-  }
   unlocked = true;
-  ac();
-  for (const fn of onUnlock.splice(0)) fn();
+  const needsPrime = !primed || ctx?.state !== 'running';
+  const c = ac();
+  if (!c) return;
+  if (needsPrime) {
+    // A silent PCM frame opens Safari's output in the same gesture. This is
+    // permission setup, never a replacement voice or generated effect.
+    try {
+      const source = c.createBufferSource();
+      source.buffer = c.createBuffer(1, 1, c.sampleRate);
+      source.connect(c.destination);
+      source.onended = () => source.disconnect();
+      source.start();
+      primed = true;
+    } catch { /* retry on the next tap */ }
+  }
+  flushReady();
+}
+
+/** Capture taps before canvas controls or the rotation card consume them. */
+export function installAudioUnlock(target: Document = document): () => void {
+  const events = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
+  for (const event of events) target.addEventListener(event, unlockAudio, { capture: true, passive: true });
+  const resume = () => { if (unlocked && target.visibilityState === 'visible') ac(); };
+  target.addEventListener('visibilitychange', resume);
+  return () => {
+    for (const event of events) target.removeEventListener(event, unlockAudio, { capture: true });
+    target.removeEventListener('visibilitychange', resume);
+  };
 }
 
 // ── generated audio files, if the build has them ──
@@ -86,6 +139,7 @@ export interface AudioManifest {
 }
 
 let manifest: AudioManifest = { voice: {}, music: {}, sfx: {} };
+let manifestLoaded = false;
 
 export async function loadManifest(): Promise<void> {
   try {
@@ -93,7 +147,9 @@ export async function loadManifest(): Promise<void> {
     if (!res.ok) return;
     const m = (await res.json()) as Partial<AudioManifest>;
     manifest = { voice: m.voice ?? {}, music: m.music ?? {}, sfx: m.sfx ?? {} };
+    manifestLoaded = true;
     whenUnlocked(() => void preloadEffects());
+    flushReady();
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       const files = [...new Set([...Object.values(manifest.voice), ...Object.values(manifest.music), ...Object.values(manifest.sfx).flat()])];
       void navigator.serviceWorker.ready.then(registration => {

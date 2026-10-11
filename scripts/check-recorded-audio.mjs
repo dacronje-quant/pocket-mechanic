@@ -20,7 +20,7 @@ await Promise.all(Array.from({length: 6}, async () => {
     else report.availableFiles++;
   }
 }));
-const browser = await playwright.chromium.launch({ ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {channel:'chrome'}), args:['--disable-gpu','--autoplay-policy=no-user-gesture-required'] });
+const browser = await playwright.chromium.launch({ ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {channel:'chrome'}), args:['--disable-gpu','--autoplay-policy=document-user-activation-required'] });
 try {
   const page = await browser.newPage({ viewport:{width:1280,height:720}, serviceWorkers:'block' });
   page.on('pageerror', error => report.errors.push(String(error)));
