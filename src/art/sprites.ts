@@ -217,17 +217,28 @@ export function followGraphic(g: Phaser.GameObjects.Graphics, image: Phaser.Game
   // text on a painted card, stays on top of it.
   // Callers often move the graphic into a container after creating it, so this re-homes the image
   // whenever the graphic moves.
+  const adjacent = (list: { getIndex: (child: Phaser.GameObjects.GameObject) => number; moveTo: (child: Phaser.GameObjects.GameObject, index: number) => unknown }) => {
+    const graphicIndex = list.getIndex(g), imageIndex = list.getIndex(image);
+    if (graphicIndex < 0 || imageIndex < 0 || imageIndex === graphicIndex + 1) return;
+    // moveAbove is a no-op when an asynchronously loaded image is already
+    // anywhere above the graphic. Account for removal when moving from below.
+    list.moveTo(image, graphicIndex + (imageIndex < graphicIndex ? 0 : 1));
+  };
   const place = () => {
     const parent = g.parentContainer;
     if (parent) {
       if (image.parentContainer !== parent) {
         image.parentContainer?.remove(image);
         parent.addAt(image, parent.getIndex(g) + 1);
-      } else if (parent.getIndex(image) !== parent.getIndex(g) + 1) parent.moveAbove<Phaser.GameObjects.GameObject>(image, g);
-    } else if (!image.parentContainer) {
+      } else adjacent(parent);
+    } else {
+      if (image.parentContainer) {
+        image.parentContainer.remove(image);
+        scene.children.add(image);
+      }
       if (image.depth !== g.depth) image.setDepth(g.depth);
       const list = scene.children;
-      if (list.getIndex(image) !== list.getIndex(g) + 1) list.moveAbove(image as Phaser.GameObjects.GameObject, g);
+      adjacent(list);
     }
   };
   const update = () => {

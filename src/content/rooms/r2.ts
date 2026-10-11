@@ -22,7 +22,7 @@ export const R2_ROOMS: RoomDef[] = [
     families: ['springs'],
     pedia: ['crank'],
     intro: "Somewhere under these velvet cushions is the winding crank. Bounce around and find it!",
-    hints: ['Tap a cushion to lift it up.', 'Things are hiding under the big cushions.', 'Try the cushion near the music box key!'],
+    hints: ['Tap a cushion to lift it up.', 'Things are hiding under the big cushions.', 'Try the big cushion at the bottom right.'],
     covers: [
       { x: 300, y: 470, art: 'cushion', item: 'bits' },
       { x: 470, y: 400, art: 'cushion', item: 'boots' },

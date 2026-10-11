@@ -2,7 +2,7 @@
 import Phaser from 'phaser';
 import { CM } from '../art/copperMoss';
 import { rivet } from '../art/finish';
-import { drawingGear, fuse, jug, puzzlePanel, reasoningProp, star, valve } from '../art/reasoningPuzzleArt';
+import { drawingGear, fuse, fuseRack, jug, puzzlePanel, reasoningProp, star, valve } from '../art/reasoningPuzzleArt';
 import * as sfx from '../audio/sfx';
 import type { JugAction, LayerPlacement } from '../content/variety-types';
 import { differenceFind, jugHint, jugMove, layersRemove, layersSet, projectLayers, sortingSwap, sortingWeigh, sudokuCandidates, sudokuSet } from '../mechanism/variety';
@@ -38,7 +38,7 @@ abstract class ReasoningRoom<K extends NewKind> extends RoomBase<K> {
   }
 }
 
-/** Valves remain identifiable by small case dots; Engineer hides size and weighs real mass. */
+/** Valves have nonnumeric case labels; Engineer hides size and weighs real mass. */
 export class SortingRoom extends ReasoningRoom<'sorting'> {
   private drawing!: Phaser.GameObjects.Graphics;
   private chosen: number[] = [];
@@ -57,7 +57,15 @@ export class SortingRoom extends ReasoningRoom<'sorting'> {
     this.drawing = this.add.graphics().setDepth(D.mech);
     const n = this.def.items.length;
     this.slots = Array.from({ length: n }, (_, i) => ({ x: 285 + i * 710 / Math.max(1, n - 1), y: 436 }));
-    this.slots.forEach((p, i) => this.tap({ x: p.x, y: p.y - 55 }, 110, 172, `sorting-valve:${i}`, () => this.choose(i)));
+    const maxHeight = this.def.mode === 'weight' ? 103 : 145;
+    this.slots.forEach((p, i) => {
+      // Cover the whole glass valve, without stealing taps on a low weighing pan.
+      const qa = `sorting-valve:${i}`;
+      const zone = this.add.zone(p.x, p.y - (maxHeight - 1) / 2, 110, maxHeight + 37).setDepth(D.widget).setInteractive({ useHandCursor: true }).setName(qa).setData('qa', qa);
+      zone.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+        if (pointer.getDistance() < 10 && (!this.fixed || this.launch.mode === 'playground')) this.choose(i);
+      });
+    });
     this.status = this.word(640, 503, '', 18);
     this.swapButton = this.control(this.def.mode === 'weight' ? 735 : 640, 592, '↔', 'sorting-swap', () => this.swap(), 40);
     if (this.def.mode === 'weight') this.weighButton = this.control(545, 592, '⚖', 'sorting-weigh', () => this.weigh(), 40);
@@ -86,7 +94,7 @@ export class SortingRoom extends ReasoningRoom<'sorting'> {
     if (this.chosen.length !== 2) { sfx.nuhUh(); return; }
     const [a, b] = this.chosen.map((i) => this.state.order[i]);
     const next = sortingWeigh(this.def, this.state, a, b);
-    if (!this.commit(next)) { sfx.nuhUh(); this.status.setText('↶'); }
+    if (!this.commit(next)) sfx.nuhUh();
   }
 
   protected refresh(): void {
@@ -108,22 +116,39 @@ export class SortingRoom extends ReasoningRoom<'sorting'> {
   }
 
   private drawScale(g: Phaser.GameObjects.Graphics): void {
-    const pair = this.state.comparison;
+    const selected = this.chosen.map(i => this.state.order[i]);
+    // A newly selected pair has not been weighed. Do not show an older pair's
+    // tilt as though it were the result for the new selection.
+    const pair = this.state.comparison && (selected.length === 0 || selected.length === 2 && selected.every((id, i) => id === this.state.comparison![i])) ? this.state.comparison : undefined;
     const a = pair ? this.def.items.find((p) => p.id === pair[0])! : null;
     const b = pair ? this.def.items.find((p) => p.id === pair[1])! : null;
     const tilt = a && b ? Math.sign(a.weight - b.weight) * 20 : 0;
+    const reach = Math.sqrt(100 * 100 - tilt * tilt);
+    const ends = [{ x: 640 - reach, y: 222 + tilt }, { x: 640 + reach, y: 222 - tilt }];
+    this.drawing.setData('sortingScale', {
+      left: { id: a?.id, x: ends[0].x, y: ends[0].y + 52 },
+      right: { id: b?.id, x: ends[1].x, y: ends[1].y + 52 },
+    });
     g.fillStyle(CM.copperDark, 1); g.fillTriangle(640, 215, 612, 285, 668, 285);
     g.fillStyle(CM.copperLight, 1); g.fillTriangle(640, 215, 620, 276, 640, 276);
-    g.lineStyle(10, CM.ink, 1); g.lineBetween(540, 224 + tilt, 740, 224 - tilt);
-    g.lineStyle(6, CM.brass, 1); g.lineBetween(540, 221 + tilt, 740, 221 - tilt);
-    for (const [x, drop, item] of [[540, tilt, a], [740, -tilt, b]] as const) {
-      g.lineStyle(2, CM.copperDark, 1); g.lineBetween(x - 22, 224 + drop, x - 35, 273 + drop); g.lineBetween(x + 22, 224 + drop, x + 35, 273 + drop);
-      g.fillStyle(CM.copperDark, 1); g.fillEllipse(x, 278 + drop, 85, 16);
-      g.lineStyle(2, CM.copperLight, 1); g.strokeEllipse(x, 274 + drop, 85, 12);
-      if (item) valve(g, x, 272 + drop, 35, false, this.def.items.findIndex((p) => p.id === item.id));
+    g.lineStyle(10, CM.ink, 1); g.lineBetween(ends[0].x, ends[0].y + 3, ends[1].x, ends[1].y + 3);
+    g.lineStyle(6, CM.brass, 1); g.lineBetween(ends[0].x, ends[0].y, ends[1].x, ends[1].y);
+    for (const [at, item] of [[ends[0], a], [ends[1], b]] as const) {
+      const panY = at.y + 52;
+      // Both chains hang from one beam-end pivot; the pan remains horizontal.
+      g.lineStyle(2, CM.copperDark, 1); g.lineBetween(at.x, at.y, at.x - 35, panY - 1); g.lineBetween(at.x, at.y, at.x + 35, panY - 1);
+      g.fillStyle(CM.copperDark, 1); g.fillEllipse(at.x, panY + 4, 85, 16);
+      g.lineStyle(2, CM.copperLight, 1); g.strokeEllipse(at.x, panY, 85, 12);
+      if (item) valve(g, at.x, panY - 2, 35, false, this.def.items.findIndex((p) => p.id === item.id));
     }
     rivet(g, 640, 222, 6);
-    for (let i = 0; i < (this.def.maxWeighings ?? 0); i++) { g.fillStyle(i < this.state.weighings ? CM.inkSoft : CM.copperLight, 1); g.fillCircle(1014, 223 + i * 14, 4); }
+    const budget = this.def.maxWeighings ?? 0;
+    for (let i = 0; i < budget; i++) {
+      g.fillStyle(i < this.state.weighings ? CM.inkSoft : CM.copperLight, 1);
+      // Keep the comparison budget outside the valves; a vertical column here
+      // used to look like extra mass markings on the last valve's glass.
+      g.fillCircle(755 + i * Math.min(20, 220 / Math.max(1, budget - 1)), 503, 4);
+    }
   }
 
   protected hintTarget(): HintTarget | null {
@@ -169,7 +194,7 @@ export class SudokuRoom extends ReasoningRoom<'sudoku'> {
     });
     this.palette = this.traySpots(this.def.size + 1);
     this.palette.forEach((p, i) => this.tap(p, 100, 84, `sudoku-symbol:${i < this.def.size ? i : 'erase'}`, () => { this.selected = i < this.def.size ? i : -1; sfx.pickUp(); this.refresh(); }, D.trayPart + 2));
-    reasoningProp(this, 9, 1010, 311, 154, D.mech - 2);
+    fuseRack(back, 1010, 311, this.def.symbols);
   }
 
   private cellAt(at: number): Point { return { x: this.origin.x + (at % this.def.size + .5) * this.size, y: this.origin.y + (Math.floor(at / this.def.size) + .5) * this.size }; }
@@ -229,19 +254,24 @@ export class JugsRoom extends ReasoningRoom<'jugs'> {
   private status!: Phaser.GameObjects.Text;
   private fillButton?: Phaser.GameObjects.Container;
   private emptyButton?: Phaser.GameObjects.Container;
+  private pourButtons: Phaser.GameObjects.Container[] = [];
+  private pourDrawing!: Phaser.GameObjects.Graphics;
+  private pouring: { from: number; to: number; time: number } | null = null;
 
   constructor() { super('room-jugs'); }
 
   protected build(): void {
     this.selected = 0; this.numbers = []; this.fillButton = undefined; this.emptyButton = undefined;
+    this.pourButtons = []; this.pouring = null;
     const back = this.add.graphics().setDepth(D.mech - 1); puzzlePanel(back, 260, 183, 760, 351, 723);
     this.drawing = this.add.graphics().setDepth(D.mech);
+    this.pourDrawing = this.add.graphics().setDepth(D.mech + 1);
     const n = this.def.capacities.length;
     this.places = Array.from({ length: n }, (_, i) => ({ x: n === 2 ? 455 + i * 338 : 380 + i * 250, y: 454 }));
     this.places.forEach((p, i) => {
       this.tap({ x: p.x + 9, y: p.y - 88 }, 175, 213, `jugs-jug:${i}`, () => this.choose(i));
       this.numbers.push(this.word(p.x, 490, '', 22));
-      this.control(p.x + 78, 490, '→', `jugs-pour:${i}`, () => this.move({ kind: 'pour', from: this.selected, to: i }), 24);
+      this.pourButtons.push(this.control(p.x + 78, 490, '→', `jugs-pour:${i}`, () => this.move({ kind: 'pour', from: this.selected, to: i }), 24));
     });
     this.status = this.word(640, 600, '', 22);
     if (!this.def.sealed) {
@@ -258,6 +288,7 @@ export class JugsRoom extends ReasoningRoom<'jugs'> {
   private move(action: JugAction): void {
     const next = jugMove(this.def, this.state, action);
     if (!this.commit(next, 'clunk')) sfx.nuhUh();
+    else if (action.kind === 'pour') this.pouring = { from: action.from, to: action.to, time: 0 };
   }
 
   protected refresh(): void {
@@ -270,9 +301,13 @@ export class JugsRoom extends ReasoningRoom<'jugs'> {
         for (let cup = 0; cup < this.def.capacities[i]; cup++) { g.fillStyle(cup < this.state.volumes[i] ? CM.teal : CM.paperDark, 1); g.fillCircle(p.x - (this.def.capacities[i] - 1) * 8 + cup * 16, 492, 5); }
       }
     });
-    // Clear pictorial tap destination; no written instructions are required.
-    g.lineStyle(3, CM.tealDark, .6);
-    if (this.places.length > 1) { const p = this.places[this.selected], q = this.places[(this.selected + 1) % this.places.length]; g.lineBetween(p.x, 210, q.x, 210); g.fillStyle(CM.tealDark, .6); const direction = Math.sign(q.x - p.x); g.fillTriangle(q.x, 210, q.x - direction * 13, 202, q.x - direction * 13, 218); }
+    // Every legal receiving jug is marked, including non-adjacent destinations.
+    // The previous arrow always pointed to the next jug, even when it was full.
+    this.pourButtons.forEach((button, i) => {
+      const legal = i !== this.selected && this.state.volumes[this.selected] > 0 && this.state.volumes[i] < this.def.capacities[i];
+      button.setAlpha(legal ? 1 : .35);
+      if (legal) { g.lineStyle(3, CM.tealDark, .8); g.strokeCircle(button.x, button.y, 29); }
+    });
     if (this.def.maxPours !== undefined) {
       for (let i = 0; i < this.def.maxPours; i++) { g.fillStyle(i < this.state.pours ? CM.inkSoft : CM.copperLight, 1); g.fillCircle(976, 250 + i * 18, 5); }
       this.status.setText(this.style.numbers ? `${this.state.pours} / ${this.def.maxPours}` : '');
@@ -293,6 +328,23 @@ export class JugsRoom extends ReasoningRoom<'jugs'> {
   }
 
   protected solutionSteps(): number { return this.def.solution.length; }
+
+  protected tick(dt: number): void {
+    const g = this.pourDrawing.clear();
+    if (!this.pouring) return;
+    this.pouring.time += dt;
+    if (this.pouring.time > .65) { this.pouring = null; return; }
+    const from = this.places[this.pouring.from], to = this.places[this.pouring.to];
+    const progress = this.pouring.time / .65;
+    for (let i = 0; i < 12; i++) {
+      const t = progress - i * .024;
+      if (t < 0 || t > 1) continue;
+      const x = from.x + (to.x - from.x) * t;
+      const y = 270 - Math.sin(t * Math.PI) * 70;
+      g.fillStyle(CM.tealDark, .8); g.fillCircle(x + 1, y + 2, 4);
+      g.fillStyle(CM.sky, 1); g.fillCircle(x, y, 3);
+    }
+  }
 }
 
 const SLIDE_COLORS: Record<string, number> = { amber: CM.glow, teal: CM.tealLight, rose: 0xc98682, ivory: CM.cream };
@@ -325,7 +377,6 @@ export class LayersRoom extends ReasoningRoom<'layers'> {
     if (this.def.orderMatters) this.upButton = this.control(1003, 513, '↑', 'layers-earlier', () => this.earlier(), 28);
     this.removeButton = this.control(1081, 513, '×', 'layers-remove', () => this.remove(), 28);
     reasoningProp(this, 13, 640, 302, 95, D.mech - 2);
-    this.word(412, 464, '☆', 24); this.word(868, 464, '✦', 24);
   }
 
   private pickSlide(id: string): void {
@@ -370,7 +421,8 @@ export class LayersRoom extends ReasoningRoom<'layers'> {
       t.fillStyle(CM.sky, at >= 0 ? .65 : .3); t.fillRoundedRect(p.x - 37, p.y - 35, 74, 70, 6);
       t.lineStyle(selected ? 4 : 2, selected ? CM.glow : CM.copperLight, 1); t.strokeRoundedRect(p.x - 37, p.y - 35, 74, 70, 6);
       const cell = 58 / this.def.size;
-      slide.cells.forEach((c) => star(t, p.x - 29 + (c.at % this.def.size + .5) * cell, p.y - 29 + (Math.floor(c.at / this.def.size) + .5) * cell, 5, SLIDE_COLORS[c.color] ?? CM.cream));
+      const visibleCells = at >= 0 ? projectLayers(this.def, [this.state[at]]) : slide.cells;
+      visibleCells.forEach((c) => star(t, p.x - 29 + (c.at % this.def.size + .5) * cell, p.y - 29 + (Math.floor(c.at / this.def.size) + .5) * cell, 5, SLIDE_COLORS[c.color] ?? CM.cream));
       for (let dot = 0; dot <= i; dot++) { t.fillStyle(CM.ink, 1); t.fillCircle(p.x - i * 3 + dot * 6, p.y + 29, 1.8); }
     });
     this.state.forEach((p, i) => {
@@ -380,6 +432,7 @@ export class LayersRoom extends ReasoningRoom<'layers'> {
       for (let dot = 0; dot <= source; dot++) { g.fillStyle(this.selected === i ? CM.cream : CM.ink, 1); g.fillCircle(x - source * 3 + dot * 6, 515, 2.4); }
       g.lineStyle(1.5, CM.copperLight, .8); g.lineBetween(x - 18, 499, x - 12 + p.turn * 9, 499);
       if (p.flipped) { g.fillStyle(CM.glow, 1); g.fillTriangle(x + 19, 523, x + 12, 517, x + 12, 529); }
+      if (i + 1 < this.state.length) { g.lineStyle(2, CM.copperDark, 1); g.lineBetween(x + 28, 515, x + 37, 515); g.fillStyle(CM.copperDark, 1); g.fillTriangle(x + 39, 515, x + 33, 511, x + 33, 519); }
     });
     const on = this.selected >= 0;
     this.turnButton?.setAlpha(on ? 1 : .5); this.flipButton?.setAlpha(on ? 1 : .5); this.removeButton.setAlpha(on ? 1 : .5); this.upButton?.setAlpha(this.selected > 0 ? 1 : .5);
@@ -488,7 +541,8 @@ export class DifferenceRoom extends ReasoningRoom<'difference'> {
       g.lineStyle(3, color, 1); g.strokeCircle(x, y, 29);
       for (let tick = 0; tick < 12; tick++) { const angle = tick * Math.PI / 6; g.lineStyle(1.5, blueprint ? color : CM.ink, 1); g.lineBetween(x + Math.sin(angle) * 22, y - Math.cos(angle) * 22, x + Math.sin(angle) * 26, y - Math.cos(angle) * 26); }
       const [hours, minutes] = value.split(':').map(Number);
-      const hour = (Number.isFinite(hours) ? hours : 12) * Math.PI / 6, minute = (Number.isFinite(minutes) ? minutes : 0) * Math.PI / 30;
+      const minuteValue = Number.isFinite(minutes) ? minutes : 0;
+      const hour = ((Number.isFinite(hours) ? hours : 12) + minuteValue / 60) * Math.PI / 6, minute = minuteValue * Math.PI / 30;
       g.lineStyle(4, blueprint ? color : CM.ink, 1); g.lineBetween(x, y, x + Math.sin(hour) * 16, y - Math.cos(hour) * 16);
       g.lineStyle(2, blueprint ? color : CM.ink, 1); g.lineBetween(x, y, x + Math.sin(minute) * 23, y - Math.cos(minute) * 23);
       return;

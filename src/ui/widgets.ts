@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { click } from '../audio/sfx';
-import { speak, stopVoice } from '../audio/voice';
+import { speak, stopVoice, voiceToken } from '../audio/voice';
 import { badge } from '../art/portraits';
 import type { CharId } from '../content/types';
 import { uiLineId } from '../content/voicelines';
@@ -381,8 +381,10 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
   private t = 0;
   private replayIcon: Phaser.GameObjects.Text;
   private hit: Phaser.GameObjects.Zone;
+  private lineGeneration = 0;
+  private speechToken?: number;
   /** The last line said, so a child who missed it can hear it again. */
-  private lastLine?: { msg: string; opts: { who?: CharId; id?: string; ms?: number; silent?: boolean } };
+  private lastLine?: { msg: string; opts: { who?: CharId; id?: string; ms?: number; silent?: boolean; keep?: boolean } };
 
   constructor(scene: Phaser.Scene, x: number, y: number, width: number) {
     super(scene, x, y);
@@ -415,7 +417,10 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
     return this.alpha > 0.2;
   }
 
-  say(msg: string, opts: { who?: CharId; id?: string; ms?: number; silent?: boolean } = {}): void {
+  say(msg: string, opts: { who?: CharId; id?: string; ms?: number; silent?: boolean; keep?: boolean } = {}): void {
+    const generation = ++this.lineGeneration;
+    if (this.speechToken !== undefined) stopVoice(this.speechToken);
+    this.speechToken = undefined;
     this.lastLine = { msg, opts: { ...opts, silent: false } };
     const who = opts.who ?? 'nana';
     if (!this.face || this.who !== who) {
@@ -425,7 +430,9 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
       this.who = who;
     }
     const words = showWords();
-    this.text.setText(words ? msg : '');
+    this.text.setFontSize(22).setText(words ? msg : '');
+    // Long spoken instructions stay inside the header, above the workboard.
+    for (let size = 21; this.text.height > 82 && size >= 16; size--) this.text.setFontSize(size);
     const h = words ? Math.max(76, this.text.height + 28) : 76;
     const w = words ? this.bw : 220;
     this.bg.clear();
@@ -437,9 +444,18 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
     this.setAlpha(0).setScale(0.9);
     this.scene.tweens.add({ targets: this, alpha: 1, scale: 1, duration: 220, ease: 'Back.easeOut' });
     this.hideTimer?.remove();
+    let displayReady = false;
+    let speechDone = !!opts.silent;
+    const maybeHide = () => {
+      if (generation === this.lineGeneration && this.active && displayReady && speechDone && !opts.keep) this.hide();
+    };
     const ms = opts.ms ?? Math.max(4500, msg.length * 75);
-    this.hideTimer = this.scene.time.delayedCall(ms, () => this.hide());
-    if (!opts.silent) void speak(who, msg, opts.id);
+    if (!opts.keep) this.hideTimer = this.scene.time.delayedCall(ms, () => { displayReady = true; maybeHide(); });
+    if (!opts.silent) {
+      const narration = speak(who, msg, opts.id);
+      this.speechToken = voiceToken();
+      void narration.then(() => { speechDone = true; maybeHide(); });
+    }
   }
 
   preUpdate(_t: number, dt: number): void {
@@ -456,11 +472,21 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
   }
 
   hide(): void {
-    this.scene.tweens.add({ targets: this, alpha: 0, duration: 250, onComplete: () => this.hit.disableInteractive() });
+    this.lineGeneration++;
+    this.hideTimer?.remove();
+    this.hideTimer = undefined;
+    if (this.speechToken !== undefined) stopVoice(this.speechToken);
+    this.speechToken = undefined;
+    this.hit.disableInteractive();
+    this.scene.tweens.killTweensOf(this);
+    this.scene.tweens.add({ targets: this, alpha: 0, duration: 250 });
   }
 
   preDestroy(): void {
-    stopVoice();
+    this.lineGeneration++;
+    this.hideTimer?.remove();
+    if (this.speechToken !== undefined) stopVoice(this.speechToken);
+    super.preDestroy();
   }
 }
 
@@ -508,10 +534,24 @@ export function scrollGrid(
   const view = scene.add.container(x, y);
   const content = scene.add.container(0, 0);
   view.add(content);
+  const bounds = new Phaser.Geom.Rectangle(x, y, w, h);
+  const clipInput = (object: Phaser.GameObjects.GameObject) => {
+    const candidate = object as Phaser.GameObjects.Container;
+    if (candidate.input) {
+      const hit = candidate.input.hitAreaCallback;
+      candidate.input.hitAreaCallback = (area, localX, localY, gameObject) => {
+        const world = candidate.getWorldTransformMatrix().transformPoint(localX - candidate.displayOriginX, localY - candidate.displayOriginY);
+        return Phaser.Geom.Rectangle.Contains(bounds, world.x, world.y) && hit(area, localX, localY, gameObject);
+      };
+    }
+    candidate.list?.forEach(clipInput);
+  };
   for (let i = 0; i < count; i++) {
     const col = i % cell.cols;
     const row = Math.floor(i / cell.cols);
-    content.add(make(i, cell.w / 2 + col * cell.w, cell.h / 2 + row * cell.h));
+    const item = make(i, cell.w / 2 + col * cell.w, cell.h / 2 + row * cell.h);
+    clipInput(item);
+    content.add(item);
   }
   const rows = Math.ceil(count / cell.cols);
   const maxScroll = Math.max(0, rows * cell.h - h);
@@ -522,8 +562,15 @@ export function scrollGrid(
   const zone = scene.add.zone(x, y, w, h).setOrigin(0).setInteractive();
   zone.setDepth(-1);
   let drag: { y0: number; c0: number } | null = null;
-  const onDown = (p: Phaser.Input.Pointer) => {
+  const ownsInput = (over: Phaser.GameObjects.GameObject[]) => over.some(object => {
+    if (object === zone) return true;
+    for (let current: Phaser.GameObjects.GameObject | null = object; current; current = current.parentContainer) if (current === content) return true;
+    return false;
+  });
+  const onDown = (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
     if (p.x < x || p.x > x + w || p.y < y || p.y > y + h) return;
+    // A modal above the list owns its gesture; don't scroll underneath it.
+    if (!ownsInput(over)) return;
     drag = { y0: p.y, c0: content.y };
   };
   const onMove = (p: Phaser.Input.Pointer) => {
@@ -531,7 +578,8 @@ export function scrollGrid(
     content.y = Phaser.Math.Clamp(drag.c0 + (p.y - drag.y0), -maxScroll, 0);
   };
   const onUp = () => (drag = null);
-  const onWheel = (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
+  const onWheel = (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[], _dx: number, dy: number) => {
+    if (!Phaser.Geom.Rectangle.Contains(bounds, p.x, p.y) || !ownsInput(over)) return;
     content.y = Phaser.Math.Clamp(content.y - dy, -maxScroll, 0);
   };
   scene.input.on('pointerdown', onDown);
@@ -563,32 +611,44 @@ export function blocker(scene: Phaser.Scene, depth: number, alpha = 0.6, onTap?:
  */
 export function parentalGate(scene: Phaser.Scene, onPass: () => void, onCancel?: () => void): void {
   const depth = 8000;
+  // Painted card art arrives asynchronously. Keep every label and control on a
+  // separate layer above the panel, including children of button containers.
+  const panelDepth = depth + 1;
+  const contentDepth = depth + 2;
   const items: Phaser.GameObjects.GameObject[] = [];
-  const close = () => items.forEach((o) => o.destroy());
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    scene.events.off('update', tick);
+    scene.events.off(Phaser.Scenes.Events.SHUTDOWN, close);
+    items.forEach((o) => o.destroy());
+  };
   items.push(blocker(scene, depth, 0.75));
   const W = scene.scale.width;
   const H = scene.scale.height;
-  items.push(card(scene, W / 2, H / 2, 640, 420).setDepth(depth));
-  items.push(scene.add.text(W / 2, H / 2 - 160, 'For grown-ups', { fontFamily: SERIF, fontSize: '38px', color: CM_CSS.ink, fontStyle: 'bold' }).setOrigin(0.5).setDepth(depth));
-  const msg = scene.add.text(W / 2, H / 2 - 105, 'Press and hold the key for 2 seconds.', { fontFamily: FONT, fontSize: '22px', color: CM_CSS.inkSoft }).setOrigin(0.5).setDepth(depth);
+  items.push(card(scene, W / 2, H / 2, 640, 420).setDepth(panelDepth));
+  items.push(scene.add.text(W / 2, H / 2 - 110, 'For grown-ups', { fontFamily: SERIF, fontSize: '38px', color: CM_CSS.ink, fontStyle: 'bold' }).setOrigin(0.5).setDepth(contentDepth));
+  const msg = scene.add.text(W / 2, H / 2 - 65, 'Press and hold the key for 2 seconds.', { fontFamily: FONT, fontSize: '22px', color: CM_CSS.inkSoft }).setOrigin(0.5).setDepth(contentDepth);
   items.push(msg);
-  const ring = scene.add.graphics().setDepth(depth);
+  const ring = scene.add.graphics().setDepth(contentDepth);
   items.push(ring);
   let held = 0;
   let holding = false;
-  const key = roundButton(scene, W / 2, H / 2 + 10, '🔑', () => undefined, { r: 54, fontSize: 46 }).setDepth(depth);
+  const key = roundButton(scene, W / 2, H / 2 + 30, '🔑', () => undefined, { r: 54, fontSize: 46 }).setDepth(contentDepth);
   items.push(key);
   key.on('pointerdown', () => (holding = true));
   key.on('pointerup', () => (holding = false));
   key.on('pointerout', () => (holding = false));
   const tick = (_t: number, dt: number) => {
+    if (closed) return;
     if (!holding) {
       held = Math.max(0, held - dt);
     } else held += dt;
     ring.clear();
     ring.lineStyle(7, CM.teal, 1);
     ring.beginPath();
-    ring.arc(W / 2, H / 2 + 10, 66, -Math.PI / 2, -Math.PI / 2 + (Math.min(held, 2000) / 2000) * Math.PI * 2);
+    ring.arc(W / 2, H / 2 + 30, 66, -Math.PI / 2, -Math.PI / 2 + (Math.min(held, 2000) / 2000) * Math.PI * 2);
     ring.strokePath();
     if (held >= 2000) {
       scene.events.off('update', tick);
@@ -598,25 +658,25 @@ export function parentalGate(scene: Phaser.Scene, onPass: () => void, onCancel?:
     }
   };
   scene.events.on('update', tick);
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, close);
   const askSum = () => {
     const a = Phaser.Math.Between(4, 9);
     const b = Phaser.Math.Between(3, 8);
     msg.setText(`What is ${a} + ${b}?`);
     const answers = Phaser.Utils.Array.Shuffle([a + b, a + b + 2, a + b - 3]);
     answers.forEach((n, i) => {
-      const btn = roundButton(scene, W / 2 + (i - 1) * 140, H / 2 + 40, String(n), () => {
+      const btn = roundButton(scene, W / 2 + (i - 1) * 140, H / 2 + 55, String(n), () => {
         close();
         if (n === a + b) onPass();
         else onCancel?.();
-      }, { r: 50, fontSize: 36 }).setDepth(depth);
+      }, { r: 50, fontSize: 36 }).setDepth(contentDepth);
       items.push(btn);
     });
   };
   const x = roundButton(scene, W / 2 + 290, H / 2 - 180, '✕', () => {
-    scene.events.off('update', tick);
     close();
     onCancel?.();
-  }, { r: 28, fontSize: 26 }).setDepth(depth);
+  }, { r: 28, fontSize: 26 }).setDepth(contentDepth);
   items.push(x);
 }
 

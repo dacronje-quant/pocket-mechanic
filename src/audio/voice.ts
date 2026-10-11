@@ -6,12 +6,14 @@
  * story can wait for it.
  */
 import { VOICES } from '../content/voices';
+import { voiceRecordingIds } from '../content/voicelines';
 import type { CharId } from '../content/types';
 import { ac, audioFile, bus, loadBuffer, voiceLevel } from './engine';
 import { beeps } from './sfx';
 
 let playing: AudioBufferSourceNode | null = null;
 let generation = 0;
+let cancelPending: (() => void) | null = null;
 let chip = 'voice-classic';
 
 export function setVoiceChip(id: string): void {
@@ -31,8 +33,16 @@ function pickVoice(): SpeechSynthesisVoice | null {
   return englishVoice ?? null;
 }
 
-export function stopVoice(): void {
+/** A bubble can cancel its own narration without silencing a newer speaker. */
+export function voiceToken(): number {
+  return generation;
+}
+
+export function stopVoice(token?: number): void {
+  if (token !== undefined && token !== generation) return;
   generation++;
+  cancelPending?.();
+  cancelPending = null;
   try {
     playing?.stop();
   } catch {
@@ -48,64 +58,93 @@ export function stopVoice(): void {
 
 /** Rough reading time, used when there is no audio to wait for. */
 export function lineDuration(text: string): number {
-  return Math.min(7, 0.9 + text.split(/\s+/).length * 0.33);
+  return Math.min(16, 0.9 + text.trim().split(/\s+/).length * 0.4);
 }
 
 export async function speak(who: CharId, text: string, id?: string): Promise<void> {
   stopVoice();
   const token = generation;
   const v = VOICES[who];
+  if (voiceLevel() <= 0) {
+    await wait(lineDuration(text), token);
+    return;
+  }
   if (v?.beeps) {
     beeps(text, chip, who === 'tess' ? 1.25 : 1);
-    await wait(Math.min(1.4, 0.3 + text.length * 0.04));
+    await wait(Math.min(1.4, 0.3 + text.length * 0.04), token);
     return;
   }
-  if (voiceLevel() <= 0) {
-    await wait(lineDuration(text));
-    return;
-  }
-  const file = id ? audioFile('voice', id) : undefined;
+  const file = id ? voiceRecordingIds(who, text, id).map(candidate => audioFile('voice', candidate)).find(Boolean) : undefined;
   if (file) {
     // a missing or slow voice file must never hold up the story: give it a moment, then use device speech
-    const buf = await Promise.race([loadBuffer(file), wait(4).then(() => null)]);
+    const buf = await new Promise<AudioBuffer | null>((res) => {
+      const finish = (buffer: AudioBuffer | null = null) => {
+        clearTimeout(cap);
+        if (cancelPending === cancel) cancelPending = null;
+        res(buffer);
+      };
+      const cancel = () => finish();
+      const cap = setTimeout(cancel, 4000);
+      cancelPending = cancel;
+      void loadBuffer(file).then(finish, cancel);
+    });
     if (token !== generation) return;
     const c = ac();
     const dest = bus('voice');
     if (buf && c && dest) {
       const src = c.createBufferSource();
       src.buffer = buf;
-      try {
-        src.connect(dest);
-        src.start();
-      } catch {
-        await wait(lineDuration(text));
-        return;
-      }
       playing = src;
       // onended never fires while the AudioContext is suspended (autoplay denied,
       // iOS after a call, a backgrounded tab), so never wait longer than the line.
       await new Promise<void>((res) => {
-        const cap = setTimeout(res, (buf.duration + 1.5) * 1000);
-        src.onended = () => {
+        const finish = () => {
           clearTimeout(cap);
+          src.onended = null;
+          if (cancelPending === finish) cancelPending = null;
+          if (playing === src) {
+            playing = null;
+            try { src.stop(); } catch { /* already ended */ }
+            try { src.disconnect(); } catch { /* unavailable audio */ }
+          }
           res();
         };
+        const cap = setTimeout(finish, (buf.duration + 1.5) * 1000);
+        cancelPending = finish;
+        src.onended = finish;
+        try {
+          src.connect(dest);
+          src.start();
+        } catch { finish(); }
       });
       if (playing === src) playing = null;
       return;
     }
   }
-  if (token === generation) await speakDevice(text, v?.pitch ?? 1, v?.rate ?? 0.95);
+  if (token === generation) await speakDevice(text, v?.pitch ?? 1, v?.rate ?? 0.95, token);
 }
 
-function speakDevice(text: string, pitch: number, rate: number): Promise<void> {
+function speakDevice(text: string, pitch: number, rate: number, token: number): Promise<void> {
   return new Promise((res) => {
-    const fallback = setTimeout(res, lineDuration(text) * 1000 + 1500);
+    let fallback: ReturnType<typeof setTimeout>;
+    const finish = () => {
+      clearTimeout(fallback);
+      if (cancelPending === finish) cancelPending = null;
+      res();
+    };
+    cancelPending = finish;
+    fallback = setTimeout(() => {
+      // A stalled device voice must stop when its subtitles advance.
+      if (token === generation) {
+        try { window.speechSynthesis?.cancel(); } catch { /* no speech */ }
+      }
+      finish();
+    }, Math.max(12, lineDuration(text) * 2 + 3) * 1000);
     try {
       const synth = window.speechSynthesis;
       if (!synth) {
         clearTimeout(fallback);
-        setTimeout(res, lineDuration(text) * 1000);
+        fallback = setTimeout(finish, lineDuration(text) * 1000);
         return;
       }
       const u = new SpeechSynthesisUtterance(text);
@@ -115,22 +154,25 @@ function speakDevice(text: string, pitch: number, rate: number): Promise<void> {
       const voice = pickVoice();
       if (voice) u.voice = voice;
       u.lang = voice?.lang ?? 'en-GB';
-      u.onend = () => {
-        clearTimeout(fallback);
-        res();
-      };
-      u.onerror = () => {
-        clearTimeout(fallback);
-        res();
-      };
+      u.onend = finish;
+      u.onerror = finish;
       synth.speak(u);
     } catch {
       clearTimeout(fallback);
-      setTimeout(res, lineDuration(text) * 1000);
+      fallback = setTimeout(finish, lineDuration(text) * 1000);
     }
   });
 }
 
-function wait(s: number): Promise<void> {
-  return new Promise((res) => setTimeout(res, s * 1000));
+function wait(s: number, token: number): Promise<void> {
+  if (token !== generation) return Promise.resolve();
+  return new Promise((res) => {
+    const finish = () => {
+      clearTimeout(timer);
+      if (cancelPending === finish) cancelPending = null;
+      res();
+    };
+    const timer = setTimeout(finish, s * 1000);
+    cancelPending = finish;
+  });
 }

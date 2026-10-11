@@ -43,6 +43,32 @@ export function decoration(g: G, x: number, y: number, type: string, color: numb
   }
   g.fillStyle(CM.cream, 0.5 * alpha); g.fillCircle(x - r * 0.28, y - r * 0.27, r * 0.16);
   if (type.includes('dot')) { g.fillStyle(CM.ink, 0.9 * alpha); g.fillCircle(x, y, r * 0.13); }
+  if (type.includes('ring')) { g.lineStyle(2, CM.ink, 0.9 * alpha); g.strokeCircle(x, y, r * 0.21); }
+}
+
+/** A continuous garden border gives even the paper-only photo tiles a visual home. */
+function photoMat(c: CanvasRenderingContext2D): void {
+  c.save(); c.strokeStyle = '#83a49a'; c.lineWidth = 2; c.globalAlpha = 0.8;
+  c.beginPath(); c.moveTo(27, 43); c.bezierCurveTo(13, 155, 40, 322, 25, 437);
+  c.moveTo(43, 25); c.bezierCurveTo(156, 39, 324, 13, 437, 27);
+  c.moveTo(453, 43); c.bezierCurveTo(466, 154, 440, 322, 455, 437);
+  c.moveTo(43, 455); c.bezierCurveTo(156, 441, 324, 467, 437, 453); c.stroke();
+  // Each side has a different leaf rhythm and direction; matching fragments
+  // stays possible in Little Tinker mode without reading any tile numbers.
+  for (let i = 0; i < 7; i++) {
+    const p = 71 + i * 55;
+    for (const [x, y, a] of [[25, p, -0.5], [p, 26, 0.5], [455, p, 0.8], [p, 455, -0.8]]) {
+      c.save(); c.translate(x, y); c.rotate(a); c.fillStyle = i % 2 ? '#a0a477' : '#83a49a';
+      c.beginPath(); c.ellipse(0, 0, 4, 10 + i % 3 * 2, 0, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = '#537a72'; c.lineWidth = 1; c.beginPath(); c.moveTo(0, -8); c.lineTo(0, 8); c.stroke(); c.restore();
+    }
+  }
+  for (const [x, y, count, r] of [[34, 34, 4, 11], [240, 28, 6, 9], [446, 34, 5, 12], [28, 240, 3, 9], [452, 240, 7, 8], [34, 446, 8, 10], [240, 452, 4, 8], [446, 446, 6, 12]]) {
+    c.strokeStyle = '#b77b56'; c.fillStyle = '#d3a278'; c.lineWidth = 1.5;
+    for (let i = 0; i < count; i++) { const a = i * Math.PI * 2 / count; c.beginPath(); c.ellipse(x + Math.cos(a) * r * 0.65, y + Math.sin(a) * r * 0.65, 3, 5, a, 0, Math.PI * 2); c.stroke(); }
+    c.beginPath(); c.arc(x, y, 3, 0, Math.PI * 2); c.fill();
+  }
+  c.restore();
 }
 
 /** Render the authored Abuela/Rosa locket onto a photo mat, without changing its pixels. */
@@ -56,6 +82,7 @@ export function familyPhoto(scene: Phaser.Scene, key: string, propsKey?: string)
     const source = scene.textures.get(propsKey).getSourceImage() as CanvasImageSource;
     const scale = 422 / Math.max(frame.cutWidth, frame.cutHeight), w = frame.cutWidth * scale, h = frame.cutHeight * scale;
     c.drawImage(source, frame.cutX, frame.cutY, frame.cutWidth, frame.cutHeight, (480 - w) / 2, (480 - h) / 2, w, h);
+    photoMat(c);
     c.strokeStyle = '#b77b56'; c.lineWidth = 5; c.strokeRect(12, 12, 456, 456);
     tex.refresh(); return key;
   }
@@ -66,27 +93,25 @@ export function familyPhoto(scene: Phaser.Scene, key: string, propsKey?: string)
   c.fillStyle = '#ac8d68'; c.fillRect(18, 161, 118, 147);
   c.fillStyle = '#705747'; c.beginPath(); c.moveTo(5, 167); c.lineTo(77, 104); c.lineTo(151, 167); c.fill();
   c.fillStyle = '#f5e7c4'; c.fillRect(53, 201, 46, 53);
-  const nana = scene.textures.exists('art:portrait-nana') ? scene.textures.get('art:portrait-nana').getSourceImage() : null;
-  if (nana) c.drawImage(nana as CanvasImageSource, 85, 48, 230, 360);
-  else {
+  // The fallback picture still depicts Rosa with her grandmother.
+  {
+    c.fillStyle = '#c3bdae'; c.beginPath(); c.arc(234, 125, 68, 0, Math.PI * 2); c.fill();
     c.fillStyle = '#567b71'; c.beginPath(); c.ellipse(234, 299, 73, 114, 0, 0, Math.PI * 2); c.fill();
     c.fillStyle = '#d8b18c'; c.beginPath(); c.arc(234, 143, 60, 0, Math.PI * 2); c.fill();
     c.strokeStyle = '#453a31'; c.lineWidth = 5;
     for (const x of [213, 257]) { c.beginPath(); c.arc(x, 141, 15, 0, Math.PI * 2); c.stroke(); }
     c.beginPath(); c.arc(234, 165, 20, 0.15, Math.PI - 0.15); c.stroke();
   }
-  const kip = scene.textures.exists('art:kip-dimensional') ? scene.textures.get('art:kip-dimensional').getSourceImage() : null;
-  if (kip) {
-    const source = kip as HTMLImageElement;
-    c.drawImage(source, 0, 0, source.width / 4, source.height / 2, 292, 111, 176, 176);
-  } else {
-    c.fillStyle = '#b77b56'; c.fillRect(337, 263, 95, 78);
-    for (const x of [361, 410]) { c.fillStyle = '#f4ebd5'; c.beginPath(); c.arc(x, 282, 16, 0, Math.PI * 2); c.fill(); }
-  }
+  c.fillStyle = '#a27376'; c.beginPath(); c.ellipse(344, 323, 51, 78, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#705747'; c.beginPath(); c.arc(344, 227, 49, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#d8b18c'; c.beginPath(); c.arc(344, 243, 40, 0, Math.PI * 2); c.fill();
+  c.fillStyle = '#705747'; c.beginPath(); c.ellipse(326, 212, 27, 16, -0.3, 0, Math.PI * 2); c.fill();
+  for (const x of [330, 357]) { c.fillStyle = '#453a31'; c.beginPath(); c.arc(x, 240, 3.5, 0, Math.PI * 2); c.fill(); }
+  c.strokeStyle = '#453a31'; c.lineWidth = 3; c.beginPath(); c.arc(344, 253, 14, 0.15, Math.PI - 0.15); c.stroke();
   c.fillStyle = '#f4ebd5';
   for (const [x, y] of [[49, 375], [100, 420], [399, 432], [330, 69]]) {
     for (let i = 0; i < 5; i++) { const a = i * Math.PI * 2 / 5; c.beginPath(); c.arc(x + Math.cos(a) * 11, y + Math.sin(a) * 11, 7, 0, Math.PI * 2); c.fill(); }
     c.fillStyle = '#d3a278'; c.beginPath(); c.arc(x, y, 5, 0, Math.PI * 2); c.fill(); c.fillStyle = '#f4ebd5';
   }
-  tex.refresh(); return key;
+  photoMat(c); tex.refresh(); return key;
 }

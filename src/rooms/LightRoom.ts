@@ -60,7 +60,7 @@ export class LightRoom extends RoomBase<'light'> {
     g0.cells.forEach((t, i) => {
       if (!t || !t.rotatable) return;
       const c = this.center(i);
-      const z = this.add.zone(c.x, c.y, this.S, this.S).setInteractive({ useHandCursor: true }).setDepth(D.mech + 3);
+      const z = this.add.zone(c.x, c.y, this.S, this.S).setInteractive({ useHandCursor: true }).setDepth(D.mech + 3).setName(`light:cell:${i}`).setData('qa', { action: 'rotate', cell: i });
       z.on('pointerup', () => this.flip(i));
     });
     const spots = this.traySpots(this.def.tray.length);
@@ -72,13 +72,14 @@ export class LightRoom extends RoomBase<'light'> {
       obj.add(g);
       obj.setSize(this.S, this.S);
       const o: Optic = { kind, color, rot: 0, obj, g, home: spots[i], cell: null };
+      obj.setName(`light:part:${i}`).setData('qa', { action: 'optic', kind, color });
       this.optics.push(o);
       this.drawOptic(g, { kind, rot: 0, rotatable: false, slot: false, color }, 0, 0, -1);
       this.enableDrag({
         obj,
         restScale: 0.72,
         targets: () => this.slots(),
-        accepts: (t) => this.style.id !== 'tinker' || this.state.cells[Number(t.id)]?.sol?.kind === kind,
+        accepts: (t) => this.style.id !== 'tinker' || this.matchesSlot(o, Number(t.id)),
         pick: () => this.lift(o),
         drop: (t) => this.drop(o, t),
       });
@@ -136,7 +137,7 @@ export class LightRoom extends RoomBase<'light'> {
     if (!t) return this.floatHome(o.obj, o.home, 0.72);
     const cell = Number(t.id);
     const slot = this.state.cells[cell]!;
-    if (this.style.id === 'tinker' && slot.sol?.kind !== o.kind) return this.refuse(o.obj, t, o.home, 0.72);
+    if (this.style.id === 'tinker' && !this.matchesSlot(o, cell)) return this.refuse(o.obj, t, o.home, 0.72);
     const prev = this.optics.find((q) => q !== o && q.cell === cell);
     if (prev) {
       prev.cell = null;
@@ -176,10 +177,16 @@ export class LightRoom extends RoomBase<'light'> {
   private flip(i: number): void {
     if (this.fixed) return;
     const t = this.state.cells[i]!;
-    t.rot = 1 - (t.rot % 2);
+    const old = t.rot;
+    t.rot = t.kind === 'R' ? 1 - (t.rot % 2) : (t.rot + 1) % 4;
     sfx.ratchet(1);
     this.evaluate();
-    this.act(() => (t.rot = 1 - (t.rot % 2)));
+    this.act(() => (t.rot = old));
+  }
+
+  private matchesSlot(o: Optic, cell: number): boolean {
+    const want = this.state.cells[cell]?.sol;
+    return want?.kind === o.kind && (!want.color || want.color === o.color);
   }
 
   private redrawOptic(o: Optic): void {
@@ -295,13 +302,7 @@ export class LightRoom extends RoomBase<'light'> {
         const ok = cell >= 0 && this.res?.satisfied.has(cell);
         const bloom = ok ? 1 : 0;
         const col = t.color ? BEAM[t.color] : 0xf1d391;
-        g.fillStyle(0x2e5e3a, 1);
-        g.fillRect(x - 3, y, 6, h * 0.8);
-        for (let k = 0; k < 6; k++) {
-          const a = (k / 6) * Math.PI * 2 + this.t * (ok ? 0.8 : 0);
-          g.fillStyle(col, ok ? 1 : 0.35);
-          g.fillEllipse(x + Math.cos(a) * S * (0.12 + bloom * 0.1), y + Math.sin(a) * S * (0.12 + bloom * 0.1), S * (0.14 + bloom * 0.08), S * (0.14 + bloom * 0.08));
-        }
+        this.drawSensor(g, x, y, col, !!ok, bloom);
         g.fillStyle(ok ? 0xfff3b0 : 0x60736d, 1);
         g.fillCircle(x, y, S * 0.11);
         if (t.color) this.colorMark(g, t.color, x, y, 6, 0x342f29);
@@ -316,6 +317,42 @@ export class LightRoom extends RoomBase<'light'> {
   }
 
   /** Colour + shape, so colours read for colour-blind players (GDD §25.2). */
+  private drawSensor(g: Phaser.GameObjects.Graphics, x: number, y: number, col: number, ok: boolean, bloom: number): void {
+    const s = this.S, r = s * 0.33;
+    if (this.def.id === '7-5') {
+      g.fillStyle(0x78815a, 1); g.fillRect(x - 3, y, 6, s * 0.4);
+      for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3 + this.t * (ok ? 0.8 : 0); g.fillStyle(col, ok ? 1 : 0.35); g.fillEllipse(x + Math.cos(a) * s * (0.12 + bloom * 0.1), y + Math.sin(a) * s * (0.12 + bloom * 0.1), s * (0.14 + bloom * 0.08), s * (0.14 + bloom * 0.08)); }
+    } else if (this.def.id === '7-3') {
+      // A frozen gear warms and starts turning when focused light arrives.
+      g.fillStyle(ok ? CM.brass : 0x83a9b5, 1); g.fillCircle(x, y, r * 0.72);
+      for (let k = 0; k < 10; k++) { const a = k * Math.PI / 5 + (ok ? this.t * 0.6 : 0); g.fillCircle(x + Math.cos(a) * r * 0.8, y + Math.sin(a) * r * 0.8, s * 0.055); }
+      if (!ok) { g.lineStyle(2, CM.cream, 0.7); for (let k = 0; k < 3; k++) { const a = k * Math.PI / 3; g.lineBetween(x - Math.cos(a) * r, y - Math.sin(a) * r, x + Math.cos(a) * r, y + Math.sin(a) * r); } }
+    } else if (this.def.id === '8-5') {
+      g.fillStyle(CM.copperDark, 1); g.fillCircle(x, y, r + 4);
+      g.fillStyle(ok ? col : CM.paperDark, ok ? 1 : 0.7); g.fillCircle(x, y, r);
+      g.lineStyle(2, CM.ink, 0.9); for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6; g.lineBetween(x + Math.cos(a) * r * 0.78, y + Math.sin(a) * r * 0.78, x + Math.cos(a) * r * 0.92, y + Math.sin(a) * r * 0.92); }
+      g.lineStyle(3, CM.ink, 1); g.lineBetween(x, y, x, y - r * 0.65); g.lineBetween(x, y, x + r * 0.45, y);
+    } else if (this.def.id.endsWith('7-6')) {
+      g.fillStyle(CM.copperDark, 1); g.fillRoundedRect(x - r, y - r, r * 2, r * 2, 7);
+      g.fillStyle(ok ? col : CM.tealDark, ok ? 1 : 0.7); g.fillRoundedRect(x - r + 4, y - r + 4, r * 2 - 8, r * 2 - 8, 4);
+      const points = Array.from({ length: 10 }, (_, k) => { const a = -Math.PI / 2 + k * Math.PI / 5, d = k % 2 ? r * 0.32 : r * 0.7; return new Phaser.Math.Vector2(x + Math.cos(a) * d, y + Math.sin(a) * d); });
+      g.fillStyle(CM.cream, ok ? 1 : 0.55); g.fillPoints(points, true);
+    } else if (this.def.id === 'qf-nightlight') {
+      g.fillStyle(CM.cream, 1); g.fillTriangle(x - r * 0.65, y + r, x + r * 0.65, y + r, x, y - r * 0.7);
+      g.fillStyle(ok ? col : CM.tealDark, 1); g.fillRoundedRect(x - r * 0.6, y - r, r * 1.2, r * 0.65, 4);
+      g.fillStyle(CM.copperDark, 1); g.fillTriangle(x - r * 0.9, y - r, x + r * 0.9, y - r, x, y - r * 1.35);
+    } else if (this.def.id === '7-1' || this.def.id === 'qf-kaleidoscope') {
+      const pts = [new Phaser.Math.Vector2(x, y - r), new Phaser.Math.Vector2(x + r * 0.8, y), new Phaser.Math.Vector2(x, y + r), new Phaser.Math.Vector2(x - r * 0.8, y)];
+      g.fillStyle(col, ok ? 1 : 0.4); g.fillPoints(pts, true); g.lineStyle(3, CM.copperLight, 1); g.strokePoints(pts, true);
+      g.lineStyle(2, CM.cream, 0.65); g.lineBetween(x, y - r, x, y + r); g.lineBetween(x - r * 0.8, y, x + r * 0.8, y);
+    } else {
+      // Generated boards ask for a sensor: a glass eye, rather than an unrelated flower.
+      g.fillStyle(CM.copperDark, 1); g.fillCircle(x, y, r + 3);
+      g.fillStyle(ok ? col : CM.tealDark, 1); g.fillCircle(x, y, r);
+      g.lineStyle(2, CM.cream, 0.6); g.strokeCircle(x, y, r * 0.7);
+    }
+  }
+
   private colorMark(g: Phaser.GameObjects.Graphics, c: Color, x: number, y: number, r: number, ink = 0xffffff): void {
     g.fillStyle(ink, 0.9);
     if (c === 'r') g.fillCircle(x, y, r * 0.7);
@@ -329,7 +366,7 @@ export class LightRoom extends RoomBase<'light'> {
       const t = cells[i];
       if (!t?.sol?.kind) continue;
       const here = this.optics.find((o) => o.cell === i);
-      if (here && here.kind === t.sol.kind && (t.sol.rot === undefined || here.rot % 2 === t.sol.rot % 2)) continue;
+      if (here && this.matchesSlot(here, i) && (t.sol.rot === undefined || here.rot % 2 === t.sol.rot % 2)) continue;
       const o = this.optics.find((q) => q.kind === t.sol!.kind && (q.cell === null || q.cell === i) && (!t.sol!.color || q.color === t.sol!.color));
       return { from: o ? { x: o.obj.x, y: o.obj.y } : undefined, to: this.center(i) };
     }

@@ -7,7 +7,7 @@
 import { ATTIC_OBJECTS, atticRooms } from './attic';
 import { effective } from '../rules';
 import { PLAY_STYLES } from '../core/styles';
-import { hasStyledVoice, roomVoiceId } from './roomVoice';
+import { roomVoice } from './roomVoice';
 import { CARDS } from './bench';
 import { STORY_ROOMS } from './index';
 import { PEDIA, pediaLines } from './pedia';
@@ -35,11 +35,10 @@ const DYNAMIC_UI_LABELS = [
 ];
 
 function roomLines(r: RoomDef): VoiceLine[] {
-  const styles: PlayStyleId[] = hasStyledVoice(r.kind) ? ['tinker', 'fixer', 'engineer'] : ['fixer'];
+  const styles: PlayStyleId[] = ['tinker', 'fixer', 'engineer'];
   return styles.flatMap(style => {
-    const def = hasStyledVoice(r.kind) ? effective(r, style) : r;
-    return [{ id: roomVoiceId(def, style, 'intro'), who: 'nana' as CharId, text: def.intro },
-      ...def.hints.map((text, i) => ({ id: roomVoiceId(def, style, `hint.${i}`), who: 'nana' as CharId, text }))];
+    const spoken = roomVoice(effective(r, style), style);
+    return [spoken.intro, ...spoken.hints];
   });
 }
 
@@ -67,4 +66,20 @@ export function allVoiceLines(uiLabels: string[] = []): VoiceLine[] {
   // later entries never override earlier ones
   const seen = new Set<string>();
   return out.filter((l) => !seen.has(l.id) && seen.add(l.id) && l.text.trim().length > 0);
+}
+
+let spokenCatalogue: VoiceLine[] | undefined;
+/** Reuse an existing performance only when its speaker and words still match. */
+export function voiceRecordingIds(who: CharId, text: string, id: string): string[] {
+  // Menu labels discovered by the offline generator may not be in the default
+  // runtime catalogue. Their ids already encode their actual spoken words.
+  if (id.startsWith('ui.') && id === uiLineId(text)) return [id];
+  const lines = spokenCatalogue ??= allVoiceLines();
+  const expected = lines.find(line => line.id === id);
+  const matches = lines.filter(line => line.who === who && line.text === text);
+  if (!expected) return [id, ...matches.map(line => line.id)];
+  return [
+    ...(expected.who === who && expected.text === text ? [id] : []),
+    ...matches.filter(line => line.id !== id).map(line => line.id),
+  ];
 }

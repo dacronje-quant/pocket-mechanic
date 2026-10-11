@@ -175,10 +175,10 @@ at Engineer difficulty; each gives a clue symbol for the Mystery Box.
 
 Production audio uses scripts/generate-elevenlabs.mjs (npm run assets:audio), with a local ignored ELEVENLABS_API_KEY in .env. The game receives only static media and retains immediate synthesized/device-speech fallbacks.
 
-- **Voices:** 1,290 spoken line IDs are recorded, including all 120 age-specific introductions/hints for the ten newer kinds, six archived-puzzle payoffs, the three newer static control labels, and previously omitted computed control/menu labels. Same words from the same actor share a file; the active bank has 990 unique spoken recordings plus Pudding's recorded meow. Nana A and Magnus A remain unchanged. Six young roles and four older characters were recast against their current portraits; see `VOICE_CASTING.md`. Young roles use natural adult performers because ElevenLabs restricts child-like voice creation. Device speech remains a runtime recovery fallback, but no authored line is exempt from recording checks. Archived puzzles keep their unchanged instruction IDs.
+- **Voices:** All 2,490 expected spoken line IDs are recorded. Instructions and hints cover all 25 room kinds, each effective play style and guided variants; replay speaks the visible caption. Same words from the same actor share a file; the active bank has 1,104 unique spoken recordings plus Pudding's recorded meow. The established cast is preserved; see `VOICE_CASTING.md`. Young roles use natural adult performers because ElevenLabs restricts child-like voice creation. Device speech remains a runtime recovery fallback, but no authored line is exempt from recording checks. Archived puzzles keep their unchanged instruction IDs.
 - **Music:** 14 instrumental themes, including the approved workshop theme. Playback crossfades repeats and adjusts filtering as repairs progress.
-- **Effects:** 44 cues in 46 files, including three satisfying brass gear click variations. Approved clock, spring, steam, bell and ratchet recordings are reused. Pitch-sensitive musical puzzle tones remain exact synthesis.
-- **Processing:** normalized MP3, a peak limiter, resumable raw response cache, bounded decoding caches, and background offline catalogue caching. node scripts/check-audio.mjs checks coverage and fully decodes every referenced file. Human listening is still needed to judge pronunciation and artistry.
+- **Effects:** 52 cues in 54 files, including three brass gear click variations and eight dedicated ElevenLabs performances for repaired objects. Pressing a repaired landmark or Shelf object replays its matching sound and animation. Replay and scene changes cancel the object's previous performance. Approved clock, spring, steam, bell and ratchet recordings are reused. Pitch-sensitive musical puzzle tones remain exact synthesis.
+- **Processing:** normalized MP3, a peak limiter, resumable raw response cache, bounded decoding caches, and background offline catalogue caching. New object performances use stereo 44.1 kHz/192 kbps files, two-pass loudness normalization and filenames keyed to their prompts and processing. `node scripts/check-audio.mjs` checks coverage and fully decodes all 1,181 referenced files, including eight revised balance/sorting instruction recordings. Human listening is still needed to judge pronunciation and artistry.
 - **Painted art:** Recovered illustrations and generated character, busy-board, object, UI and puzzle assets are catalogued in `public/art/manifest.json`. Exact puzzle geometry, animation, text and input remain live. The approved visual treatment and fallback policy are in `ART_DIRECTION.md`; the optional legacy Gemini generator remains separate.
 - **Secrets:** API keys stay in the ignored root .env or environment and never enter the browser bundle.
 
@@ -189,10 +189,13 @@ Production audio uses scripts/generate-elevenlabs.mjs (npm run assets:audio), wi
 2. Headless playthrough (`npm run playthrough`, Playwright): from an empty save, make a profile,
    play every story scene and room (`pm.room.solve()` applies the authored solution through the
    room's own pipeline), visit every hub area and a Quick Fix, fail on any page error.
-3. Real-input checks for the ten new kinds in all age modes: legal drags/taps, rotations, hints,
-   undo/reset, reachable pars and solved feedback. Use touch-emulated portrait/landscape layouts
-   as well as desktop. These checks do not establish physical-device performance.
-4. Final browser, asset-preservation and offline results belong in `VISUAL_OVERHAUL_VERIFICATION.md`.
+3. Real-input checks cover all 160 rooms in all three play styles (480 combinations), plus
+   125 representative touch cases on phone, tablet and portrait layouts. Targeted checks cover
+   legal drags/taps, rotations, hints, undo/reset and solved feedback. These checks do not establish
+   every possible action sequence or physical-device performance.
+4. Current visual, voice, menu and repaired-object sound results are recorded in
+   `GAME_SWEEP_VERIFICATION.md`. Earlier art-preservation and offline results remain in
+   `VISUAL_OVERHAUL_VERIFICATION.md`.
 
 ## 8. Status
 
@@ -210,7 +213,9 @@ Production audio uses scripts/generate-elevenlabs.mjs (npm run assets:audio), wi
 - [x] Age-specific instructions and stable voice ids; all new puzzle instructions, hints and computed control labels are recorded
 - [x] Hub & meta scenes (title/profiles, shop, story, Test Run, rewards, festival, shelf + Tune-Ups, town, Part-o-pedia, Paint & Polish, Nook + Job Book, Invention Bench, Attic, Quick Fixes, grown-ups)
 - [x] Generated media tooling and players; production ElevenLabs audio and recovered painted originals bundled locally (see section 6)
-- [x] Engine/content/voice verification suite: 225 tests passing; all authored solutions checked in every age mode
+- [x] Engine/content/voice/UI/audio verification suite: 295 tests passing; all authored solutions checked in every age mode
+- [x] Live lever and pulley physics, alternative balance solutions, trial cancellation and comparison-scale follow-up (`BALANCE_PHYSICS_VERIFICATION.md`)
+- [x] Full visual/puzzle/voice sweep, Settings layering, actual Town object art and eight replayable ElevenLabs object sounds (`GAME_SWEEP_VERIFICATION.md`)
 - [x] Final 61-room browser and visual/touch evidence: record the completed checks in `VISUAL_OVERHAUL_VERIFICATION.md`
 - [x] Release build, README
 

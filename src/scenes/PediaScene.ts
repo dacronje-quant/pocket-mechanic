@@ -6,7 +6,7 @@
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
-import { speak } from '../audio/voice';
+import { speak, stopVoice, voiceToken } from '../audio/voice';
 import { drawRoomBackdrop } from '../art/backgrounds';
 import { CM } from '../art/copperMoss';
 import { collectionFrame } from '../art/finish';
@@ -39,6 +39,7 @@ export class PediaScene extends MetaScene {
   private grid?: Phaser.GameObjects.Container;
   private page: Phaser.GameObjects.GameObject[] = [];
   private tabs: Phaser.GameObjects.Container[] = [];
+  private pageVoice?: number;
 
   constructor() {
     super('pedia');
@@ -116,8 +117,15 @@ export class PediaScene extends MetaScene {
   }
 
   private closePage(): void {
+    if (this.pageVoice !== undefined) stopVoice(this.pageVoice);
+    this.pageVoice = undefined;
     this.page.forEach((o) => o.destroy());
     this.page = [];
+  }
+
+  private speakPage(text: string, id: string): void {
+    void speak('nana', text, id);
+    this.pageVoice = voiceToken();
   }
 
   private add2<T extends Phaser.GameObjects.GameObject>(o: T): T {
@@ -149,11 +157,11 @@ export class PediaScene extends MetaScene {
     if (showWords()) this.add2(this.add.text(620, 120, e.name, { fontFamily: SERIF, fontSize: '40px', color: '#342f29', fontStyle: 'bold' }));
     lines.forEach(([icon, text, id], i) => {
       const y = 220 + i * 140;
-      this.add2(roundButton(this, 650, y + 20, icon, () => void speak('nana', text, id), { r: 32, fontSize: 28 }));
+      this.add2(roundButton(this, 650, y + 20, icon, () => this.speakPage(text, id), { r: 32, fontSize: 28 }));
       if (showWords()) this.add2(this.add.text(700, y - 10, text, { fontFamily: FONT, fontSize: '20px', color: '#342f29', wordWrap: { width: 480 }, lineSpacing: 4 }));
     });
     this.add2(roundButton(this, 1170, 120, '✕', () => this.closePage(), { r: 26, fontSize: 22 }));
-    void speak('nana', e.say, `pedia.${e.id}.say`);
+    this.speakPage(e.say, `pedia.${e.id}.say`);
   }
 
   private historyPage(id: string, name: string, history: string): void {
@@ -171,8 +179,8 @@ export class PediaScene extends MetaScene {
       this.add2(this.add.text(640, 150, name, { fontFamily: SERIF, fontSize: '36px', color: '#342f29', fontStyle: 'bold' }));
       this.add2(this.add.text(640, 220, history, { fontFamily: FONT, fontSize: '21px', color: '#342f29', wordWrap: { width: 460 }, lineSpacing: 5 }));
     }
-    this.add2(roundButton(this, 660, 560, '🔊', () => void speak('nana', history, `attic.${id}.history`), { r: 32, fontSize: 28 }));
+    this.add2(roundButton(this, 660, 560, '🔊', () => this.speakPage(history, `attic.${id}.history`), { r: 32, fontSize: 28 }));
     this.add2(roundButton(this, 1110, 140, '✕', () => this.closePage(), { r: 26, fontSize: 22 }));
-    void speak('nana', history, `attic.${id}.history`);
+    this.speakPage(history, `attic.${id}.history`);
   }
 }

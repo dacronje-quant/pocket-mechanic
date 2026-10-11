@@ -172,6 +172,7 @@ export class CardsRoom extends RoomBase<'cards'> {
   private demoing = false;
   private marks: StepMark[][] = [];
   private playing = false;
+  private playbackVersion = 0;
   private fast = false;
   private partyBtns: Array<{ move: Move; btn: Phaser.GameObjects.Container }> = [];
   private t = 0;
@@ -191,6 +192,9 @@ export class CardsRoom extends RoomBase<'cards'> {
     this.pose = null;
     this.partyBtns = [];
     this.queue = [];
+    this.onQueueDone = null;
+    this.onStep = null;
+    this.playbackVersion++;
     this.playing = false;
     this.demoing = false;
     this.step = -1;
@@ -382,6 +386,7 @@ export class CardsRoom extends RoomBase<'cards'> {
 
   private partyPress(m: Move): void {
     if (this.fixed) return;
+    this.stopPlayback();
     this.perform(m);
     const target = this.def.scenarios[0].moves;
     if (target[this.state.copied] === m) {
@@ -420,6 +425,7 @@ export class CardsRoom extends RoomBase<'cards'> {
     const spots = this.trayCardSpots(this.def.tray.length);
     this.def.tray.forEach((card, i) => {
       const obj = this.makeCard(card, spots[i].x, spots[i].y);
+      obj.setName(`cards-part:${i}:${cardKey(card)}`);
       const v: CardView = { card, obj, home: spots[i], slot: null };
       this.views.push(v);
       this.enableDrag({
@@ -499,6 +505,7 @@ export class CardsRoom extends RoomBase<'cards'> {
   }
 
   private liftCard(v: CardView): void {
+    this.stopPlayback();
     if (v.slot === null) return;
     const was = v.slot;
     v.slot = null;
@@ -553,11 +560,13 @@ export class CardsRoom extends RoomBase<'cards'> {
     if (this.playing || this.fixed) return;
     this.playing = true;
     this.demoing = false;
+    const version = ++this.playbackVersion;
     this.moves++;
     this.idle = 0;
     this.marks = this.def.scenarios.map((s) => new Array(s.moves.length).fill(undefined));
     const scen = this.def.scenarios;
     const runScenario = (k: number) => {
+      if (version !== this.playbackVersion) return;
       if (k >= scen.length) {
         this.playing = false;
         this.step = -1;
@@ -612,7 +621,8 @@ export class CardsRoom extends RoomBase<'cards'> {
     this.queueT = 0;
     this.queueIndex = 0;
     this.onStep = onStep;
-    this.onQueueDone = done;
+    const version = this.playbackVersion;
+    this.onQueueDone = () => { if (version === this.playbackVersion) done(); };
     if (!moves.length) {
       this.onQueueDone = null;
       done();
@@ -622,14 +632,35 @@ export class CardsRoom extends RoomBase<'cards'> {
   /** Bertie shows the dance, step by step, lighting each step of the score. */
   private showDemo(): void {
     if (this.playing) return;
-    const s = this.def.scenarios[0];
+    this.stopPlayback();
+    const version = this.playbackVersion;
     this.demoing = true;
-    this.row = 0;
-    this.fast = !!(s.sensors && Object.values(s.sensors).some((v) => v === true));
-    this.enqueue(s.moves, null, () => {
-      this.demoing = false;
-      this.step = -1;
-    });
+    const demonstrate = (row: number) => {
+      if (version !== this.playbackVersion) return;
+      const s = this.def.scenarios[row];
+      this.row = row;
+      this.fast = !!(s.sensors && Object.values(s.sensors).some((v) => v === true));
+      this.enqueue(s.moves, null, () => {
+        if (version !== this.playbackVersion) return;
+        if (this.style.id !== 'tinker' && row + 1 < this.def.scenarios.length) {
+          this.time.delayedCall(500, () => demonstrate(row + 1));
+        } else {
+          this.demoing = false;
+          this.step = -1;
+        }
+      });
+    };
+    demonstrate(0);
+  }
+
+  private stopPlayback(): void {
+    this.playbackVersion++;
+    this.queue = [];
+    this.onQueueDone = null;
+    this.onStep = null;
+    this.playing = false;
+    this.demoing = false;
+    this.step = -1;
   }
 
   private perform(m: Move): void {

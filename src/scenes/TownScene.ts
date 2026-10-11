@@ -1,16 +1,14 @@
 /**
  * The Window Seat (GDD §13.2): Brasswick on the map. The town's restoration is
- * the progress bar — each fixed object visibly works around town: smoke from
- * the bakery, music from Rosa's window, the toy train circling, the lighthouse
- * beam turning, steam from the café, Bertie dancing, stars over the school,
- * and the clock tower's hands moving again.
+ * the progress bar — each destination displays the actual repaired object,
+ * with its own live animation and repeatable performance when pressed.
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { withArt, coverImage } from '../art/generated';
 import { CM, drawPatina } from '../art/copperMoss';
 import { badge } from '../art/portraits';
-import { drawSmallObject } from '../art/objects';
+import { MachineArt } from '../art/objects';
 import { card } from '../ui/widgets';
 import { REPAIRS } from '../content/repairs';
 import type { RepairDef } from '../content/types';
@@ -36,10 +34,13 @@ const LANDMARKS: Landmark[] = [
   { repair: 8, x: 640, y: 170 }, // clock tower
 ];
 
+const POSTCARD_HOME = ['stage-bakery', 'room-home', 'stage-party', 'stage-harbor', 'stage-cafe', 'stage-fair', 'stage-classroom', 'stage-tower'];
+
 export class TownScene extends MetaScene {
-  private live!: Phaser.GameObjects.Graphics;
-  private t = 0;
   private night = false;
+  private machines = new Map<number, MachineArt>();
+  private postcard?: Phaser.GameObjects.Container;
+  private visitSequence = 0;
 
   constructor() {
     super('town');
@@ -48,9 +49,9 @@ export class TownScene extends MetaScene {
   protected build(): void {
     const p = profile();
     this.night = windDownActive();
-    this.t = 0;
+    this.machines.clear();
+    this.postcard = undefined;
     this.drawMap();
-    this.live = this.add.graphics().setDepth(20);
     LANDMARKS.forEach((l) => this.landmark(l, REPAIRS[l.repair - 1]));
     this.music('shop', Math.min(1, p.repairs.length / 8 + 0.2));
     this.backButton();
@@ -217,7 +218,6 @@ export class TownScene extends MetaScene {
       g.fillStyle(CM.copperDark, 1).fillCircle(l.x, l.y - 22, 43);
       g.fillStyle(fixed ? CM.cream : CM.paperDark, 1).fillCircle(l.x, l.y - 22, 38);
       g.lineStyle(1.5, CM.brass, 1).strokeCircle(l.x, l.y - 22, 41);
-      drawSmallObject(g, r.object, l.x, l.y - 22, 0.46);
       if (fixed) {
         g.fillStyle(CM.mossDark, 1).fillCircle(l.x + 29, l.y + 6, 10);
         g.lineStyle(2, CM.cream, 1);
@@ -225,7 +225,13 @@ export class TownScene extends MetaScene {
         g.lineBetween(l.x + 28, l.y + 10, l.x + 35, l.y + 2);
       }
     });
-    const z = this.add.zone(l.x, l.y, 170, 170).setInteractive({ useHandCursor: true }).setDepth(15);
+    const machine = new MachineArt(this, l.x, l.y + 25, r.object, 0.27)
+      .setDepth(12).setWorking(fixed).setAlpha(fixed ? 1 : 0.58)
+      .setName(`town:machine:${r.object}`);
+    machine.setData('repair', r.id);
+    this.machines.set(r.id, machine);
+    const z = this.add.zone(l.x, l.y, 170, 170).setInteractive({ useHandCursor: true }).setDepth(15)
+      .setName(`town:visit:${r.id}`).setData('repair', r.id);
     z.on('pointerup', () => this.visit(r, fixed));
     this.hot(`town${r.id}`, () => this.visit(r, fixed));
   }
@@ -237,108 +243,38 @@ export class TownScene extends MetaScene {
       this.line('town.closed');
       return;
     }
-    sfx.ding();
+    this.machines.get(r.id)?.perform();
     this.bubble.say(r.tagline, { who: r.owner, id: `town.${r.key}` });
-    withArt(this, `postcard-${r.key}`, (key) => {
-      const c = this.add.container(640, 340).setDepth(HUD + 5).setAngle(-3).setScale(0.6).setAlpha(0);
-      c.add(card(this, 0, 0, 520, 330, 0xf4ebd5));
-      c.add(coverImage(this, key, -245, -150, 490, 290));
-      c.setSize(520, 330).setInteractive();
-      c.on('pointerup', () => c.destroy());
-      this.tweens.add({ targets: c, scale: 1, alpha: 1, duration: 300, ease: 'Back.easeOut' });
-      this.time.delayedCall(5000, () => c.active && this.tweens.add({ targets: c, alpha: 0, duration: 300, onComplete: () => c.destroy() }));
+    const visit = ++this.visitSequence;
+    this.postcard?.destroy();
+    // The postcard stays beside the town, leaving every landmark centre
+    // exposed so another press can replay the object immediately.
+    const c = this.add.container(210, 158).setDepth(HUD - 2).setAngle(-3).setScale(0.6).setAlpha(0)
+      .setName(`town:postcard:${r.key}`);
+    this.postcard = c;
+    c.add(card(this, 0, 0, 340, 216, 0xf4ebd5));
+    const object = new MachineArt(this, 0, 86, r.object, 0.38).setWorking(true);
+    c.add(object);
+    let home: Phaser.GameObjects.Image | undefined;
+    let authored = false;
+    // Existing location art keeps visits illustrated even when the optional
+    // dedicated postcard is absent from the installed art catalogue.
+    withArt(this, POSTCARD_HOME[r.id - 1], (key) => {
+      if (!c.active || authored || visit !== this.visitSequence) return;
+      home = coverImage(this, key, -158, -96, 316, 192);
+      c.addAt(home, 1);
     });
+    withArt(this, `postcard-${r.key}`, (key) => {
+      if (!c.active || visit !== this.visitSequence) return;
+      authored = true;
+      home?.destroy();
+      object.setVisible(false);
+      c.addAt(coverImage(this, key, -158, -96, 316, 192), 1);
+    });
+    c.setSize(340, 216).setInteractive();
+    c.on('pointerup', () => c.destroy());
+    this.tweens.add({ targets: c, scale: 1, alpha: 1, duration: 300, ease: 'Back.easeOut' });
+    this.time.delayedCall(5000, () => c.active && this.tweens.add({ targets: c, alpha: 0, duration: 300, onComplete: () => c.destroy() }));
   }
 
-  update(_t: number, dt: number): void {
-    if (!this.live) return;
-    this.t += dt / 1000;
-    const t = this.t;
-    const g = this.live;
-    g.clear();
-    const p = profile();
-    for (const l of LANDMARKS) {
-      if (!repairDone(p, l.repair)) continue;
-      switch (l.repair) {
-        case 1: // smoke from the bakery chimney
-          for (let k = 0; k < 4; k++) {
-            const s = (t * 0.5 + k / 4) % 1;
-            g.fillStyle(0xf4ebd5, 0.5 * (1 - s));
-            g.fillCircle(l.x + 29 + Math.sin(t + k) * 8, l.y - 90 - s * 80, 8 + s * 14);
-          }
-          break;
-        case 2: // music drifting from Rosa's window
-          for (let k = 0; k < 3; k++) {
-            const s = (t * 0.35 + k / 3) % 1;
-            g.fillStyle(0x667a6a, 1 - s);
-            const x = l.x + 30 + s * 70;
-            const y = l.y - 20 - s * 70 + Math.sin(t * 3 + k) * 6;
-            g.fillCircle(x, y, 6);
-            g.fillRect(x + 4, y - 22, 3, 22);
-          }
-          break;
-        case 3: {
-          // the toy train circling the shop
-          const a = t * 1.2;
-          const x = l.x + Math.cos(a) * 80;
-          const y = l.y + 60 + Math.sin(a) * 18;
-          g.fillStyle(0xad6b51, 1);
-          g.fillRoundedRect(x - 14, y - 12, 28, 16, 4);
-          g.fillStyle(0x2b2b33, 1);
-          g.fillCircle(x - 8, y + 5, 4);
-          g.fillCircle(x + 8, y + 5, 4);
-          break;
-        }
-        case 4: {
-          // the lighthouse beam turning
-          const a = t * 0.9;
-          g.fillStyle(0xfff3bf, 0.35);
-          const bx = l.x;
-          const by = l.y - 92;
-          g.fillTriangle(bx, by, bx + Math.cos(a) * 260, by + Math.sin(a) * 40 - 30, bx + Math.cos(a) * 260, by + Math.sin(a) * 40 + 30);
-          break;
-        }
-        case 5: // steam curling from the café
-          for (let k = 0; k < 3; k++) {
-            const s = (t * 0.6 + k / 3) % 1;
-            g.fillStyle(0xf4ebd5, 0.6 * (1 - s));
-            g.fillCircle(l.x - 30 + k * 30 + Math.sin(t * 2 + k) * 6, l.y - 70 - s * 60, 6 + s * 10);
-          }
-          break;
-        case 6: {
-          // Bertie dancing by the big wheel
-          const bob = Math.abs(Math.sin(t * 4)) * 10;
-          g.fillStyle(0x6c7a89, 1);
-          g.fillRoundedRect(l.x - 120 - 14, l.y + 10 - 40 - bob, 28, 34, 6);
-          g.fillStyle(0xf1d391, 1);
-          g.fillCircle(l.x - 120, l.y + 10 - 52 - bob, 10);
-          g.lineStyle(4, 0x6c7a89, 1);
-          g.lineBetween(l.x - 134, l.y - 16 - bob, l.x - 150, l.y - 30 - bob + Math.sin(t * 8) * 10);
-          g.lineBetween(l.x - 106, l.y - 16 - bob, l.x - 90, l.y - 30 - bob - Math.sin(t * 8) * 10);
-          // the big wheel turns
-          g.lineStyle(3, 0xad6b51, 1);
-          for (let k = 0; k < 6; k++) {
-            const a = t * 0.6 + (k / 6) * Math.PI * 2;
-            g.lineBetween(l.x + 120, l.y - 10, l.x + 120 + Math.cos(a) * 50, l.y - 10 + Math.sin(a) * 50);
-          }
-          break;
-        }
-        case 7: // stars over the school
-          for (let k = 0; k < 6; k++) {
-            g.fillStyle(0xfff3bf, 0.5 + Math.sin(t * 3 + k) * 0.5);
-            g.fillCircle(l.x - 60 + k * 24, l.y - 100 - (k % 2) * 16, 3);
-          }
-          break;
-        case 8: {
-          // the tower clock is going again
-          const cx = l.x;
-          const cy = l.y - 70;
-          g.lineStyle(4, 0x342f29, 1);
-          g.lineBetween(cx, cy, cx + Math.cos(t * 0.8 - Math.PI / 2) * 18, cy + Math.sin(t * 0.8 - Math.PI / 2) * 18);
-          g.lineBetween(cx, cy, cx + Math.cos(t * 0.07 - Math.PI / 2) * 11, cy + Math.sin(t * 0.07 - Math.PI / 2) * 11);
-          break;
-        }
-      }
-    }
-  }
 }

@@ -23,7 +23,7 @@ function prop(scene: Phaser.Scene, index: number, x: number, y: number, size: nu
 
 function symbol(token: string): { kind: string; color: number } {
   const basic = ['star', 'leaf', 'berry', 'cherry', 'heart', 'flower'].find((name) => token.includes(name)) ?? 'flower';
-  const kind = token.includes('yellow') && basic === 'star' ? 'star-dot' : basic;
+  const kind = token.includes('yellow') && basic === 'star' ? 'star-dot' : token.includes('purple') && basic === 'flower' ? 'flower-ring' : basic;
   const color = token.includes('teal') || token.includes('blue') ? CM.teal : token.includes('green') || token.includes('moss') ? CM.moss : token.includes('yellow') ? 0xe6cf79 : token.includes('gold') ? CM.brass : token.includes('purple') ? 0x87759a : token.includes('pink') ? 0xbd8291 : 0xb8635a;
   return { kind, color };
 }
@@ -194,7 +194,12 @@ abstract class PieceRoom<K extends 'shadow' | 'packing'> extends RoomBase<K> {
       if (!has.has(`${c.x - 1},${c.y}`)) g.lineBetween(x, y, x, y + s);
       if (!has.has(`${c.x + 1},${c.y}`)) g.lineBetween(x + s, y, x + s, y + s);
     }
-    if (shadow) this.drawTool(g, p.piece.art, Math.min(w, h) * s * 0.42 + Math.max(w, h) * s * 0.08);
+    if (shadow) {
+      // Keep the etched tool inside an occupied square and turn it with the part.
+      const mark = cells.reduce((best, cell) => Math.hypot(cell.x + 0.5 - w / 2, cell.y + 0.5 - h / 2) < Math.hypot(best.x + 0.5 - w / 2, best.y + 0.5 - h / 2) ? cell : best);
+      g.save(); g.translateCanvas((mark.x - w / 2 + 0.5) * s, (mark.y - h / 2 + 0.5) * s); g.rotateCanvas(p.turn * Math.PI / 2);
+      this.drawTool(g, p.piece.art, s * 0.44); g.restore();
+    }
     p.restScale = Math.min(0.78, 86 / (Math.max(w, h) * s));
     const placed = (this.state as Placement[]).some((q) => q.id === p.piece.id);
     const hitW = placed ? w * s + 14 : Math.max(w * s + 14, 88 / p.restScale);
@@ -249,6 +254,14 @@ abstract class PieceRoom<K extends 'shadow' | 'packing'> extends RoomBase<K> {
       const hx = this.ox + (top % def.cols + 0.5) * this.S, hy = this.oy + Math.floor(top / def.cols) * this.S;
       g.fillStyle(CM.brass, 1); g.fillCircle(hx, hy - 4, 7);
       g.lineStyle(3, CM.ink, 0.8); g.strokeCircle(hx, hy - 4, 7);
+      const piece = def.pieces.find((p) => p.id === outline.id), placement = def.solution.find((p) => p.id === outline.id);
+      if (piece && placement) {
+        const cx = outline.cells.reduce((n, at) => n + at % def.cols, 0) / outline.cells.length;
+        const cy = outline.cells.reduce((n, at) => n + Math.floor(at / def.cols), 0) / outline.cells.length;
+        const mark = outline.cells.reduce((a, b) => Math.hypot(a % def.cols - cx, Math.floor(a / def.cols) - cy) < Math.hypot(b % def.cols - cx, Math.floor(b / def.cols) - cy) ? a : b);
+        g.save(); g.translateCanvas(this.ox + (mark % def.cols + 0.5) * this.S, this.oy + (Math.floor(mark / def.cols) + 0.5) * this.S); g.rotateCanvas(placement.turn * Math.PI / 2);
+        this.drawTool(g, piece.art, this.S * 0.44); g.restore();
+      }
     }
   }
   protected refresh(): void {
@@ -268,7 +281,10 @@ abstract class PieceRoom<K extends 'shadow' | 'packing'> extends RoomBase<K> {
     const needed = def.solution.find((q) => !(this.state as Placement[]).some((p) => p.id === q.id && p.x === q.x && p.y === q.y && p.turn === q.turn));
     if (!needed) return null;
     const p = this.parts.find((q) => q.piece.id === needed.id)!;
-    if (p.turn !== needed.turn && this.selected === p.piece.id && this.turnButton) return { from: { x: p.obj.x, y: p.obj.y }, to: { x: this.turnButton.x, y: this.turnButton.y } };
+    if (p.turn !== needed.turn && this.turnButton) {
+      if (this.selected !== p.piece.id) return { to: { x: p.obj.x, y: p.obj.y } };
+      return { from: { x: p.obj.x, y: p.obj.y }, to: { x: this.turnButton.x, y: this.turnButton.y } };
+    }
     const targetCells = pieceCells(def, needed) ?? [];
     const obstruction = (this.state as Placement[]).find((q) => q.id !== needed.id && (pieceCells(def, q) ?? []).some((at) => targetCells.includes(at)));
     if (obstruction) { const blocker = this.parts.find((q) => q.piece.id === obstruction.id)!; return { from: { x: blocker.obj.x, y: blocker.obj.y }, to: blocker.home }; }
@@ -430,6 +446,13 @@ export class SymmetryRoom extends RoomBase<'symmetry'> {
     });
   }
   protected hintTarget(): HintTarget | null {
+    const target = new Map(this.def.solution.map((q) => [q.at, q.token]));
+    const extra = Object.keys(this.state).map(Number).find((at) => !target.has(at));
+    if (extra !== undefined) {
+      // Tapping with the matching selected decoration removes it, including decoys.
+      const token = this.tokens.find((q) => q.token === this.state[extra]);
+      return this.selected === this.state[extra] ? { to: this.cell(extra) } : { to: token!.home };
+    }
     const need = this.def.solution.find((q) => this.state[q.at] !== q.token); if (!need) return null;
     const token = this.tokens.find((q) => q.token === need.token); return { from: token?.home, to: this.cell(need.at) };
   }
@@ -455,7 +478,10 @@ export class TiltRoom extends RoomBase<'tilt'> {
       g.fillStyle(CM.ink, 0.4); g.fillEllipse(3, r * 0.65, r * 2.2, r * 1.1);
       g.fillStyle(i ? 0xba786d : CM.teal, 1); g.fillCircle(0, 0, r); g.lineStyle(2, CM.ink, 1); g.strokeCircle(0, 0, r);
       g.lineStyle(3, CM.cream, 0.8); g.beginPath(); g.arc(-1, -1, r * 0.68, Math.PI, Math.PI * 1.7); g.strokePath();
-      g.fillStyle(CM.cream, 0.8); g.fillCircle(-r * 0.34, -r * 0.35, r * 0.19); c.add(g); this.balls.push(c);
+      g.fillStyle(CM.cream, 0.8); g.fillCircle(-r * 0.34, -r * 0.35, r * 0.19);
+      if (i) { g.lineStyle(3, CM.cream, 0.95); g.lineBetween(-r * 0.45, r * 0.08, r * 0.45, r * 0.08); }
+      else { g.fillStyle(CM.cream, 0.95); g.fillCircle(0, r * 0.12, r * 0.17); }
+      c.add(g); this.balls.push(c);
     });
     const positions: Record<Direction, { x: number; y: number; icon: string }> = {
       up: { x: 1035, y: 272, icon: '↑' }, right: { x: 1100, y: 338, icon: '→' }, down: { x: 1035, y: 404, icon: '↓' }, left: { x: 970, y: 338, icon: '←' },
@@ -515,6 +541,8 @@ export class TiltRoom extends RoomBase<'tilt'> {
         g.fillStyle(Phaser.Display.Color.IntegerToColor(col).darken(35).color, 1); g.fillCircle(c.x, c.y + 2, r * 0.68);
         g.lineStyle(2, CM.ink, 0.9); g.strokeCircle(c.x, c.y, r);
         g.lineStyle(3, 0xffffff, 0.55); g.beginPath(); g.arc(c.x, c.y, r * 0.84, Math.PI * 1.1, Math.PI * 1.5, false); g.strokePath();
+        if (goal) { g.lineStyle(3, CM.cream, 0.95); g.lineBetween(c.x - r * 0.38, c.y + r * 0.78, c.x + r * 0.38, c.y + r * 0.78); }
+        else { g.fillStyle(CM.cream, 0.95); g.fillCircle(c.x, c.y + r * 0.78, r * 0.13); }
       }
     }
     this.balls.forEach((ball, i) => { const c = this.cell(this.state.marbles[i]); ball.setPosition(c.x, c.y).setData('cell', this.state.marbles[i]); });

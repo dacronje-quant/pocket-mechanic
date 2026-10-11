@@ -7,7 +7,6 @@ import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
 import { CM, drawPatina } from '../art/copperMoss';
 import { rivet } from '../art/finish';
-import { playMelody } from '../audio/music';
 import { NOTE_FREQS, pinKey, pinProgress, pinSet } from '../mechanism/pins';
 import { D, RoomBase, type HintTarget } from './RoomBase';
 import { roundButton, toast } from '../ui/widgets';
@@ -26,6 +25,8 @@ export class MusicRoom extends RoomBase<'music'> {
   private lastStep = -1;
   private ring: number[] = [];
   private melody = new Set<string>();
+  private listening = false;
+  private referenceTime = 0;
 
   constructor() {
     super('room-music');
@@ -42,6 +43,8 @@ export class MusicRoom extends RoomBase<'music'> {
     this.ring = new Array(notes).fill(0);
     this.head = 0;
     this.lastStep = -1;
+    this.listening = false;
+    this.referenceTime = 0;
     // the pinned cylinder: a brass drum lying on its side, shaded so it reads as round, with end caps
     const back = this.add.graphics().setDepth(D.back + 1);
     const bx = this.x0 - 20;
@@ -114,9 +117,12 @@ export class MusicRoom extends RoomBase<'music'> {
   }
 
   private listen(): void {
-    const notes: number[] = new Array(this.def.steps).fill(-1);
-    for (const [s, n] of this.def.melody) notes[s] = n;
-    playMelody(notes, this.def.tempo, 'sine');
+    // Use the same clock, pitch bank and comb animation as the cylinder.
+    // Scheduling a second melody over the unfinished pins obscured the song.
+    this.listening = true;
+    this.referenceTime = 0;
+    this.head = 0;
+    this.lastStep = -1;
   }
 
   private togglePin(s: number, n: number): void {
@@ -152,6 +158,10 @@ export class MusicRoom extends RoomBase<'music'> {
         const y = this.y0 + (notes - 1 - n) * this.ch + this.ch / 2;
         const k = pinKey(s, n);
         const pinned = this.state.has(k);
+        if (this.listening && s === Math.floor(this.head) && this.melody.has(k)) {
+          g.lineStyle(3, CM.glow, 1);
+          g.strokeCircle(x, y, this.ch * 0.36);
+        }
         if (pinned) {
           g.fillStyle(0x000000, 0.3);
           g.fillCircle(x + 2, y + 3, this.ch * 0.26);
@@ -174,17 +184,26 @@ export class MusicRoom extends RoomBase<'music'> {
 
   protected tick(dt: number): void {
     const { steps, notes, tempo } = this.def;
+    if (this.listening) {
+      this.referenceTime += dt;
+      if (this.referenceTime >= steps / tempo) {
+        this.listening = false;
+        this.head = 0;
+        this.lastStep = -1;
+        this.drawGrid();
+      }
+    }
     this.head = (this.head + dt * tempo) % steps;
     const s = Math.floor(this.head);
     if (s !== this.lastStep) {
       this.lastStep = s;
       for (let n = 0; n < notes; n++) {
-        if (this.state.has(pinKey(s, n))) {
+        if ((this.listening ? this.melody : this.state).has(pinKey(s, n))) {
           sfx.note(NOTE_FREQS[n], 'chime', 0.45);
           this.ring[n] = 1;
         }
       }
-      if (this.style.id === 'tinker') this.drawGrid();
+      if (this.style.id === 'tinker' || this.listening) this.drawGrid();
     }
     const hg = this.headG;
     hg.clear();

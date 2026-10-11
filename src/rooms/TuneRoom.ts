@@ -30,7 +30,7 @@ export class TuneRoom extends RoomBase<'tune'> {
   private waves!: Phaser.GameObjects.Graphics;
   private t = 0;
   private lastSound = 0;
-  private dragStart = 0;
+  private dragStarts = new Map<string, number>();
   private wasTuned = false;
 
   constructor() {
@@ -40,6 +40,7 @@ export class TuneRoom extends RoomBase<'tune'> {
   protected build(): void {
     this.dials = [];
     this.wasTuned = false;
+    this.dragStarts.clear();
     this.deco = this.add.graphics().setDepth(D.mech);
     this.waves = this.add.graphics().setDepth(D.mech + 1);
     const n = this.def.dials.length;
@@ -66,7 +67,7 @@ export class TuneRoom extends RoomBase<'tune'> {
         b = { x: cx, y: 300 };
         wave = { x: cx - 80, y: 140, w: 160, h: 56 };
       }
-      const knob = this.add.container(0, 0).setDepth(D.parts);
+      const knob = this.add.container(0, 0).setDepth(D.parts).setName(`tune-dial:${d.id}`);
       const kg = this.add.graphics();
       kg.fillStyle(0x000000, 0.3);
       kg.fillCircle(3, 5, 30);
@@ -88,7 +89,7 @@ export class TuneRoom extends RoomBase<'tune'> {
       this.dials.push(view);
       this.placeKnob(view);
       knob.on('dragstart', () => {
-        this.dragStart = this.state[d.id];
+        this.dragStarts.set(d.id, this.state[d.id]);
         this.idle = 0;
         sfx.pickUp();
       });
@@ -144,7 +145,8 @@ export class TuneRoom extends RoomBase<'tune'> {
   }
 
   private releaseKnob(v: DialView): void {
-    const before = this.dragStart;
+    const before = this.dragStarts.get(v.id) ?? this.state[v.id];
+    this.dragStarts.delete(v.id);
     const id = v.id;
     if (before === this.state[id]) return;
     const d = this.def.dials[v.i];

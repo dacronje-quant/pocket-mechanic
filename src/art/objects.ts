@@ -4,9 +4,7 @@
  * and can "perform" their big moment for the Test Run and the Return.
  */
 import Phaser from 'phaser';
-import * as sfx from '../audio/sfx';
-import { playMelody } from '../audio/music';
-import { SONGS } from '../content/songs';
+import { playObjectSound, type ObjectSound } from '../audio/objectSounds';
 import { star } from './Kip';
 import { CM, drawPatina, drawTimber, drawLeafSprig, drawCopperPipe } from './copperMoss';
 import { atlasFrame, paintedObject } from './sprites';
@@ -22,6 +20,7 @@ export class MachineArt extends Phaser.GameObjects.Container {
   private t = 0;
   private performing = 0;
   private painted?: Phaser.GameObjects.Image;
+  private sound?: ObjectSound;
 
   constructor(scene: Phaser.Scene, x: number, y: number, id: string, scale = 1) {
     super(scene, x, y);
@@ -38,6 +37,7 @@ export class MachineArt extends Phaser.GameObjects.Container {
     this.add([fallback, this.live]);
     this.setScale(scale);
     scene.add.existing(this);
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.stopSound, this);
     const index = ['clock', 'musicbox', 'train', 'radio', 'tea', 'bertie', 'orrery', 'tower'].indexOf(id);
     if (index >= 0) withArt(scene, id === 'musicbox' ? 'item-musicbox' : 'item-atlas', (key) => {
       if (!this.active || !this.scene) return;
@@ -56,41 +56,21 @@ export class MachineArt extends Phaser.GameObjects.Container {
   /** Play the object's big moment; returns its length in seconds. */
   perform(): number {
     this.working = true;
-    this.performing = 4;
-    switch (this.id) {
-      case 'clock':
-        sfx.cuckoo(4);
-        return 3;
-      case 'musicbox':
-        return playMelody(SONGS.find((s) => s.id === 'song-lullaby')!.notes, 3, 'sine') || 4;
-      case 'train':
-        sfx.whistle(740, 1.2);
-        setTimeout(() => sfx.chug(), 300);
-        setTimeout(() => sfx.chug(), 700);
-        return 3;
-      case 'radio':
-        sfx.staticBurst(1, 0.8);
-        setTimeout(() => sfx.hum(196, 1.5), 800);
-        return 3;
-      case 'tea':
-        sfx.hiss(1.2);
-        setTimeout(() => sfx.whistle(1046, 1), 900);
-        return 3;
-      case 'bertie':
-        playMelody(SONGS.find((s) => s.id === 'song-boogie')!.notes, 4, 'square');
-        return 4;
-      case 'orrery':
-        sfx.sparkle();
-        playMelody(SONGS.find((s) => s.id === 'song-stars')!.notes, 3, 'sine');
-        return 4;
-      case 'tower':
-        sfx.bong();
-        setTimeout(() => sfx.bong(), 1600);
-        return 4;
-      default:
-        sfx.sparkle();
-        return 2;
-    }
+    this.stopSound();
+    this.sound = playObjectSound(this.id, this.scene.time);
+    this.performing = this.sound.duration;
+    return this.sound.duration;
+  }
+
+  private stopSound(): void {
+    this.sound?.stop();
+    this.sound = undefined;
+  }
+
+  override preDestroy(): void {
+    this.stopSound();
+    this.scene.events.off(Phaser.Scenes.Events.SHUTDOWN, this.stopSound, this);
+    super.preDestroy();
   }
 
   preUpdate(_time: number, dt: number): void {

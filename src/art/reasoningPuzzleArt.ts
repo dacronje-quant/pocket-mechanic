@@ -22,6 +22,20 @@ export function reasoningProp(scene: Phaser.Scene, index: number, x: number, y: 
   });
 }
 
+/** Case labels identify a valve; counted dots would misleadingly look like its hidden mass. */
+export function valveMark(g: G, x: number, y: number, code: number): void {
+  const colors = [0x638e8c, 0xbc6954, 0xbda45b, 0x81769a, 0x688251, 0x816858];
+  const mark = ((code % 6) + 6) % 6;
+  g.fillStyle(colors[mark], 1); g.fillRoundedRect(x - 10, y - 10, 20, 20, 3);
+  g.fillStyle(CM.cream, 1);
+  if (mark === 0) g.fillCircle(x, y, 5.5);
+  else if (mark === 1) g.fillTriangle(x, y - 6, x + 6, y + 5, x - 6, y + 5);
+  else if (mark === 2) g.fillRect(x - 5, y - 5, 10, 10);
+  else if (mark === 3) g.fillPoints([{ x, y: y - 7 }, { x: x + 6, y }, { x, y: y + 7 }, { x: x - 6, y }], true);
+  else if (mark === 4) star(g, x, y, 7, CM.cream);
+  else { g.fillRect(x - 6, y - 2, 12, 4); g.fillRect(x - 2, y - 6, 4, 12); }
+}
+
 export function valve(g: G, x: number, y: number, height: number, chosen = false, code = 0): void {
   const w = 40;
   g.fillStyle(CM.ink, .25); g.fillEllipse(x + 3, y + 9, 64, 18);
@@ -44,7 +58,7 @@ export function valve(g: G, x: number, y: number, height: number, chosen = false
   g.fillStyle(CM.copperDark, .5); g.fillRoundedRect(x + 4, y - height * .45 - 10, 6, 20, 2);
   g.fillStyle(CM.cream, .4); g.fillRect(x - 9, y - height * .45 - 11, 18, 3);
   g.lineStyle(1.5, CM.ink, .8); g.strokeRoundedRect(x - 12, y - height * .45 - 12, 24, 24, 4);
-  for (let i = 0; i <= code; i++) { g.fillStyle(CM.ink, 1); g.fillCircle(x - code * 3 + i * 6, y + 1, 1.5); }
+  valveMark(g, x, y - height * .45, code);
   if (chosen) { g.lineStyle(4, CM.glow, 1); g.strokeRoundedRect(x - 33, y - height - 18, 66, height + 37, 12); }
 }
 
@@ -63,7 +77,22 @@ export function fuse(g: G, x: number, y: number, value: number, size = 46, locke
   else if (token === 'triangle') g.fillTriangle(x, y - r - 2, x + r + 2, y + r, x - r - 2, y + r);
   else if (token === 'star') star(g, x, y, r * 1.35, CM.cream);
   else g.fillPoints([{ x, y: y - r - 3 }, { x: x + r + 3, y }, { x, y: y + r + 3 }, { x: x - r - 3, y }], true);
-  if (locked) { rivet(g, x - size / 2 + 6, y + size / 2 - 6, 2.2); rivet(g, x + size / 2 - 6, y + size / 2 - 6, 2.2); }
+  if (locked) {
+    // A bolted copper strap distinguishes givens even at phone size.
+    g.lineStyle(Math.max(1.5, size * .045), CM.copperDark, 1);
+    g.lineBetween(x - size * .34, y + size * .37, x + size * .34, y + size * .37);
+    rivet(g, x - size * .34, y + size * .37, Math.max(2.2, size * .075));
+    rivet(g, x + size * .34, y + size * .37, Math.max(2.2, size * .075));
+  }
+}
+
+/** Reference fuses are drawn from the actual age-mode palette, rather than a painted generic set. */
+export function fuseRack(g: G, x: number, y: number, symbols: Array<{ color: number; shape: string }>): void {
+  const width = symbols.length * 36 + 24;
+  etchedPlate(g, x - width / 2, y - 28, width, 58, CM.copperDark, 1, 917);
+  symbols.forEach((symbol, i) => fuse(g, x + (i - (symbols.length - 1) / 2) * 36, y, i, 29, false, false, symbol.color, symbol.shape));
+  rivet(g, x - width / 2 + 7, y + 22, 2.5);
+  rivet(g, x + width / 2 - 7, y + 22, 2.5);
 }
 
 export function jug(g: G, x: number, y: number, capacity: number, amount: number, target: number | undefined, selected: boolean, width = 118, height = 174): void {

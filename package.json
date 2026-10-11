@@ -17,6 +17,9 @@
     "playthrough:touch": "node scripts/touch-playthrough.mjs",
     "check:pages": "node scripts/check-pages.mjs",
     "check:audio": "node scripts/check-audio.mjs",
+    "check:puzzles": "node scripts/visual-puzzle-sweep.mjs --all",
+    "check:visuals": "node scripts/sweep-visual-capture.mjs",
+    "check:menus": "node scripts/sweep-hub-checks.mjs",
     "check:offline": "node scripts/check-offline.mjs",
     "audition:player": "node scripts/build-audition-player.mjs"
   },

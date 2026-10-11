@@ -88,7 +88,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     g0.cells.forEach((t, i) => {
       if (!t || (!t.rotatable && !t.toggle)) return;
       const c = this.cellCenter(i);
-      const z = this.add.zone(c.x, c.y, this.S, this.S).setInteractive({ useHandCursor: true }).setDepth(D.mech + 3);
+      const z = this.add.zone(c.x, c.y, this.S, this.S).setInteractive({ useHandCursor: true }).setDepth(D.mech + 3).setName(`flow:cell:${i}`).setData('qa', { action: 'tile', cell: i });
       z.on('pointerup', () => this.tapCell(i));
     });
     // drawer pieces
@@ -100,6 +100,7 @@ export class FlowRoom extends RoomBase<'flow'> {
       obj.add(g);
       obj.setSize(this.S, this.S);
       const part: Part = { kind, rot: Number(tok[1] ?? 0), obj, g, home: spots[i], cell: null };
+      obj.setName(`flow:part:${i}`).setData('qa', { action: 'tile-part', kind });
       this.drawPart(part);
       this.parts.push(part);
       this.enableDrag({
@@ -288,7 +289,10 @@ export class FlowRoom extends RoomBase<'flow'> {
         sfx.pop();
         this.kip.giggle();
       } else if (sound && this.circ.liveCells.size > was) sfx.zap();
-      if (this.circ.components.some((c) => c.kind === 'Q' && c.level > 0.3)) this.ringing = 1.5;
+      if (this.circ.components.some((c) => c.kind === 'Q' && c.level > 0.3)) {
+        this.ringing = 1.5;
+        if (sound && this.def.id === '4-6') sfx.hum(220, 0.8);
+      }
     } else {
       this.runs = null;
     }
@@ -406,8 +410,9 @@ export class FlowRoom extends RoomBase<'flow'> {
 
   private drawPart(p: Part): void {
     p.g.clear();
-    const t: Tile = { kind: p.kind, rot: p.rot, rotatable: false, toggle: false, state: true, required: false, forbidden: false, bright: false, slot: false };
-    this.drawTile(p.g, t, 0, 0, -1);
+    const placed = p.cell !== null ? this.state.cells[p.cell] : null;
+    const t: Tile = placed ? { ...placed, kind: p.kind, rot: p.rot } : { kind: p.kind, rot: p.rot, rotatable: false, toggle: false, state: false, required: false, forbidden: false, bright: false, slot: false };
+    this.drawTile(p.g, t, 0, 0, p.cell ?? -1);
     // a bright stud on every end that connects, so the piece's direction reads at a glance (also in the tray)
     const h = this.S / 2;
     for (const d of ports(t)) {
@@ -499,9 +504,10 @@ export class FlowRoom extends RoomBase<'flow'> {
     } else {
       const pipeCol = fam === 'pipes' ? 0xc8703f : 0xb5652e;
       const width = fam === 'pipes' ? S * 0.3 : S * 0.12;
-      for (const ch of chans) for (const d of ch) line(d, width + 6, 0x342f29, 0.6);
-      for (const ch of chans) for (const d of ch) line(d, width, pipeCol);
-      if (fam === 'pipes') for (const ch of chans) for (const d of ch) line(d, width * 0.5, 0xd5f5e3, 0.35);
+      const gap = ['V', 'B', 'O', 'Q', 'M', 'F'].includes(t.kind) ? S * 0.2 : 0;
+      for (const ch of chans) for (const d of ch) line(d, width + 6, 0x342f29, 0.6, gap);
+      for (const ch of chans) for (const d of ch) line(d, width, pipeCol, 1, gap);
+      if (fam === 'pipes') for (const ch of chans) for (const d of ch) line(d, width * 0.5, 0xd5f5e3, 0.35, gap);
       if (fam === 'circuit') {
         // double-coded: copper wire with little stripes
         for (const ch of chans) for (const d of ch) {
@@ -511,9 +517,19 @@ export class FlowRoom extends RoomBase<'flow'> {
           }
         }
       }
-      if (chans.length && ['I', 'L', 'T', '+', 'X'].includes(t.kind)) {
+      if (chans.length && ['I', 'L', 'T', '+'].includes(t.kind)) {
         g.fillStyle(pipeCol, 1);
         g.fillCircle(x, y, width * 0.62);
+      }
+      if (t.kind === 'X') {
+        // A raised channel crosses the other without joining it.
+        const d = chans[0][0], r = S * 0.24;
+        g.lineStyle(width + 8, CM.ink, 1);
+        g.lineBetween(x - DX[d] * r, y - DY[d] * r, x + DX[d] * r, y + DY[d] * r);
+        g.lineStyle(width, pipeCol, 1);
+        g.lineBetween(x - DX[d] * r, y - DY[d] * r, x + DX[d] * r, y + DY[d] * r);
+        g.lineStyle(2, CM.cream, 0.65);
+        g.lineBetween(x - DX[d] * r - DY[d] * width * 0.3, y - DY[d] * r + DX[d] * width * 0.3, x + DX[d] * r - DY[d] * width * 0.3, y + DY[d] * r + DX[d] * width * 0.3);
       }
     }
     switch (t.kind) {
@@ -533,6 +549,7 @@ export class FlowRoom extends RoomBase<'flow'> {
         break;
       case 'K': {
         const wet = cell >= 0 && this.pipe?.reached.has(cell);
+        if (this.drawSink(g, t, x, y, !!wet)) break;
         // what the water or steam goes to, as the room's words call it
         const art = this.def.id === '5-2' ? 'wheel' : ['5-4', '8-2'].includes(this.def.id) ? 'piston' : 'tank';
         if (art === 'wheel' && !t.forbidden) {
@@ -650,6 +667,12 @@ export class FlowRoom extends RoomBase<'flow'> {
         break;
       case 'O': {
         const lit = cell >= 0 ? level : 0;
+        if (this.def.id.endsWith('4-3')) {
+          g.fillStyle(CM.copperDark, 1); g.fillRoundedRect(x - S * 0.25, y + S * 0.16, S * 0.5, S * 0.15, 5);
+          g.fillStyle(lit > 0.02 ? CM.glow : 0x877c68, lit > 0.02 ? 0.85 : 0.55); g.fillRoundedRect(x - S * 0.18, y - S * 0.33, S * 0.36, S * 0.5, 11);
+          g.lineStyle(3, CM.cream, 0.6); g.lineBetween(x - S * 0.11, y - S * 0.22, x - S * 0.11, y + S * 0.07);
+          break;
+        }
         if (lit > 0.02) {
           g.fillStyle(0xfff3b0, 0.18 + lit * 0.25);
           g.fillCircle(x, y, S * (0.35 + lit * 0.25));
@@ -666,6 +689,14 @@ export class FlowRoom extends RoomBase<'flow'> {
       }
       case 'Q': {
         const ring = cell >= 0 && level > 0.3;
+        if (this.def.id === '4-6') {
+          g.fillStyle(CM.woodLight, 1); g.fillRoundedRect(x - S * 0.33, y - S * 0.33, S * 0.66, S * 0.66, 9);
+          g.fillStyle(CM.ink, 1); g.fillCircle(x, y, S * 0.26);
+          g.lineStyle(3, CM.copper, 1); g.strokeCircle(x, y, S * (0.19 + (ring ? Math.sin(this.flowT * 20) * 0.02 : 0)));
+          g.fillStyle(CM.slate, 1); g.fillCircle(x, y, S * 0.09);
+          if (ring) { g.lineStyle(2, CM.glow, 0.8); g.strokeCircle(x, y, S * 0.36); }
+          break;
+        }
         const wob = ring ? Math.sin(this.time.now / 30) * 4 : 0;
         g.fillStyle(0xbca16a, 1);
         g.fillTriangle(x - S * 0.22 + wob, y + S * 0.18, x + S * 0.22 + wob, y + S * 0.18, x + wob, y - S * 0.24);
@@ -678,13 +709,16 @@ export class FlowRoom extends RoomBase<'flow'> {
         break;
       case 'F': {
         const blown = cell >= 0 && (this.circ?.blown.includes(cell) || t.state);
+        const horizontal = t.rot % 2 === 1;
+        const pt = (a: number, b: number) => horizontal ? { x: x - b, y: y + a } : { x: x + a, y: y + b };
+        const fuseLine = (a: number, b: number, c: number, d: number) => { const start = pt(a, b), end = pt(c, d); g.lineBetween(start.x, start.y, end.x, end.y); };
         g.fillStyle(0xe9dcc0, 1);
-        g.fillRoundedRect(x - S * 0.12, y - S * 0.3, S * 0.24, S * 0.6, 8);
+        g.fillRoundedRect(x - S * (horizontal ? 0.3 : 0.12), y - S * (horizontal ? 0.12 : 0.3), S * (horizontal ? 0.6 : 0.24), S * (horizontal ? 0.24 : 0.6), 8);
         g.lineStyle(3, blown ? 0x555555 : 0xffb347, 1);
         if (blown) {
-          g.lineBetween(x, y - S * 0.25, x + 4, y - 4);
-          g.lineBetween(x, y + S * 0.25, x - 4, y + 6);
-        } else g.lineBetween(x, y - S * 0.25, x, y + S * 0.25);
+          fuseLine(0, -S * 0.25, 4, -4);
+          fuseLine(0, S * 0.25, -4, 6);
+        } else fuseLine(0, -S * 0.25, 0, S * 0.25);
         break;
       }
       case 'S':
@@ -720,6 +754,36 @@ export class FlowRoom extends RoomBase<'flow'> {
   }
 
   /** A cake, a present or balloons on a station's platform, so "cake first" can be seen. */
+  private drawSink(g: Phaser.GameObjects.Graphics, tile: Tile, x: number, y: number, wet: boolean): boolean {
+    const s = this.S;
+    if (this.def.id === '5-2' && !tile.forbidden) {
+      const a = wet ? this.flowT * 2 : 0;
+      g.lineStyle(5, CM.copper, 1); g.strokeCircle(x, y, s * 0.3);
+      for (let i = 0; i < 8; i++) {
+        const t = a + i * Math.PI / 4;
+        g.lineStyle(4, CM.woodLight, 1); g.lineBetween(x, y, x + Math.cos(t) * s * 0.3, y + Math.sin(t) * s * 0.3);
+        g.fillStyle(CM.teal, 1); g.fillCircle(x + Math.cos(t) * s * 0.3, y + Math.sin(t) * s * 0.3, s * 0.065);
+      }
+      g.fillStyle(CM.brass, 1); g.fillCircle(x, y, s * 0.08); return true;
+    }
+    if (this.def.id === '5-4' || this.def.id === '8-2') {
+      const stroke = wet ? Math.sin(this.flowT * 5) * s * 0.1 : 0;
+      g.fillStyle(CM.copperDark, 1); g.fillRoundedRect(x - s * 0.28, y - s * 0.28, s * 0.56, s * 0.5, 8);
+      g.fillStyle(CM.slate, 1); g.fillRect(x - s * 0.2, y - s * 0.14 + stroke, s * 0.4, s * 0.14);
+      g.lineStyle(7, CM.cream, 1); g.lineBetween(x, y - s * 0.14 + stroke, x, y - s * 0.37 + stroke);
+      g.lineStyle(2, tile.forbidden ? 0xb8635a : CM.copperLight, 1); g.strokeRoundedRect(x - s * 0.28, y - s * 0.28, s * 0.56, s * 0.5, 8);
+      if (tile.forbidden) { g.lineStyle(3, 0xb8635a, 1); g.lineBetween(x - s * 0.15, y + s * 0.05, x + s * 0.15, y + s * 0.19); g.lineBetween(x + s * 0.15, y + s * 0.05, x - s * 0.15, y + s * 0.19); }
+      return true;
+    }
+    if (this.def.id === 'qf-sprinkler') {
+      g.lineStyle(9, CM.copper, 1); g.lineBetween(x, y + s * 0.28, x, y - s * 0.12);
+      g.fillStyle(CM.teal, 1); g.fillEllipse(x, y - s * 0.12, s * 0.5, s * 0.16);
+      if (wet) for (let i = 0; i < 5; i++) { const a = -Math.PI * 0.9 + i * Math.PI * 0.2; g.lineStyle(2, 0x9ad8ff, 0.8); g.lineBetween(x, y - s * 0.14, x + Math.cos(a) * s * 0.36, y - s * 0.14 + Math.sin(a) * s * 0.25); }
+      return true;
+    }
+    return false;
+  }
+
   private drawStationThing(g: Phaser.GameObjects.Graphics, id: string, x: number, y: number, r: number): void {
     g.lineStyle(2, 0x342f29, 0.8);
     if (id.includes('cake')) {
@@ -877,6 +941,7 @@ export class FlowRoom extends RoomBase<'flow'> {
     g.clear();
     const h = this.S / 2;
     if (this.def.family === 'pipes' && this.pipe) {
+      if (['5-2', '5-4', '8-2', 'qf-sprinkler'].includes(this.def.id)) this.drawTiles();
       // water flowing: moving dashes in every wet pipe
       for (const port of this.pipe.wetPorts) {
         const i = port >> 2;
@@ -908,7 +973,7 @@ export class FlowRoom extends RoomBase<'flow'> {
       }
       if (this.ringing > 0) {
         this.ringing -= dt;
-        if (Math.floor(this.flowT * 8) % 4 === 0 && Math.random() < 0.3) sfx.ding(1568);
+        if (this.def.id !== '4-6' && Math.floor(this.flowT * 8) % 4 === 0 && Math.random() < 0.3) sfx.ding(1568);
         this.drawTiles();
       }
     }

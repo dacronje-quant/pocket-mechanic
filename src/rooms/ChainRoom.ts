@@ -29,6 +29,7 @@ const SIGNAL_GLYPH: Record<Signal, string> = { turn: '⟳', push: '➜', pull: '
 interface LinkPartView {
   id: string;
   obj: Phaser.GameObjects.Container;
+  drawing: Phaser.GameObjects.Graphics;
   home: { x: number; y: number };
   at: number | null;
 }
@@ -72,12 +73,12 @@ export class ChainRoom extends RoomBase<'chain'> {
     this.orbG = this.add.graphics().setDepth(D.mech + 2).setBlendMode(Phaser.BlendModes.ADD);
     const spots = this.traySpots(this.def.tray.length);
     this.def.tray.forEach((id, i) => {
-      const obj = this.add.container(spots[i].x, spots[i].y).setDepth(D.trayPart).setScale(0.68);
+      const obj = this.add.container(spots[i].x, spots[i].y).setDepth(D.trayPart).setScale(0.68).setName(`chain-part:${i}:${id}`);
       const g = this.add.graphics();
       this.drawCard(g, id, 0, 0, true);
       obj.add(g);
       obj.setSize(this.card, this.card);
-      const v: LinkPartView = { id, obj, home: spots[i], at: null };
+      const v: LinkPartView = { id, obj, drawing: g, home: spots[i], at: null };
       this.parts.push(v);
       this.enableDrag({
         obj,
@@ -102,7 +103,7 @@ export class ChainRoom extends RoomBase<'chain'> {
   }
 
   /** A link card: the part, with its in and out ports coloured (and shaped) by signal. */
-  private drawCard(g: Phaser.GameObjects.Graphics, id: string, x: number, y: number, drawer = false): void {
+  private drawCard(g: Phaser.GameObjects.Graphics, id: string, x: number, y: number, drawer = false, reverse = false): void {
     const s = this.card;
     const p = LINK_PARTS[id];
     g.fillStyle(0x000000, 0.25);
@@ -116,8 +117,23 @@ export class ChainRoom extends RoomBase<'chain'> {
     rivet(g, x - s / 2 + 9, y - s / 2 + 9, 2);
     rivet(g, x + s / 2 - 9, y + s / 2 - 9, 2);
     drawPart(g, id, x, y - 4, s / 120);
-    if (p?.in) this.port(g, x - s / 2, y, p.in);
-    if (p?.out) this.port(g, x + s / 2, y, p.out);
+    const direction = reverse ? -1 : 1;
+    if (p?.in) this.port(g, x - direction * s / 2, y, p.in);
+    if (p?.out) this.port(g, x + direction * s / 2, y, p.out);
+  }
+
+  private reversed(i: number): boolean {
+    return this.def.links.length > 8 && i >= Math.ceil(this.def.links.length / 2);
+  }
+
+  private stopRun(): void {
+    this.run = null;
+    this.runT = -1;
+  }
+
+  private paintPart(part: LinkPartView): void {
+    part.drawing.clear();
+    this.drawCard(part.drawing, part.id, 0, 0, part.at === null, part.at !== null && this.reversed(part.at));
   }
 
   private port(g: Phaser.GameObjects.Graphics, x: number, y: number, sig: Signal): void {
@@ -127,10 +143,18 @@ export class ChainRoom extends RoomBase<'chain'> {
     g.fillCircle(x, y, 10);
     // shape code (reads without colour)
     g.fillStyle(0x342f29, 0.8);
-    const i = (['turn', 'push', 'pull', 'spark', 'steam', 'water', 'light', 'marble', 'sound'] as Signal[]).indexOf(sig);
-    if (i % 3 === 0) g.fillCircle(x, y, 3.5);
-    else if (i % 3 === 1) g.fillRect(x - 3.5, y - 3.5, 7, 7);
-    else g.fillTriangle(x, y - 5, x + 5, y + 4, x - 5, y + 4);
+    g.lineStyle(1.7, CM.ink, 1);
+    switch (sig) {
+      case 'turn': g.strokeCircle(x, y, 5); g.fillTriangle(x + 5, y - 5, x + 5, y + 1, x, y - 4); break;
+      case 'push': g.lineBetween(x - 5, y, x + 4, y); g.fillTriangle(x + 6, y, x + 1, y - 4, x + 1, y + 4); break;
+      case 'pull': g.lineBetween(x + 5, y, x - 4, y); g.fillTriangle(x - 6, y, x - 1, y - 4, x - 1, y + 4); break;
+      case 'spark': g.fillPoints([{ x: x + 2, y: y - 7 }, { x: x - 4, y: y + 1 }, { x: x + 1, y: y + 1 }, { x: x - 2, y: y + 7 }, { x: x + 5, y: y - 2 }, { x, y: y - 2 }], true); break;
+      case 'steam': for (let i = -1; i <= 1; i++) { g.lineBetween(x + i * 4, y + 5, x + i * 4 - 1, y); g.lineBetween(x + i * 4 - 1, y, x + i * 4 + 1, y - 5); } break;
+      case 'water': g.fillTriangle(x, y - 6, x - 4, y + 2, x + 4, y + 2); g.fillCircle(x, y + 2, 4); break;
+      case 'light': g.fillCircle(x, y, 3); for (let i = 0; i < 8; i++) { const angle = i * Math.PI / 4; g.lineBetween(x + Math.cos(angle) * 5, y + Math.sin(angle) * 5, x + Math.cos(angle) * 7, y + Math.sin(angle) * 7); } break;
+      case 'marble': g.strokeCircle(x, y, 5.5); g.fillCircle(x - 1.5, y - 1.5, 2); break;
+      case 'sound': g.lineBetween(x - 4, y + 4, x - 4, y - 5); g.lineBetween(x - 4, y - 5, x + 3, y - 7); g.fillEllipse(x - 6, y + 4, 6, 4); break;
+    }
   }
 
   private placedAt(i: number): string | undefined {
@@ -150,7 +174,8 @@ export class ChainRoom extends RoomBase<'chain'> {
     const was = v.at;
     v.at = null;
     this.sync();
-    this.run = null;
+    this.stopRun();
+    this.paintPart(v);
     this.undoStack.push(() => {
       v.at = was;
       this.sync();
@@ -164,13 +189,15 @@ export class ChainRoom extends RoomBase<'chain'> {
     const prev = this.parts.find((q) => q !== v && q.at === i);
     if (prev) {
       prev.at = null;
+      this.paintPart(prev);
       this.floatHome(prev.obj, prev.home, 0.68);
     }
     v.at = i;
+    this.paintPart(v);
     this.tweens.add({ targets: v.obj, x: t.x, y: t.y, scale: 1, duration: 110, ease: 'Back.easeOut' });
     v.obj.setDepth(D.mech + 3);
     this.sync();
-    this.run = null;
+    this.stopRun();
     this.clunkAt(t.x, t.y);
     this.act(() => {
       v.at = null;
@@ -180,6 +207,7 @@ export class ChainRoom extends RoomBase<'chain'> {
   }
 
   protected refresh(): void {
+    this.stopRun();
     for (const p of this.parts) p.at = null;
     for (const [k, id] of Object.entries(this.state)) {
       if (!id) continue;
@@ -187,6 +215,7 @@ export class ChainRoom extends RoomBase<'chain'> {
       if (p) p.at = Number(k);
     }
     for (const p of this.parts) {
+      this.paintPart(p);
       if (p.at !== null) p.obj.setPosition(this.pos[p.at].x, this.pos[p.at].y).setScale(1).setDepth(D.mech + 3);
       else p.obj.setPosition(p.home.x, p.home.y).setScale(0.68).setDepth(D.trayPart);
     }
@@ -264,7 +293,7 @@ export class ChainRoom extends RoomBase<'chain'> {
       const w = this.wobble.get(i) ?? 0;
       if (w > 0) this.wobble.set(i, w - dt);
       const ox = w > 0 ? Math.sin(this.t * 40) * 4 : 0;
-      if (l.part) this.drawCard(ig, l.part, p.x + ox, p.y);
+      if (l.part) this.drawCard(ig, l.part, p.x + ox, p.y, false, this.reversed(i));
       else if (!this.parts.some((q) => q.at === i)) {
         ig.lineStyle(4, 0xf4ebd5, 0.6);
         ig.strokeRoundedRect(p.x - this.card / 2, p.y - this.card / 2, this.card, this.card, 14);

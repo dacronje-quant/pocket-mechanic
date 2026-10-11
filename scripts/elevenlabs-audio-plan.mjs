@@ -18,6 +18,10 @@ export const MUSIC = {
 
 const foley = 'Close dry studio foley for a cosy children\'s repair game. Gentle, tactile and clearly defined. No spoken words, music or background ambience. No piercing high frequencies or startling loudness.';
 const sound = (id, seconds, description, extras = {}) => ({ id, seconds, prompt: `${description} ${foley}`, ...extras });
+const performance = (id, seconds, description) => sound(id, seconds, description, {
+  quality: 'high',
+  prompt: `${description} Close detailed studio foley, warm and gentle for a children's repair game. No speech or background ambience. Clean natural decay, no piercing peaks.`,
+});
 export const SOUNDS = [
   sound('clunk', 0.55, 'One satisfying precision brass gear snap: crisp click-CLACK as teeth engage and the axle seats. A bright metallic click above a rounded weighted mechanical knock, with a short fine resonance. Quick onset, one positive action, no rattle or dull thud.', { variants: 3 }),
   sound('tick', 0.2, 'One tiny brass clock escapement tick.', { reuse: 'sfx-tick-tock.mp3', start: 0.137 }),
@@ -63,4 +67,12 @@ export const SOUNDS = [
   sound('yawn', 1.2, 'A sleepy tiny clockwork robot makes one gentle downward electronic yawning chime, no human speech.'),
   sound('swish', 0.5, 'One quiet soft paintbrush swish over a miniature wooden toy.'),
   sound('coin', 0.6, 'A tiny brass coin reward lands with two bright but rounded miniature metallic chimes.'),
+  performance('object-clock', 4, 'A restored miniature wooden cuckoo clock: two alternating tick-tocks, a tiny brass latch opens, three clear soft two-note bellows cuckoo calls, then a final tick. Rich wood and leather bellows detail, distinct small toy actions.'),
+  performance('object-musicbox', 5, 'A restored antique music box: a delicate brass winding-key ratchet, the lid clicks open, a tender cascade of real metallic music-box comb plucks with subtle turning clockwork. Rounded jewel-like notes, warm wood resonance, no accompaniment.'),
+  performance('object-train', 4, 'A miniature clockwork steam locomotive: one friendly rounded whistle, five distinct double chuff-chuffs, fine brass wheel clicks and warm wooden rail clacks. It gently slows into a tiny steam release. Small toy scale, no huge train roar.'),
+  performance('object-radio', 4, 'A restored wooden valve radio: a tactile knob click, brief warm tuning crackle that clears into a friendly rounded three-tone radio signal and quiet valve hum. Rich intimate cabinet resonance, no broadcast speech or music, no harsh static.'),
+  performance('object-tea', 4.5, 'A miniature copper tea machine: a brass valve turns, soft steam puffs, liquid tea pours into a porcelain cup with two delicate drips, a short rounded kettle whistle, a final tiny cup clink. Rich close mechanical and liquid detail.'),
+  performance('object-bertie', 4.5, 'A charming clockwork robot dances: a brass winding-key ratchet, four alternating soft servo whirrs and mechanical foot taps, cheerful toy-like electronic chirps between movements, a final gear click. Polished brass-and-wood mechanisms, no music.'),
+  performance('object-orrery', 5, 'A miniature brass star orrery starts turning: intricate soft gear meshing, smooth warm rotation, five delicately spaced glassy celestial chimes with rounded shimmering decays. A magical tactile scientific clockwork instrument, no orchestral score.'),
+  performance('object-tower', 5, 'An antique storybook town clock tower: two warm escapement tick-tocks lead into two softly struck deep bronze bell tolls, rich layered overtones fading naturally. Full-bodied and welcoming, no startling strike or huge booming bass.'),
 ];

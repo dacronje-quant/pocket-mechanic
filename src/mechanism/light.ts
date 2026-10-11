@@ -47,7 +47,8 @@ export function parseLightTile(tok: string): LightTile | null {
   const t: LightTile = {
     kind: k as LightKind,
     rot: rot ? Number(rot) : 0,
-    rotatable: flags.includes('r'),
+    // On filters and sensors, r is a colour marker rather than a turn control.
+    rotatable: (k === 'R' || k === 'A') && flags.includes('r'),
     slot: k === '_',
     id,
   };

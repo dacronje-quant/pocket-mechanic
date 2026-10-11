@@ -12,9 +12,42 @@ export function setSoft(on: boolean): void {
 
 export { unlockAudio, isMuted } from './engine';
 
+let effectScope: { dest: AudioNode; sources: Set<AudioScheduledSourceNode> } | null = null;
+
+/** Own one object's sounds so replay and leaving its scene stop the old performance. */
+export function effectPlayback(): { play: (cue: () => void) => void; stop: () => void } {
+  const c = ac(), dest = bus('sfx');
+  const gain = c?.createGain();
+  if (gain && dest) gain.connect(dest);
+  const sources = new Set<AudioScheduledSourceNode>();
+  let stopped = false;
+  return {
+    play(cue) {
+      if (stopped || !gain || !dest) return;
+      const previous = effectScope;
+      effectScope = { dest: gain, sources };
+      try { cue(); } finally { effectScope = previous; }
+    },
+    stop() {
+      if (stopped) return;
+      stopped = true;
+      sources.forEach(source => { try { source.stop(); } catch { /* already ended */ } source.disconnect(); });
+      sources.clear();
+      gain?.disconnect();
+    },
+  };
+}
+
+function track(source: AudioScheduledSourceNode): void {
+  if (!effectScope) return;
+  const sources = effectScope.sources;
+  sources.add(source);
+  source.addEventListener('ended', () => sources.delete(source), { once: true });
+}
+
 function out(): { c: AudioContext; dest: AudioNode } | null {
   const c = ac();
-  const dest = bus('sfx');
+  const dest = effectScope?.dest ?? bus('sfx');
   if (!c || !dest) return null;
   return { c, dest };
 }
@@ -34,7 +67,7 @@ const variants = new Map<string, number>();
 function recorded(id: string, options: { pitch?: number; length?: number; repeat?: number; spacing?: number; level?: number } = {}): boolean {
   const files = soundFiles(id);
   const c = ac();
-  const dest = bus('sfx');
+  const dest = effectScope?.dest ?? bus('sfx');
   if (!files.length || !c || !dest) return false;
   const index = variants.get(id) ?? 0;
   const file = files[index % files.length];
@@ -67,11 +100,21 @@ function recorded(id: string, options: { pitch?: number; length?: number; repeat
     gain.gain.setValueAtTime(peak, t + length - release);
     gain.gain.linearRampToValueAtTime(0, t + length);
     src.connect(filter).connect(gain).connect(dest);
+    track(src);
     src.onended = () => { src.disconnect(); filter.disconnect(); gain.disconnect(); };
     src.start(t);
     src.stop(t + length);
   }
   return true;
+}
+
+/** Play a ready bespoke recording in full; null selects the immediate fallback. */
+export function recordedEffect(id: string): number | null {
+  const file = soundFiles(id)[0];
+  if (!file) return null;
+  const buffer = readyBuffer(file);
+  if (!buffer) { void loadBuffer(file); return null; }
+  return recorded(id) ? buffer.duration : null;
 }
 
 export function tone(freq: number, type: OscillatorType, peak: number, attack: number, decay: number, delay = 0, slideTo?: number): void {
@@ -86,6 +129,7 @@ export function tone(freq: number, type: OscillatorType, peak: number, attack: n
   if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + attack + decay);
   env(g, t, peak, attack, decay);
   o.connect(g).connect(dest);
+  track(o);
   o.start(t);
   o.stop(t + attack + decay + 0.05);
 }
@@ -116,6 +160,7 @@ export function noise(peak: number, decay: number, filterFreq: number, delay = 0
   const g = c.createGain();
   env(g, t, peak, attack, decay);
   src.connect(f).connect(g).connect(dest);
+  track(src);
   src.start(t, Math.random());
   src.stop(t + attack + decay + 0.05);
 }

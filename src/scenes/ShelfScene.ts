@@ -119,12 +119,17 @@ export class ShelfScene extends MetaScene {
       if (showWords()) crit.add(this.add.text((i - 1) * 230 - 8, 0, label, { fontFamily: FONT, fontSize: '18px', color: '#665d50' }).setOrigin(0, 0.5));
     });
     add(roundButton(this, 1200, 140, '✕', () => this.close(), { r: 26, fontSize: 22, say: 'Close' }));
+    // Hear the repaired object again without leaving the replay chooser.
+    const display = this.children.list.find(object => object instanceof MachineArt && object.id === r.object) as MachineArt | undefined;
+    add(roundButton(this, 1100, 160, '♫', () => display?.perform(), { r: 28, fontSize: 26 }));
+    const spacing = Math.min(162, 1116 / r.rooms.length);
+    const tileWidth = Math.min(150, spacing - 10);
     r.rooms.forEach((id, i) => {
       const def = getRoom(id);
       if (!def) return;
-      const x = 640 + (i - (r.rooms.length - 1) / 2) * 162;
+      const x = 640 + (i - (r.rooms.length - 1) / 2) * spacing;
       const rec = p.rooms[id];
-      const t = add(tile(this, x, 380, 150, 200, () => undefined, { caption: showWords() ? def.title : undefined, captionSize: 13 }));
+      const t = add(tile(this, x, 380, tileWidth, 200, () => undefined, { caption: showWords() ? def.title : undefined, captionSize: 13 }));
       t.disableInteractive();
       const ic = this.add.graphics();
       drawPart(ic, def.pedia[0] ?? 'gear', 0, -48, 0.55);

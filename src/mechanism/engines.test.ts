@@ -92,6 +92,13 @@ describe('trains', () => {
 });
 
 describe('light', () => {
+  it('red colour flags do not make sensors or filters turnable', () => {
+    const g = parseLightGrid(['Dr Fr A1r R0r']);
+    expect(g.cells.map(t => t?.rotatable)).toEqual([false, false, true, true]);
+    expect(g.cells[0]?.color).toBe('r');
+    expect(g.cells[1]?.color).toBe('r');
+  });
+
   it('a mirror bounces the lamp onto the sensor', () => {
     const g = parseLightGrid(['A1 . _=R1', '.  . D0']);
     expect(traceLight(g).success).toBe(false);

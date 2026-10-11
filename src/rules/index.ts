@@ -290,8 +290,36 @@ export function leverWeights(def: Effective<BalanceRoomDef>, s: BalanceState): L
   return ws;
 }
 
+/** Reject states that cannot be built from this board and its real drawer. */
+export function balanceStateValid(def: Effective<BalanceRoomDef>, s: BalanceState): boolean {
+  if (def.mode === 'pulley') {
+    const P = def.pulley;
+    return !!P && Number.isFinite(P.load) && P.load > 0 && Number.isFinite(P.strength) && P.strength >= 0
+      && Number.isFinite(P.helper ?? 0) && (P.helper ?? 0) >= 0
+      && P.strength + (P.helper ?? 0) > 0
+      && Number.isInteger(P.slots) && P.slots > 0 && Number.isInteger(P.wheels) && P.wheels > 0
+      && Number.isInteger(s.wheels) && s.wheels >= 0 && s.wheels <= Math.min(P.slots, P.wheels);
+  }
+  const L = def.lever;
+  const min = L?.fulcrumMin ?? L?.fulcrum, max = L?.fulcrumMax ?? L?.fulcrum;
+  if (!L || !Number.isFinite(L.half) || L.half <= 0 || !Number.isFinite(s.fulcrum)
+    || !Number.isFinite(min) || !Number.isFinite(max) || min! > max!
+    || s.fulcrum < Math.max(-L.half, min!) || s.fulcrum > Math.min(L.half, max!)) return false;
+  const loads = [...L.fixed, ...(L.kip ? [{ ...L.kip, id: 'kip' }] : [])];
+  if (loads.some(weight => !Number.isFinite(weight.mass) || weight.mass <= 0 || !Number.isFinite(weight.pos) || Math.abs(weight.pos) > L.half)) return false;
+  const drawer = [...L.tray], occupied = new Set<number>();
+  for (const weight of s.weights) {
+    const part = drawer.indexOf(weight.mass);
+    if (!Number.isFinite(weight.mass) || weight.mass <= 0 || part < 0 || !Number.isFinite(weight.slot)
+      || !L.slots.includes(weight.slot) || Math.abs(weight.slot) > L.half || occupied.has(weight.slot)) return false;
+    drawer.splice(part, 1);
+    occupied.add(weight.slot);
+  }
+  return true;
+}
+
 export function balanceSolved(def: Effective<BalanceRoomDef>, s: BalanceState): boolean {
-  if (!s.pulled) return false;
+  if (!s.pulled || !balanceStateValid(def, s)) return false;
   if (def.mode === 'lever') return leverSucceeds(leverWeights(def, s), s.fulcrum, def.lever!.goal);
   const P = def.pulley!;
   return pulleyLifts(P.load, s.wheels, P.strength + (P.helper ?? 0));

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateRoom, type GenKind } from './generate';
 import { effective, initialState, isSolved, solutionState } from '../rules';
+import { parseLightGrid } from '../mechanism/light';
 
 const KINDS: GenKind[] = ['gear', 'pipes', 'circuit', 'tracks', 'light', 'logic'];
 
@@ -20,5 +21,21 @@ describe('attic generators', () => {
 
   it('is deterministic', () => {
     expect(generateRoom('pipes', 5, { id: 'a', title: 'a' })).toEqual(generateRoom('pipes', 5, { id: 'a', title: 'a' }));
+  });
+
+  it('generated light instructions explain the actual sensor requirements', () => {
+    const variants = new Set<string>();
+    for (let seed = 1; seed <= 60; seed++) {
+      const def = generateRoom('light', seed * 7919, { id: `light-${seed}`, title: 'test' });
+      if (def.kind !== 'light') throw new Error('Expected a light room');
+      const sensor = parseLightGrid(def.grid).cells.find(t => t?.kind === 'D')!;
+      const words = [def.intro, ...def.hints].join(' ');
+      if (sensor.color === 'g') {
+        variants.add('colour'); expect(words).toContain('green filter');
+      } else if (sensor.focused) {
+        variants.add('focus'); expect(words).toContain('lens'); expect(words).toContain('ringed sensor');
+      } else variants.add('plain');
+    }
+    expect([...variants].sort()).toEqual(['colour', 'focus', 'plain']);
   });
 });

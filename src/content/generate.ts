@@ -393,8 +393,24 @@ function tryLight(rng: Rng, m: Meta): LightRoomDef | null {
     ...base(m),
     kind: 'light',
     families: ['light'],
-    intro: 'Bounce the lamp light onto the sleepy sensor.',
-    hints: ['Light goes in straight lines. Where does it hit the wall?', 'Mirrors turn light round corners. Tap a mirror to flip it.', 'Put mirrors where the beam needs to turn.'],
+    intro: variant === 'colour'
+      ? 'Steer the lamp light with mirrors and a green filter to wake the green sensor.'
+      : variant === 'focus'
+        ? 'Steer the lamp light with mirrors and focus it through a lens to wake the ringed sensor.'
+        : 'Bounce the lamp light onto the sleepy sensor.',
+    hints: [
+      'Follow the straight light beam. Where does it stop?',
+      variant === 'colour'
+        ? 'Mirrors turn light round corners. The green sensor also needs the green filter.'
+        : variant === 'focus'
+          ? 'Mirrors turn light round corners. The ringed sensor also needs light focused through a lens.'
+          : 'Mirrors turn light round corners. Tap a mirror to flip it.',
+      variant === 'colour'
+        ? 'Put mirrors where the beam needs to turn, and put the green filter in the straight gap.'
+        : variant === 'focus'
+          ? 'Put mirrors where the beam needs to turn, and put the lens in the straight gap.'
+          : 'Put mirrors where the beam needs to turn.',
+    ],
     grid: grid.map((r) => r.join(' ')),
     tray: shuffle(rng, tray),
   };

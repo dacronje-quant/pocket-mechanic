@@ -55,7 +55,7 @@ export class LogicRoom extends RoomBase<'logic'> {
     this.nodesG = this.add.graphics().setDepth(D.mech + 2);
     for (const n of this.def.nodes) {
       if (n.kind !== 'input') continue;
-      const z = this.add.zone(n.x, n.y, 110, 110).setInteractive({ useHandCursor: true }).setDepth(D.mech + 4);
+      const z = this.add.zone(n.x, n.y, 110, 110).setInteractive({ useHandCursor: true }).setDepth(D.mech + 4).setName(`logic:input:${n.id}`).setData('qa', { action: 'input', id: n.id });
       z.on('pointerdown', () => this.pressInput(n, true));
       z.on('pointerup', () => this.pressInput(n, false));
       z.on('pointerout', () => n.momentary && this.state.inputs[n.id] && this.pressInput(n, false));
@@ -69,6 +69,7 @@ export class LogicRoom extends RoomBase<'logic'> {
       if (this.style.numbers) obj.add(this.add.text(0, 44, gate, { fontFamily: FONT, fontSize: '15px', color: '#f4ebd5', fontStyle: 'bold', stroke: '#342f29', strokeThickness: 4 }).setOrigin(0.5));
       obj.setSize(110, 110);
       const part: GatePart = { gate, obj, home: spots[i], node: null };
+      obj.setName(`logic:gate:${i}`).setData('qa', { action: 'gate', gate });
       this.parts.push(part);
       this.enableDrag({
         obj,
@@ -90,10 +91,11 @@ export class LogicRoom extends RoomBase<'logic'> {
       roundButton(this, 1180, 600, '▶', () => this.startTest(), { r: 48, fontSize: 44, color: 0xa0a477, say: 'Test it!' }).setDepth(D.hud);
     }
     for (const n of this.def.nodes) {
-      if (n.label && this.style.id !== 'tinker') {
+      const label = n.label ?? (n.kind === 'input' ? n.id.toUpperCase() : undefined);
+      if (label && this.style.id !== 'tinker') {
         this.labels.push(
           this.add
-            .text(n.x, n.y + 62, n.label, { fontFamily: FONT, fontSize: '16px', color: '#f4ebd5', fontStyle: 'bold', stroke: '#342f29', strokeThickness: 4 })
+            .text(n.x, n.y + 62, label, { fontFamily: FONT, fontSize: '16px', color: '#f4ebd5', fontStyle: 'bold', stroke: '#342f29', strokeThickness: 4 })
             .setOrigin(0.5)
             .setDepth(D.mech + 3),
         );

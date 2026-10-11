@@ -2,8 +2,8 @@
 /** Resumable production generator. API keys are never saved or sent to the client. */
 import { loadEnvFile } from 'node:process';
 import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runnerImport } from 'vite';
@@ -76,7 +76,7 @@ async function api(path, body, timeout = 120000) {
     return res;
   }
 }
-function normalize(source, relative, kind, trim = {}, voiceProcessing) {
+function normalize(source, relative, kind, trim = {}, voiceProcessing, highQuality = false) {
   const output = join(AUDIO, relative);
   mkdirSync(dirname(output), { recursive: true });
   const filters = [];
@@ -87,8 +87,20 @@ function normalize(source, relative, kind, trim = {}, voiceProcessing) {
     filters.push('tremolo=f=35:d=0.32', 'aecho=0.8:0.75:7|14:0.22|0.12');
   } else if (voiceProcessing) throw new Error('Unsupported voice processing profile.');
   const target = kind === 'voice' ? -20 : kind === 'music' ? -24 : -23;
-  filters.push(`loudnorm=I=${target}:TP=-2:LRA=7`, 'alimiter=limit=0.7:level=false', 'afade=t=in:d=0.003');
-  execFileSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y', '-i', source, '-af', filters.join(','), '-ac', kind === 'music' ? '2' : '1', '-ar', kind === 'voice' ? '24000' : '44100', '-b:a', kind === 'voice' ? '64k' : kind === 'music' ? '96k' : '96k', '-f', 'mp3', output + '.tmp'], { stdio: 'pipe' });
+  let normalization = `loudnorm=I=${target}:TP=-2:LRA=7`;
+  if (highQuality) {
+    // Measure in the final channel layout, then apply a fixed loudness gain.
+    // A single dynamic pass can make short, uneven foley performances vary.
+    filters.push('aformat=sample_rates=44100:channel_layouts=stereo');
+    const measured = spawnSync(ffmpeg, ['-hide_banner', '-i', source, '-af', [...filters, `${normalization}:print_format=json`].join(','), '-f', 'null', '-'], { encoding: 'utf8' });
+    if (measured.status) throw new Error('Unable to measure object sound loudness.');
+    const levels = JSON.parse(measured.stderr.slice(measured.stderr.lastIndexOf('{')));
+    if (['input_i', 'input_tp', 'input_lra', 'input_thresh', 'target_offset'].some(key => !Number.isFinite(Number(levels[key])))) throw new Error('Object sound is silent or has invalid loudness.');
+    normalization += `:measured_I=${levels.input_i}:measured_TP=${levels.input_tp}:measured_LRA=${levels.input_lra}:measured_thresh=${levels.input_thresh}:offset=${levels.target_offset}:linear=true`;
+  }
+  filters.push(normalization, 'alimiter=limit=0.7:level=false', 'afade=t=in:d=0.003');
+  if (highQuality) filters.push('areverse', 'afade=t=in:d=0.04', 'areverse');
+  execFileSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-y', '-i', source, '-af', filters.join(','), '-ac', kind === 'music' || highQuality ? '2' : '1', '-ar', kind === 'voice' ? '24000' : '44100', '-b:a', kind === 'voice' ? '64k' : highQuality ? '192k' : '96k', '-f', 'mp3', output + '.tmp'], { stdio: 'pipe' });
   renameSync(output + '.tmp', output);
 }
 function save() { atomic(MANIFEST_PATH, manifest); atomic(REPORT_PATH, report); }
@@ -210,19 +222,32 @@ async function music() {
   });
 }
 async function sfx() {
-  const jobs = SOUNDS.filter(s=>s.id.startsWith(only)).flatMap(s=>Array.from({length:s.variants||1},(_,i)=>({...s,index:i,file:`sfx/${s.id}${s.variants?'-'+(i+1):''}.mp3`})));
+  const jobs = SOUNDS.filter(s=>s.id.startsWith(only)).flatMap(s=>Array.from({length:s.variants||1},(_,i)=>{
+    const sourceHash = s.quality === 'high' ? hash({ prompt: s.prompt, seconds: s.seconds, model: 'eleven_text_to_sound_v2', format: 'mp3_44100_192' }) : '';
+    const revision = sourceHash ? '-' + hash({ sourceHash, processing: 'stereo-loudness-two-pass-v1' }) : '';
+    return {...s,index:i,sourceHash,file:`sfx/${s.id}${s.variants?'-'+(i+1):''}${revision}.mp3`};
+  }));
   console.log(`Sound effects: ${SOUNDS.length} cues, ${jobs.length} files including gear variations.`);
   if (dry) return;
   await pool(jobs, async job => {
-    if (!existsSync(join(AUDIO, job.file))) {
+    if (!existsSync(join(AUDIO, job.file)) || args.includes('--reprocess')) {
       let raw = job.reuse ? join(ROOT, 'auditions/elevenlabs', job.reuse) : join(WORK, `sfx-${job.id}-${job.index}.mp3`);
-      if (!job.reuse) await binary('/v1/sound-generation?output_format=mp3_44100_128', { text: job.prompt, model_id: 'eleven_text_to_sound_v2', duration_seconds: job.seconds, prompt_influence: 0.7, loop: false }, raw);
-      normalize(raw, job.file, 'sfx', job.start!==undefined?{start:job.start,seconds:job.seconds}:{});
+      if (job.prompt.length > 450) throw new Error(`Sound prompt exceeds 450 characters: ${job.prompt.length}`);
+      if (job.sourceHash) {
+        const legacy = raw;
+        raw = join(WORK, `sfx-${job.id}-${job.index}-${job.sourceHash}.mp3`);
+        // Migrate the already generated first production take without another
+        // API call. Future prompt edits get a distinct raw and browser cache key.
+        if (!existsSync(raw) && existsSync(legacy) && report.completed[`sfx/${job.id}.mp3`]?.prompt === job.prompt) copyFileSync(legacy, raw);
+      }
+      if (!job.reuse) await binary(`/v1/sound-generation?output_format=${job.quality === 'high' ? 'mp3_44100_192' : 'mp3_44100_128'}`, { text: job.prompt, model_id: 'eleven_text_to_sound_v2', duration_seconds: job.seconds, prompt_influence: 0.7, loop: false }, raw);
+      normalize(raw, job.file, 'sfx', job.start!==undefined?{start:job.start,seconds:job.seconds}:{}, undefined, job.quality === 'high');
     }
     const files = manifest.sfx[job.id] ??= [];
-    if (!files.includes(job.file)) files.push(job.file);
+    if (job.quality === 'high') manifest.sfx[job.id] = [job.file];
+    else if (!files.includes(job.file)) files.push(job.file);
     if (job.id === 'meow') for (const line of catalogue.filter(l=>l.who==='pudding')) manifest.voice[line.id]=job.file;
-    report.completed[job.file] = { kind: 'sfx', prompt: job.prompt, reusedAudition: job.reuse || undefined };
+    report.completed[job.file] = { kind: 'sfx', prompt: job.prompt, model: 'eleven_text_to_sound_v2', quality: job.quality || 'standard', reusedAudition: job.reuse || undefined };
     save();
   });
 }

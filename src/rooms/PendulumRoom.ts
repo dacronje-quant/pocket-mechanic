@@ -23,7 +23,7 @@ interface PView {
   side: number;
 }
 
-const ROD = (notch: number) => 80 + notch * 34;
+const ROD = (notch: number) => 80 + notch * 30;
 
 export class PendulumRoom extends RoomBase<'pendulum'> {
   private views: PView[] = [];
@@ -42,12 +42,15 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
   protected build(): void {
     this.views = [];
     this.pallet = undefined;
+    this.meter = undefined;
+    this.beat = 0;
+    this.t = 0;
     this.g = this.add.graphics().setDepth(D.mech);
     const n = this.def.pendulums.length;
     const swinging = this.def.goal !== 'push';
     this.def.pendulums.forEach((p, i) => {
       const px = n === 1 ? 640 : 640 + (i - (n - 1) / 2) * 380;
-      const bob = this.add.container(px, 130 + ROD(this.state.notches[p.id])).setDepth(D.parts);
+      const bob = this.add.container(px, 130 + ROD(this.state.notches[p.id])).setDepth(D.parts).setName(`pendulum-bob:${p.id}`);
       const bg = this.add.graphics();
       bg.fillStyle(0x000000, 0.3);
       bg.fillCircle(3, 5, 34);
@@ -64,8 +67,8 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
       bob.setSize(90, 90);
       const v: PView = { id: p.id, px, py: 130, fixed: !!p.fixed, bob, amp: swinging ? 0.3 : 0, phase: 0, side: i };
       this.views.push(v);
+      bob.setInteractive({ draggable: !p.fixed, useHandCursor: true });
       if (!p.fixed) {
-        bob.setInteractive({ draggable: true, useHandCursor: true });
         let start = 0;
         let moved = false;
         bob.on('dragstart', () => {
@@ -76,7 +79,7 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
         bob.on('drag', (ptr: Phaser.Input.Pointer) => {
           // slide the bob along the rod: notches snap with a click
           const len = Math.hypot(ptr.worldX - v.px, ptr.worldY - v.py);
-          const notch = Phaser.Math.Clamp(Math.round((len - 80) / 34), this.def.minNotch, this.def.maxNotch);
+          const notch = Phaser.Math.Clamp(Math.round((len - 80) / 30), this.def.minNotch, this.def.maxNotch);
           if (notch !== this.state.notches[p.id]) {
             this.state.notches[p.id] = notch;
             sfx.ratchet(1);
@@ -97,7 +100,7 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
     });
     if (this.def.pallet) {
       this.escape = { x: this.views[0].px + 90, y: 110 };
-      const c = this.add.container(this.palletHome.x, this.palletHome.y).setDepth(D.trayPart).setScale(0.8);
+      const c = this.add.container(this.palletHome.x, this.palletHome.y).setDepth(D.trayPart).setScale(0.8).setName('pendulum-pallet');
       const pg = this.add.graphics();
       pg.fillStyle(0xc8703f, 1);
       pg.fillTriangle(-40, -10, 40, -10, 0, 22);
@@ -130,6 +133,11 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
   private push(v: PView): void {
     if (this.fixed) return;
     v.amp = 0.38;
+    if (this.def.goal === 'push') {
+      // Little Tinker may inherit a two-bob bridge. Either tappable bob
+      // starts the linked clock, including its fixed reference pendulum.
+      for (const view of this.views) { view.amp = .38; view.phase = 0; }
+    }
     sfx.swish();
     if (!this.state.pushed) {
       this.state.pushed = true;
@@ -169,6 +177,15 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
     this.t += dt;
     const g = this.g;
     g.clear();
+    // Equal lengths are the puzzle's synchronising linkage. Lock their phase
+    // as well, so the completed bridge really moves level with both bobs.
+    if (this.def.goal === 'sync' && pendulumSolved(this.def, this.state)) {
+      const reference = this.views[0];
+      for (const view of this.views.slice(1)) {
+        view.phase = reference.phase;
+        view.amp = reference.amp;
+      }
+    }
     let ticked = false;
     for (const v of this.views) {
       const notch = this.state.notches[v.id];
@@ -203,7 +220,7 @@ export class PendulumRoom extends RoomBase<'pendulum'> {
     const running = this.views[0].amp > 0.01 && (!this.def.pallet || this.state.pallet);
     if (this.def.pallet || this.def.goal === 'push') {
       for (let i = 0; i < 12; i++) {
-        const a = (i / 12) * Math.PI * 2 + (running ? Math.floor(this.t * 2) * 0.26 : 0);
+        const a = (i / 12) * Math.PI * 2 + this.beat * 0.26;
         g.fillStyle(0xbca16a, 1);
         g.fillTriangle(e.x + 110 + Math.cos(a) * 40, 150 + Math.sin(a) * 40, e.x + 110 + Math.cos(a + 0.2) * 28, 150 + Math.sin(a + 0.2) * 28, e.x + 110 + Math.cos(a - 0.2) * 28, 150 + Math.sin(a - 0.2) * 28);
       }

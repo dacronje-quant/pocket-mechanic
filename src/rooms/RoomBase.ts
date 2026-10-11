@@ -1,4 +1,4 @@
-import { roomVoiceId } from '../content/roomVoice';
+import { roomVoice } from '../content/roomVoice';
 /**
  * Everything every room shares: the backdrop, Kip (and Tess), the HUD, the
  * parts drawer and drag-and-snap, hints, the Peek Lens, Golden Gears, Lost
@@ -142,6 +142,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
   private playTimer = 0;
   private ghostVisible = false;
   private pathPulse = 0;
+  private activeRoomHint = false;
 
   // ───────────────────────────── for the room kinds ─────────────────────────────
 
@@ -198,6 +199,10 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     this.usedTess = false;
     this.ghostVisible = false;
     this.playTimer = 0;
+    this.pathPulse = 0;
+    this.activeRoomHint = false;
+    this.timerText = undefined;
+    this.peekBtn = undefined;
     this.dark = undefined;
     this.tess = undefined;
   }
@@ -269,7 +274,9 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     this.titleCard();
     this.cameras.main.fadeIn(300, 26, 18, 12);
     if (this.launch.mode !== 'playground') {
-      this.time.delayedCall(1300, () => this.bubble.say(this.def.intro, { id: roomVoiceId(this.def, this.style.id, 'intro') }));
+      this.time.delayedCall(1300, () => {
+        if (!this.fixed && !this.activeRoomHint) this.sayRoomLine('intro');
+      });
     }
     pm.scene = this.scene.key;
     pm.next = null;
@@ -497,8 +504,12 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     this.hintStage = 0;
     if (undo) this.undoStack.push(undo);
     this.hintG.clear();
+    this.pathPulse = 0;
     if (this.fixed && this.launch.mode !== 'playground') this.recheckClever();
     else if (this.liveCheck) this.checkSolved();
+    // A nudge belongs to the state that requested it. Once the player acts,
+    // keep the goal visible and cancel the now outdated spoken instruction.
+    if (!this.fixed && this.activeRoomHint) this.sayRoomLine('intro', true);
   }
 
   /** Golden Gear ③ can still be earned after the fix (keep playing). */
@@ -520,6 +531,11 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     sfx.whirr();
     u();
     this.refresh();
+    this.idle = 0;
+    this.hintStage = 0;
+    this.pathPulse = 0;
+    this.hintG.clear();
+    if (!this.fixed && this.activeRoomHint) this.sayRoomLine('intro', true);
   }
 
   protected checkSolved(): void {
@@ -846,8 +862,9 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     this.refreshGold();
     let x = 1224;
     roundButton(this, x, 52, '⛶', () => toggleFullscreen(this), { fontSize: 30 }).setDepth(D.hud);
-    x -= 90;
-    this.soundBtn = roundButton(this, x, 52, settings().muted ? '🔇' : '🔊', () => this.toggleSound(), { fontSize: 28 }).setDepth(D.hud);
+    // Secondary controls sit beside the drawer, leaving the goal readable
+    // even with every Engineer tool and Tess unlocked.
+    this.soundBtn = roundButton(this, 1224, 670, settings().muted ? '🔇' : '🔊', () => this.toggleSound(), { fontSize: 28 }).setDepth(D.hud);
     x -= 90;
     roundButton(this, x, 52, '↺', () => this.rewind(), { fontSize: 38, say: 'Undo' }).setDepth(D.hud);
     if (this.canPeek()) {
@@ -862,15 +879,14 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     // Hear it again: replays whatever was said last (a hint you missed); pressed while a line is
     // showing, or before anything was said, it gives the room's main instruction.
     roundButton(this, x, 52, '💬', () => {
-      if (this.bubble.showing || !this.bubble.replay()) this.bubble.say(this.def.intro, { id: roomVoiceId(this.def, this.style.id, 'intro') });
+      if (!this.bubble.replay()) this.sayRoomLine('intro');
     }, { fontSize: 28, say: '' }).setDepth(D.hud);
     if (tessUnlocked(profile()) && settings().coop !== 'hands') {
-      x -= 90;
-      roundButton(this, x, 52, '👥', () => this.toggleTess(), { fontSize: 28 }).setDepth(D.hud);
+      roundButton(this, 56, 670, '👥', () => this.toggleTess(), { fontSize: 28 }).setDepth(D.hud);
     }
     if (this.launch.mode === 'tuneup') {
       this.timerText = this.add
-        .text(640, 52, '', { fontFamily: FONT, fontSize: '24px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 14, y: 6 } })
+        .text(174, 116, '', { fontFamily: FONT, fontSize: '24px', color: '#f4ebd5', backgroundColor: '#342f29cc', padding: { x: 14, y: 6 } })
         .setOrigin(0.5)
         .setDepth(D.hud);
     }
@@ -878,7 +894,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     // right, so it never covers the top of the puzzle while the goal is being explained.
     const left = 262;
     const right = x - 44;
-    const width = Math.max(400, Math.min(700, right - left));
+    const width = Math.min(700, right - left);
     this.bubble = new SpeechBubble(this, left + width / 2, 58, width).setDepth(D.bubble);
   }
 
@@ -972,12 +988,20 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
 
   // ───────────────────────────── hints ─────────────────────────────
 
+  private sayRoomLine(line: 'intro' | number, silent = false): void {
+    const voice = roomVoice(this.def as AnyDef, this.style.id);
+    const selected = line === 'intro' ? voice.intro : voice.hints[Math.min(line, voice.hints.length - 1)];
+    this.activeRoomHint = line !== 'intro';
+    this.bubble.say(selected.text, { who: selected.who, id: selected.id, keep: true, silent });
+  }
+
   private requestHint(): void {
+    if (this.fixed) return;
     const h = this.def.hints;
     const tier = Math.min(this.hintTier, h.length - 1);
     this.hintsUsed++;
     profile().stats.hints++;
-    this.bubble.say(h[tier], { id: roomVoiceId(this.def, this.style.id, `hint.${tier}`) });
+    this.sayRoomLine(tier);
     if (tier >= 2) this.showPath(true);
     this.hintTier++;
   }
@@ -1002,7 +1026,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
       this.hintStage = 3;
       const tier = this.style.id === 'tinker' ? 2 : Math.min(this.hintTier, 2);
       this.hintsUsed++;
-      this.bubble.say(this.def.hints[tier], { id: roomVoiceId(this.def, this.style.id, `hint.${tier}`) });
+      this.sayRoomLine(tier);
       this.hintTier++;
     } else if (this.hintStage === 3 && t > at.path) {
       this.hintStage = 4;

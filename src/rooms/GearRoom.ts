@@ -130,6 +130,7 @@ export class GearRoom extends RoomBase<'gear'> {
       const r = Math.max(pitchRadius(teeth) + MODULE, 60);
       img.setInteractive({ hitArea: new Phaser.Geom.Circle(img.width / 2, img.height / 2, r), hitAreaCallback: Phaser.Geom.Circle.Contains, draggable: true, useHandCursor: true });
       const v: GearView = { id: `t${i}`, teeth, img, fixed: false, home, omega: 0, freeSpin: 0 };
+      img.setName(`gear:part:${i}`).setData('qa', { action: 'gear', teeth });
       this.views.push(v);
       this.enableDrag({
         obj: img,
@@ -421,7 +422,7 @@ export class GearRoom extends RoomBase<'gear'> {
       const o = this.evalR?.outputs[i];
       const omega = o?.omega ?? 0;
       w.a += omega * dt;
-      w.b += (w.out.ratio !== undefined && w.out.widget === 'hands' ? this.evalR.omegaIn : omega / 12) * dt;
+      w.b += (w.out.ratio !== undefined && w.out.widget === 'hands' ? (omega !== 0 ? this.evalR.omegaIn : 0) : omega / 12) * dt;
       this.drawWidget(w, omega, dt);
       if (w.label) {
         const r = o ? Math.abs(o.ratio) : 0;

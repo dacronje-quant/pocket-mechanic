@@ -101,6 +101,7 @@ export class CamRoom extends RoomBase<'cam'> {
     this.xs = {};
     this.figs = {};
     this.turn = 0;
+    this.lastStep = -1;
     this.g = this.add.graphics().setDepth(D.mech);
     this.fg = this.add.graphics().setDepth(D.mech + 2);
     const n = this.def.followers.length;
@@ -117,10 +118,6 @@ export class CamRoom extends RoomBase<'cam'> {
         p.obj.disableInteractive();
       }
     });
-    for (const f of this.def.followers) {
-      const z = this.add.zone(this.xs[f.id], SHAFT_Y, 120, 120).setInteractive({ useHandCursor: true }).setDepth(D.mech + 3);
-      z.on('pointerup', () => this.tapCam(f.id));
-    }
   }
 
   private makeFigure(art: FollowerArt): Figure {
@@ -217,7 +214,7 @@ export class CamRoom extends RoomBase<'cam'> {
   }
 
   private addPart(shape: CamShape, home: { x: number; y: number }): CamPart {
-    const obj = this.add.container(home.x, home.y).setDepth(D.trayPart).setScale(0.7);
+    const obj = this.add.container(home.x, home.y).setDepth(D.trayPart).setScale(0.7).setName(`cam-part:${this.parts.length}:${shape}`);
     const g = this.add.graphics();
     obj.add(g);
     obj.setSize(130, 130);
@@ -231,6 +228,11 @@ export class CamRoom extends RoomBase<'cam'> {
       accepts: (t) => this.style.id !== 'tinker' || this.def.solution[t.id]?.shape === shape,
       pick: () => this.lift(p),
       drop: (t) => this.drop(p, t),
+    });
+    // The cam receives both taps and drags, so a wrong choice can be removed.
+    // A separate higher tap zone used to swallow its drag input.
+    obj.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      if (p.at && pointer.getDistance() < 10) this.tapCam(p.at);
     });
     return p;
   }

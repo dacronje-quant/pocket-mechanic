@@ -79,6 +79,7 @@ export class OilRoom extends RoomBase<'oil'> {
     this.drops = this.add.particles(0, 0, 'drop', { speed: { min: 40, max: 120 }, angle: { min: 60, max: 120 }, gravityY: 400, lifespan: 600, scale: { start: 0.9, end: 0.4 }, tint: 0xe8a33d, emitting: false }).setDepth(D.fx);
     // the oil can
     this.can = this.add.container(this.canHome.x, this.canHome.y).setDepth(D.trayPart).setScale(0.9);
+    this.can.setName('oil:can').setData('qa', { action: 'oil' });
     const cg = this.add.graphics();
     drawPart(cg, 'oilcan', 0, 0, 1);
     this.can.add(cg);
@@ -107,6 +108,7 @@ export class OilRoom extends RoomBase<'oil'> {
       c.add(pg);
       c.setSize(100, 70);
       this.pawlObj = c;
+      c.setName('oil:pawl').setData('qa', { action: 'pawl' });
       this.enableDrag({
         obj: c,
         restScale: 0.9,
@@ -153,7 +155,7 @@ export class OilRoom extends RoomBase<'oil'> {
   private buildCrank(): void {
     const k = this.def.crank!;
     this.crankG = this.add.graphics().setDepth(D.mech + 2);
-    const zone = this.add.zone(k.x, k.y, 260, 260).setInteractive({ useHandCursor: true }).setDepth(D.mech + 3);
+    const zone = this.add.zone(k.x, k.y, 260, 260).setInteractive({ useHandCursor: true }).setDepth(D.mech + 3).setName('oil:crank').setData('qa', { action: 'wind' });
     let last: number | null = null;
     zone.on('pointerdown', (p: Phaser.Input.Pointer) => {
       last = Math.atan2(p.worldY - k.y, p.worldX - k.x);
@@ -209,7 +211,7 @@ export class OilRoom extends RoomBase<'oil'> {
   protected tick(dt: number): void {
     this.t += dt;
     // Little Tinkers (and anyone) can tap-and-hold the crank to auto-turn
-    if (this.holding && this.def.crank && !this.fixed && this.style.id === 'tinker') this.turn(dt * 4);
+    if (this.holding && this.def.crank && !this.fixed) this.turn(dt * 4);
     for (const p of this.parts) {
       const oiled = this.state.oiled.has(p.id);
       const g = p.g;
