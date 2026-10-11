@@ -7,6 +7,7 @@ import Phaser from 'phaser';
 import { loadManifest, setLevels } from '../audio/engine';
 import { setSoft } from '../audio/sfx';
 import { beginArtScene, preloadCoreArt } from '../art/generated';
+import { warmFigures } from '../art/sprites';
 import { ensureBasics, ensureGearTexture } from '../art/textures';
 import { CM, CM_CSS, drawLeafSprig, drawPatina } from '../art/copperMoss';
 import { getRoom } from '../content/index';
@@ -37,6 +38,7 @@ export class BootScene extends Phaser.Scene {
     ]);
     this.events.off(Phaser.Scenes.Events.SHUTDOWN, stop);
     if (!alive || !this.sys.isActive()) return;
+    warmFigures(this.game);
     pm.ready = true;
     pm.dev = {
       save,

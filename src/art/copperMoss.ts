@@ -119,19 +119,3 @@ export function drawCopperPipe(g: G, points: [number, number][], width = 10): vo
     g.strokeCircle(nx - 1, ny - 1, width * 0.48);
   }
 }
-
-/** One shared, cached fine-paper overlay. Kept above scenery, below HUD when requested. */
-export function addPaperGrain(scene: Phaser.Scene, depth = 90, alpha = 0.12): Phaser.GameObjects.Image {
-  const key = 'copper-moss:paper-grain';
-  if (!scene.textures.exists(key)) {
-    const g = scene.make.graphics({ x: 0, y: 0 });
-    const rng = mulberry32(440821);
-    for (let i = 0; i < 6800; i++) {
-      g.fillStyle(i % 3 === 0 ? CM.cream : CM.ink, 0.15 + rng() * 0.35);
-      g.fillRect(rng() * 1280, rng() * 720, 0.4 + rng() * 1.1, 0.4 + rng() * 0.8);
-    }
-    g.generateTexture(key, 1280, 720);
-    g.destroy();
-  }
-  return scene.add.image(640, 360, key).setDisplaySize(1280, 720).setDepth(depth).setAlpha(alpha);
-}

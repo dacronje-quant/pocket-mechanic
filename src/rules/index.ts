@@ -29,24 +29,19 @@ import { pinKey, pinsMatch } from '../mechanism/pins';
 import { allTuned } from '../mechanism/tune';
 import type {
   BalanceRoomDef,
-  BusyRoomDef,
   CamRoomDef,
   CardsRoomDef,
   ChainRoomDef,
   FlowRoomDef,
   GearPlacement,
   GearRoomDef,
-  HuntRoomDef,
   LightRoomDef,
   LogicRoomDef,
-  MusicRoomDef,
-  NestRoomDef,
   OilRoomDef,
   PendulumRoomDef,
   PlayStyleId,
   RoomDef,
   RoomKind,
-  TuneRoomDef,
 } from '../content/types';
 import { gridToRows, lightToRows } from './grid';
 
@@ -571,4 +566,3 @@ export function isSolved<K extends RoomKind>(def: DefOf<K>, s: StateOf[K], style
 }
 
 // silence "declared but unused" for kinds whose defs are only used through RULES
-export type _Unused = HuntRoomDef | BusyRoomDef | NestRoomDef | MusicRoomDef | TuneRoomDef;

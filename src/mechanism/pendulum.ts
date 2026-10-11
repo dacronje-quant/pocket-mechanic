@@ -35,6 +35,3 @@ export function inSync(notchA: number, notchB: number): boolean {
 }
 
 /** Swing angle at time t for an amplitude (radians) — small-angle motion. */
-export function swingAngle(notch: number, t: number, amplitude: number): number {
-  return amplitude * Math.sin((2 * Math.PI * t) / period(notchLength(notch)));
-}
