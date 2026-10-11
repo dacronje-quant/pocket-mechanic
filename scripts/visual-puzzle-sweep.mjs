@@ -47,7 +47,7 @@ try {
     page.on('console', m => { if (m.type() === 'error' && !/favicon|Failed to load resource/.test(m.text())) errors.push(m.text()); });
     await page.goto(`${base}/?renderer=canvas&room=1-2`);
     await page.waitForFunction(() => window.pm?.room);
-    let selected = all ? rooms : [...new Map(rooms.map(r => [r.kind, r])).values()];
+    let selected = args.includes('--story') ? rooms.filter(r => STORY_ROOMS.some(story => story.id === r.id)) : all ? rooms : [...new Map(rooms.map(r => [r.kind, r])).values()];
     if (filterKinds.length) selected = selected.filter(r => filterKinds.includes(r.kind));
     if (filterIds.length) selected = rooms.filter(r => filterIds.includes(r.id));
     for (const style of styleList) for (const room of selected) {

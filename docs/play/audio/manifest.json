@@ -3334,6 +3334,33 @@
     ],
     "object-tower": [
       "sfx/object-tower-e7ed1fd0935710b49d55.mp3"
+    ],
+    "robot-classic": [
+      "sfx/robot-classic-8b92938e7554d047f474.mp3"
+    ],
+    "robot-chirpy": [
+      "sfx/robot-chirpy-4e4813c6ab8075943d82.mp3"
+    ],
+    "robot-musical": [
+      "sfx/robot-musical-5ba51d39de65b853926c.mp3"
+    ],
+    "robot-bubbly": [
+      "sfx/robot-bubbly-86580c780544b0f7a4e4.mp3"
+    ],
+    "robot-retro": [
+      "sfx/robot-retro-c1624822f1db078758b5.mp3"
+    ],
+    "robot-musicbox": [
+      "sfx/robot-musicbox-bb3ea5c7e7c6bdf2e467.mp3"
+    ],
+    "instrument-hum": [
+      "sfx/instrument-hum-b4842c70c713ff11173f.mp3"
+    ],
+    "instrument-horn": [
+      "sfx/instrument-horn-c68d786411ba1041687c.mp3"
+    ],
+    "instrument-whistle": [
+      "sfx/instrument-whistle-9f3f5128c6d0ed5a16d0.mp3"
     ]
   }
 }

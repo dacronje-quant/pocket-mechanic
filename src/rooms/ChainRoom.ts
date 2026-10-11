@@ -40,6 +40,7 @@ export class ChainRoom extends RoomBase<'chain'> {
   private stationsG!: Phaser.GameObjects.Graphics;
   private orbG!: Phaser.GameObjects.Graphics;
   private iconsG!: Phaser.GameObjects.Graphics;
+  private fixedCards: Array<{ index: number; drawing: Phaser.GameObjects.Graphics }> = [];
   private run: ChainRun | null = null;
   private runT = -1;
   private wobble = new Map<number, number>();
@@ -56,6 +57,7 @@ export class ChainRoom extends RoomBase<'chain'> {
     this.run = null;
     this.runT = -1;
     this.wobble = new Map();
+    this.fixedCards = [];
     this.liveCheck = false;
     const n = this.def.links.length;
     const rows = n > 8 ? 2 : 1;
@@ -71,6 +73,20 @@ export class ChainRoom extends RoomBase<'chain'> {
     this.stationsG = this.add.graphics().setDepth(D.mech);
     this.iconsG = this.add.graphics().setDepth(D.mech + 1);
     this.orbG = this.add.graphics().setDepth(D.mech + 2).setBlendMode(Phaser.BlendModes.ADD);
+    // Connectors and authored cards are static. Keep their drawing across
+    // frames; only the moving signal, goal halo and wobble need updates.
+    for (let i = 0; i + 1 < this.pos.length; i++) {
+      const a = this.pos[i], b = this.pos[i + 1];
+      this.stationsG.lineStyle(10, 0x342f29, .6).lineBetween(a.x, a.y, b.x, b.y);
+      this.stationsG.lineStyle(5, 0xb88a2c, 1).lineBetween(a.x, a.y, b.x, b.y);
+    }
+    this.def.links.forEach((link, index) => {
+      if (!link.part) return;
+      const p = this.pos[index];
+      const drawing = this.add.graphics().setPosition(p.x, p.y).setDepth(D.mech + 1);
+      this.drawCard(drawing, link.part, 0, 0, false, this.reversed(index));
+      this.fixedCards.push({ index, drawing });
+    });
     const spots = this.traySpots(this.def.tray.length);
     this.def.tray.forEach((id, i) => {
       const obj = this.add.container(spots[i].x, spots[i].y).setDepth(D.trayPart).setScale(0.68).setName(`chain-part:${i}:${id}`);
@@ -176,6 +192,7 @@ export class ChainRoom extends RoomBase<'chain'> {
     this.sync();
     this.stopRun();
     this.paintPart(v);
+    this.drawSlots();
     this.undoStack.push(() => {
       v.at = was;
       this.sync();
@@ -197,6 +214,7 @@ export class ChainRoom extends RoomBase<'chain'> {
     this.tweens.add({ targets: v.obj, x: t.x, y: t.y, scale: 1, duration: 110, ease: 'Back.easeOut' });
     v.obj.setDepth(D.mech + 3);
     this.sync();
+    this.drawSlots();
     this.stopRun();
     this.clunkAt(t.x, t.y);
     this.act(() => {
@@ -220,6 +238,18 @@ export class ChainRoom extends RoomBase<'chain'> {
       else p.obj.setPosition(p.home.x, p.home.y).setScale(0.68).setDepth(D.trayPart);
     }
     this.sync();
+    this.drawSlots();
+  }
+
+  private drawSlots(): void {
+    const g = this.iconsG;
+    if (!g) return;
+    g.clear();
+    this.def.links.forEach((link, index) => {
+      if (!link.slot || this.parts.some(part => part.at === index)) return;
+      const p = this.pos[index];
+      g.lineStyle(4, CM.cream, .6).strokeRoundedRect(p.x - this.card / 2, p.y - this.card / 2, this.card, this.card, 14);
+    });
   }
 
   private start(): void {
@@ -273,37 +303,19 @@ export class ChainRoom extends RoomBase<'chain'> {
 
   protected tick(dt: number): void {
     this.t += dt;
-    const sg = this.stationsG;
-    const ig = this.iconsG;
     const og = this.orbG;
-    sg.clear();
-    ig.clear();
     og.clear();
-    // connectors between stations
-    for (let i = 0; i + 1 < this.pos.length; i++) {
-      const a = this.pos[i];
-      const b = this.pos[i + 1];
-      sg.lineStyle(10, 0x342f29, 0.6);
-      sg.lineBetween(a.x, a.y, b.x, b.y);
-      sg.lineStyle(5, 0xb88a2c, 1);
-      sg.lineBetween(a.x, a.y, b.x, b.y);
+    for (const { index, drawing } of this.fixedCards) {
+      const w = this.wobble.get(index) ?? 0;
+      drawing.x = this.pos[index].x + (w > 0 ? Math.sin(this.t * 40) * 4 : 0);
     }
-    this.def.links.forEach((l, i) => {
-      const p = this.pos[i];
-      const w = this.wobble.get(i) ?? 0;
-      if (w > 0) this.wobble.set(i, w - dt);
-      const ox = w > 0 ? Math.sin(this.t * 40) * 4 : 0;
-      if (l.part) this.drawCard(ig, l.part, p.x + ox, p.y, false, this.reversed(i));
-      else if (!this.parts.some((q) => q.at === i)) {
-        ig.lineStyle(4, 0xf4ebd5, 0.6);
-        ig.strokeRoundedRect(p.x - this.card / 2, p.y - this.card / 2, this.card, this.card, 14);
-      }
-      if (i === this.def.links.length - 1) {
-        // the goal glows when the chain completes
-        ig.lineStyle(4, 0xf1d391, 0.5 + Math.sin(this.t * 3) * 0.3);
-        ig.strokeRoundedRect(p.x - this.card / 2 - 6, p.y - this.card / 2 - 6, this.card + 12, this.card + 12, 18);
-      }
-    });
+    for (const [index, remaining] of this.wobble) {
+      if (remaining <= dt) this.wobble.delete(index);
+      else this.wobble.set(index, remaining - dt);
+    }
+    const goal = this.pos[this.pos.length - 1];
+    og.lineStyle(4, CM.glow, .5 + Math.sin(this.t * 3) * .3);
+    og.strokeRoundedRect(goal.x - this.card / 2 - 6, goal.y - this.card / 2 - 6, this.card + 12, this.card + 12, 18);
     if (this.runT >= 0 && this.run) {
       const before = Math.floor(this.runT);
       this.runT += dt * 1.6;

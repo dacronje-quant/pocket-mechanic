@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REPAIRS } from '../content/repairs';
-import { afterRoom, startRepair, type Step } from './journey';
+import { afterRoom, resumeStory, startRepair, type Step } from './journey';
 import { finishRepair, goldNeeded, markFixed, medalFor, nookLevel, repairOpen, storyGold, whatWeLearned } from './progress';
 import { newProfile } from './save';
 
@@ -45,6 +45,27 @@ describe('the journey through a Great Repair', () => {
     expect(afterRoom(p, { roomId: '1-2', mode: 'tuneup' }).scene).toBe('shelf');
     expect(afterRoom(p, { roomId: 'attic-typewriter-1', mode: 'attic' }).scene).toBe('attic');
     expect(afterRoom(p, { roomId: '8-7', mode: 'free' }).scene).toBe('bench');
+  });
+
+  it('recovers a completed Big Fix, an interrupted Return and missed chapter beats', () => {
+    const p = newProfile('AB', 0, 'fixer');
+    markFixed(p, '3-bf');
+    expect(scenes(startRepair(p, 3))).toEqual(['reveal', 'story:r3-return', 'rewards', 'story:act1-closer', 'shop']);
+    finishRepair(p, 3);
+    expect(scenes(resumeStory(p)!)).toEqual(['story:r3-return', 'rewards', 'story:act1-closer', 'shop']);
+    p.seen.push('r3-return');
+    expect(scenes(resumeStory(p)!)).toEqual(['story:act1-closer', 'shop']);
+    p.seen.push('act1-closer');
+    expect(resumeStory(p)).toBeNull();
+  });
+
+  it('recovers the silent bell after any Act II order and never repeats a seen beat', () => {
+    const p = newProfile('AB', 0, 'fixer');
+    p.repairs = [6, 5, 4];
+    p.seen = ['r6-return', 'r5-return', 'r4-return', 'tess-built', 'magnus-radio'];
+    expect(scenes(resumeStory(p)!)).toEqual(['story:bell-silent', 'shop']);
+    p.seen.push('bell-silent');
+    expect(resumeStory(p)).toBeNull();
   });
 });
 

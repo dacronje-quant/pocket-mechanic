@@ -33,7 +33,7 @@ export abstract class MetaScene extends Phaser.Scene {
     ensureBasics(this);
     setLevels({ muted: s.muted, music: s.music, sfx: s.sfx, voice: s.voice });
     setSoft(s.soft);
-    setVoiceChip(profile().look.voice);
+    setVoiceChip(profile().look.voice, profile().tessLook.voice);
     pm.scene = this.scene.key;
     resetLeaving();
     pm.next = null;

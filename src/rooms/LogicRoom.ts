@@ -13,6 +13,7 @@ import type { LogicRoomNode } from '../content/types';
 import { logicSolved } from '../rules';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
 import { FONT, roundButton } from '../ui/widgets';
+import { settings } from '../core/save';
 
 const GATE_COLORS: Record<GateType, number> = { AND: 0xbb785b, OR: 0x648995, NOT: 0x8a9b69, LATCH: 0x917d96 };
 const GATE_WORDS: Record<GateType, string> = { AND: 'BOTH', OR: 'EITHER', NOT: 'FLIP', LATCH: 'REMEMBER' };
@@ -239,7 +240,7 @@ export class LogicRoom extends RoomBase<'logic'> {
       this.testing = false;
       sfx.boing();
       this.kip.shrug();
-      this.cameras.main.shake(120, 0.003);
+      if (!settings().calm) this.cameras.main.shake(120, 0.003);
       this.latches = {};
       this.evaluateNow();
       return;

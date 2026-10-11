@@ -282,8 +282,7 @@ export function makeFiddle(scene: Phaser.Scene, kind: FiddleKind, x: number, y: 
       g.fillCircle(-30, 0, 12);
       hit(70, 60);
       tap = () => {
-        sfx.tone(330, 'square', 0.12, 0.01, 0.25);
-        sfx.tone(262, 'square', 0.12, 0.01, 0.3, 0.2);
+        sfx.horn();
         wobble(10);
       };
       break;

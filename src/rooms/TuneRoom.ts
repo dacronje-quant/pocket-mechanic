@@ -139,7 +139,8 @@ export class TuneRoom extends RoomBase<'tune'> {
         else sfx.drip();
         break;
       case 'whistle':
-        sfx.whistle(196 * Math.pow(2, val * 2), 0.18);
+        // This is a playable pitch instrument, rather than a train effect.
+        sfx.note(196 * Math.pow(2, val * 2), 'pipe', 0.18);
         break;
     }
   }

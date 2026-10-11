@@ -1,10 +1,8 @@
 /**
  * Music that is the machine (GDD §23.2). Each object has a theme made of
  * layers: a broken machine plays a sparse version and every fixed room adds
- * an instrument, so players hear their progress. Themes are synthesised here
- * as a fallback; a generated loop under public/audio/music replaces a
- * theme when the manifest lists one — crossfaded into itself so it never
- * clicks, and heard through a low-pass filter that opens up as rooms are
+ * an instrument, so players hear their progress. Unavailable recordings stay silent. Generated loops are crossfaded
+ * so they never click, and heard through a low-pass filter that opens up as rooms are
  * fixed, so the generated music still tells the player their progress.
  */
 import type { ThemeId } from '../content/types';
@@ -49,20 +47,7 @@ export const THEMES: Record<ThemeId | 'festival' | 'title', MusicTheme> = {
   festival: T({ bpm: 112, root: 60, scale: MAJOR, chords: [0, 3, 4, 0], melody: [0, 0, 4, 4, 5, 5, 4, -1, 3, 3, 2, 2, 1, 1, 0, -1], beatsPerBar: 4, bass: 'triangle', lead: 'triangle', perc: 'snap' }),
 };
 
-const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
-const degree = (th: MusicTheme, d: number, octave = 0) => {
-  const s = th.scale;
-  const o = Math.floor(d / s.length);
-  const i = ((d % s.length) + s.length) % s.length;
-  return th.root + s[i] + 12 * (o + octave);
-};
-
 let current: { id: string; theme: MusicTheme } | null = null;
-let layers = 1;
-let timer: ReturnType<typeof setInterval> | null = null;
-let nextTime = 0;
-let step = 0;
-let tempoScale = 1;
 /** A generated loop playing: crossfaded repeats through a low-pass filter that opens with progress. */
 let file: { buf: AudioBuffer; filter: BiquadFilterNode; out: GainNode; voices: Array<{ src: AudioBufferSourceNode; gain: GainNode }>; timer: ReturnType<typeof setTimeout> | null } | null = null;
 let fileProgress = 1;
@@ -80,60 +65,6 @@ function note(c: AudioContext, dest: AudioNode, freq: number, t: number, len: nu
   o.connect(g).connect(dest);
   o.start(t);
   o.stop(t + len + 0.05);
-}
-
-function perc(c: AudioContext, dest: AudioNode, kind: MusicTheme['perc'], t: number, accent: boolean): void {
-  const len = kind === 'chug' ? 0.08 : kind === 'brush' ? 0.12 : 0.03;
-  const src = c.createBufferSource();
-  const buf = c.createBuffer(1, Math.ceil(c.sampleRate * (len + 0.02)), c.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  src.buffer = buf;
-  const f = c.createBiquadFilter();
-  f.type = kind === 'chug' ? 'lowpass' : 'bandpass';
-  f.frequency.value = kind === 'tick' ? 3200 : kind === 'chug' ? 700 : kind === 'snap' ? 2000 : kind === 'bell' ? 5000 : 3500;
-  f.Q.value = kind === 'tick' ? 6 : 1.5;
-  const g = c.createGain();
-  const peak = (accent ? 0.12 : 0.07) * (kind === 'bell' ? 0.6 : 1);
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(peak, t + 0.003);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-  src.connect(f).connect(g).connect(dest);
-  src.start(t);
-  if (kind === 'bell' && accent) note(c, dest, 2093, t, 0.4, 'sine', 0.02);
-}
-
-function schedule(): void {
-  const c = ac();
-  const dest = bus('music');
-  if (!c || !dest || !current) return;
-  const th = current.theme;
-  const stepDur = 60 / (th.bpm * tempoScale) / 4; // sixteenth notes
-  const stepsPerBar = th.beatsPerBar * 4;
-  while (nextTime < c.currentTime + 0.15) {
-    const s = step;
-    const t = nextTime;
-    const inBar = s % stepsPerBar;
-    const bar = Math.floor(s / stepsPerBar) % th.chords.length;
-    const chord = th.chords[bar];
-    // layer 1: soft pad on the chord
-    if (inBar === 0) {
-      for (const d of [0, 2, 4]) note(c, dest, midi(degree(th, chord + d, -1)), t, stepDur * stepsPerBar * 0.95, 'sine', 0.025);
-    }
-    // layer 2: bass on the beats
-    if (layers >= 2 && inBar % 4 === 0) note(c, dest, midi(degree(th, chord, -2)), t, stepDur * 3, th.bass, inBar === 0 ? 0.09 : 0.06);
-    // layer 3: the machine ticks in time
-    if (layers >= 3 && inBar % 2 === 0) perc(c, dest, th.perc, t, inBar % 4 === 0);
-    // layer 4: the melody
-    if (layers >= 4) {
-      const m = th.melody[s % th.melody.length];
-      if (m >= 0 && s % 2 === 0) note(c, dest, midi(degree(th, m, 0)), t, stepDur * 3, th.lead, th.lead === 'sine' ? 0.06 : 0.04);
-    }
-    // layer 5: sparkly arpeggio
-    if (layers >= 5 && inBar % 2 === 1) note(c, dest, midi(degree(th, chord + [0, 2, 4, 7][(s >> 1) % 4], 1)), t, stepDur * 1.5, 'sine', 0.018);
-    nextTime += stepDur;
-    step++;
-  }
 }
 
 function stopFile(): void {
@@ -223,9 +154,6 @@ function startFile(buf: AudioBuffer, dest: AudioNode): void {
 
 /** Play a theme. `progress` (0..1) decides how many layers are back. */
 export function playMusic(id: keyof typeof THEMES, progress = 1, windDown = false): void {
-  tempoScale = windDown ? 0.85 : 1;
-  const want = Math.max(1, Math.min(5, 1 + Math.round(progress * 4)));
-  layers = windDown ? Math.min(want, 3) : want;
   if (current?.id === id) {
     fileProgress = progress;
     fileWindDown = windDown;
@@ -251,36 +179,23 @@ export function playMusic(id: keyof typeof THEMES, progress = 1, windDown = fals
     const dest = bus('music');
     void loadBuffer(url).then((buf) => {
       if (current?.id !== id) return;
-      if (!buf || !dest) return startSynth();
+      if (!buf || !dest) return;
       try {
         startFile(buf, dest);
       } catch {
-        startSynth();
+        /* unavailable recording: stay silent */
       }
-    }).catch(() => startSynth());
+    }).catch(() => undefined);
     return;
   }
-  startSynth();
-}
-
-function startSynth(): void {
-  const c = ac();
-  if (!c) return;
-  nextTime = c.currentTime + 0.05;
-  step = 0;
-  if (timer) clearInterval(timer);
-  timer = setInterval(schedule, 40);
 }
 
 export function setMusicProgress(progress: number): void {
-  layers = Math.max(1, Math.min(5, 1 + Math.round(progress * 4)));
   fileProgress = progress;
   applyFileProgress();
 }
 
 export function stopMusic(): void {
-  if (timer) clearInterval(timer);
-  timer = null;
   stopFile();
   current = null;
 }

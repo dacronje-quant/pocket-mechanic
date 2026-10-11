@@ -243,6 +243,10 @@ abstract class PieceRoom<K extends 'shadow' | 'packing'> extends RoomBase<K> {
       const x = this.ox + at % def.cols * this.S, y = this.oy + Math.floor(at / def.cols) * this.S;
       g.fillStyle(def.kind === 'shadow' ? CM.tealDark : CM.woodLight, 1); g.fillRoundedRect(x + 1, y + 1, this.S - 2, this.S - 2, 5);
       g.lineStyle(1, CM.cream, 0.2); g.strokeRoundedRect(x + 3, y + 3, this.S - 6, this.S - 6, 5);
+      // Recessed cells read as places for pieces, rather than flat painted tiles.
+      g.lineStyle(2, CM.ink, .26).lineBetween(x + 4, y + 4, x + this.S - 5, y + 4);
+      g.lineBetween(x + 4, y + 4, x + 4, y + this.S - 5);
+      g.lineStyle(1, CM.cream, .35).lineBetween(x + 5, y + this.S - 4, x + this.S - 5, y + this.S - 4);
     }
     // each tool's shadow on the wall: one solid silhouette hanging from a hook
     for (const outline of def.outlines ?? []) {

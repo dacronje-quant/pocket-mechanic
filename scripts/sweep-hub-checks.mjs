@@ -20,6 +20,7 @@ const { STORY_ROOMS } = await load('src/content/index.ts');
 const { QUICK_FIXES } = await load('src/content/quickfixes.ts');
 const { PEDIA } = await load('src/content/pedia.ts');
 const { REPAIRS } = await load('src/content/repairs.ts');
+const { STORIES } = await load('src/content/story.ts');
 const { atticRooms } = await load('src/content/attic.ts');
 const { effective } = await load('src/rules/index.ts');
 const { roomVoice } = await load('src/content/roomVoice.ts');
@@ -29,7 +30,7 @@ const longInstructions = [...STORY_ROOMS, ...QUICK_FIXES.map(fix => fix.room), .
   return { roomId: room.id, longest: Math.max(voice.intro.text.length, ...voice.hints.map(line => line.text.length)) };
 }).filter(room => !captionIds.length || captionIds.includes(room.roomId)).sort((a, b) => b.longest - a.longest).slice(0, 18);
 const atticIds = atticRooms().map(room => room.id);
-const fixture = { rooms: [...STORY_ROOMS, ...QUICK_FIXES.map(fix => fix.room), ...atticRooms()].map(room => room.id), atticIds, pedia: PEDIA.map(entry => entry.id) };
+const fixture = { rooms: [...STORY_ROOMS, ...QUICK_FIXES.map(fix => fix.room), ...atticRooms()].map(room => room.id), atticIds, pedia: PEDIA.map(entry => entry.id), seen: STORIES.map(story => story.id) };
 const report = { started: new Date().toISOString(), input: 'real mouse clicks, drags and wheel events; save/scene fixtures only', cases: [], errors: [] };
 const browser = await chromium.launch({ ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: 'chrome' }), args: ['--disable-gpu', '--autoplay-policy=no-user-gesture-required'] });
 const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
@@ -92,6 +93,8 @@ async function setup(key) {
   await page.evaluate(({ fixture, key }) => {
     const save = window.pm.dev.save, p = save.profiles.find(profile => profile.id === save.active);
     p.style = 'fixer'; p.repairs = [1, 2, 3, 4, 5, 6, 7, 8]; p.pedia = fixture.pedia; p.attic.rooms = fixture.atticIds;
+    p.seen = fixture.seen;
+    if (!p.flags.includes('festival')) p.flags.push('festival');
     p.rooms = Object.fromEntries(fixture.rooms.map(id => [id, { fixed: true, gold: [1, 2, 3], medal: 0 }]));
     Object.assign(save.settings, { voice: 1, sfx: 0, music: 0, muted: false, subtitles: 'on', readAloud: false, calm: true, coop: 'tess' });
     p.tools = ['beam', 'peek'];

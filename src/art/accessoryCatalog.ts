@@ -48,6 +48,8 @@ export function attachmentPose(pose: number, variant: 'kip' | 'tess') {
     rightFoot: { x: walking ? 18 : 13, y: walking ? 26 : 31 },
     key: { x: -23, y: -21 },
     hat: { x: 5, y: -39 },
-    antenna: { x: 25, y: -42 },
+    // The modular body's crown is above the case, not over its right hand.
+    // Both parts share this socket, so there is no gap below the bulb.
+    antenna: { x: variant === 'tess' ? -5 : -4, y: -39 },
   };
 }

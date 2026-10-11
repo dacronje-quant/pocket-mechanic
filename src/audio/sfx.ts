@@ -1,9 +1,10 @@
 /**
- * Recorded mechanical foley with immediate synthesized fallbacks. Musical
- * puzzle notes and configurable robot beeps retain their exact pitch/timing.
+ * Recorded mechanical foley; unavailable recordings stay silent. Musical
+ * puzzle notes retain their exact pitch/timing; robot chips are recorded.
  * "Soft Clockwork" (GDD §23.4) takes the edge off bells, whistles and sparks.
  */
 import { ac, bus, loadBuffer, readyBuffer, soundFiles } from './engine';
+import { robotCue } from '../content/soundCues';
 
 let soft = false;
 export function setSoft(on: boolean): void {
@@ -60,10 +61,9 @@ function env(g: GainNode, t: number, peak: number, attack: number, decay: number
 
 /** A sharp sound: quieter and slower to start under Soft Clockwork. */
 const sharp = (peak: number) => (soft ? peak * 0.35 : peak);
-const sharpAttack = (a: number) => (soft ? Math.max(a, 0.03) : a);
 
 const variants = new Map<string, number>();
-/** Never play a click late: cold/missing recordings use the synth immediately. */
+/** Never play a click late: cold/missing recordings stay silent. */
 function recorded(id: string, options: { pitch?: number; length?: number; repeat?: number; spacing?: number; level?: number } = {}): boolean {
   const files = soundFiles(id);
   const c = ac();
@@ -108,7 +108,7 @@ function recorded(id: string, options: { pitch?: number; length?: number; repeat
   return true;
 }
 
-/** Play a ready bespoke recording in full; null selects the immediate fallback. */
+/** Play a ready bespoke recording in full; null means the recording is unavailable. */
 export function recordedEffect(id: string): number | null {
   const file = soundFiles(id)[0];
   if (!file) return null;
@@ -169,264 +169,190 @@ export function noise(peak: number, decay: number, filterFreq: number, delay = 0
 
 /** The signature CLUNK of a correct fit: low thump + bright metallic click. */
 export function clunk(): void {
-  if (recorded('clunk')) return;
-  tone(140, 'sine', 0.9, 0.004, 0.18, 0, 60);
-  noise(sharp(0.5), 0.06, 2600, 0, 3);
-  tone(1850, 'triangle', sharp(0.15), 0.002, 0.12, 0.01);
+  recorded('clunk');
 }
 
 export function tick(pitch = 1): void {
-  if (recorded('tick', { pitch })) return;
-  noise(sharp(0.25), 0.025, 3200 * pitch, 0, 6);
-  tone(2400 * pitch, 'square', sharp(0.03), 0.001, 0.02);
+  recorded('tick', { pitch });
 }
 
 export function tock(): void {
-  if (recorded('tock')) return;
-  tone(420, 'triangle', 0.3, 0.003, 0.09);
-  noise(0.15, 0.04, 900, 0, 4);
+  recorded('tock');
 }
 
 /** Wrong part: a gentle "nuh-uh" boing. */
 export function nuhUh(): void {
-  if (recorded('nuhUh')) return;
-  tone(330, 'sine', 0.35, 0.01, 0.12, 0, 260);
-  tone(260, 'sine', 0.35, 0.01, 0.16, 0.14, 200);
+  recorded('nuhUh');
 }
 
 export function boing(pitch = 1): void {
-  if (recorded('boing', { pitch })) return;
-  tone(180 * pitch, 'sine', 0.4, 0.005, 0.35, 0, 520 * pitch);
+  recorded('boing', { pitch });
 }
 
 export function ding(freq = 1320): void {
-  if (freq === 1320 && recorded('ding')) return;
-  tone(freq, 'sine', sharp(0.35), sharpAttack(0.002), 1.1);
-  tone(freq * 2.76, 'sine', sharp(0.08), sharpAttack(0.002), 0.6);
+  recorded('ding', { pitch: freq / 1320 });
 }
 
 export function dingDong(): void {
-  if (recorded('dingDong')) return;
-  ding(880);
-  setTimeout(() => ding(698), 380);
+  recorded('dingDong');
 }
 
 export function bong(): void {
-  if (recorded('bong')) return;
-  tone(110, 'sine', 0.7, 0.01, 3.2);
-  tone(220, 'sine', sharp(0.3), 0.01, 2.6);
-  tone(331, 'sine', sharp(0.12), 0.01, 2.2);
-  tone(523, 'sine', sharp(0.05), 0.01, 1.4);
+  recorded('bong');
 }
 
 export function sparkle(): void {
-  if (recorded('sparkle')) return;
-  [1568, 2093, 2637, 3136].forEach((f, i) => tone(f, 'sine', sharp(0.12), 0.004, 0.25, i * 0.06));
+  recorded('sparkle');
 }
 
 export function whirr(): void {
-  if (recorded('whirr')) return;
-  tone(500, 'sawtooth', 0.05, 0.02, 0.5, 0, 900);
+  recorded('whirr');
 }
 
 export function pickUp(): void {
-  if (recorded('pickUp')) return;
-  tone(600, 'triangle', 0.12, 0.004, 0.08, 0, 900);
+  recorded('pickUp');
 }
 
 export function drop(): void {
-  if (recorded('drop')) return;
-  tone(500, 'triangle', 0.1, 0.004, 0.1, 0, 300);
+  recorded('drop');
 }
 
 export function chirp(): void {
-  if (recorded('chirp')) return;
-  tone(900, 'sine', 0.2, 0.005, 0.07, 0, 1400);
-  tone(1200, 'sine', 0.2, 0.005, 0.09, 0.09, 1800);
+  recorded('chirp');
 }
 
 export function click(): void {
-  if (recorded('click')) return;
-  noise(sharp(0.3), 0.02, 4000, 0, 4);
+  recorded('click');
 }
 
 export function toggle(on: boolean): void {
-  if (recorded(on ? 'toggleOn' : 'toggleOff')) return;
-  noise(sharp(0.25), 0.02, on ? 4500 : 3000, 0, 5);
-  tone(on ? 1600 : 1100, 'square', sharp(0.03), 0.001, 0.03);
+  recorded(on ? 'toggleOn' : 'toggleOff');
 }
 
 /** Room-fixed fanfare in C major. */
 export function fanfare(): void {
-  if (recorded('fanfare')) return;
-  [523, 659, 784, 1047].forEach((f, i) => tone(f, 'triangle', 0.22, 0.01, 0.4, i * 0.12));
-  tone(1047, 'sine', 0.18, 0.01, 1.2, 0.5);
+  recorded('fanfare');
 }
 
 export function bigFanfare(): void {
-  if (recorded('bigFanfare')) return;
-  [392, 523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 'triangle', 0.2, 0.01, 0.5, i * 0.11));
-  [523, 659, 784].forEach((f) => tone(f, 'sine', 0.12, 0.02, 2, 0.8));
+  recorded('bigFanfare');
 }
 
 /** A little musical sting in a room's key. */
 export function sting(root = 523): void {
-  tone(root, 'triangle', 0.15, 0.01, 0.25);
-  tone(root * 1.5, 'triangle', 0.12, 0.01, 0.35, 0.09);
+  recorded('fanfare', { pitch: root / 523, length: 0.6 });
 }
 
 // ───────────────────────────── materials & machines ─────────────────────────────
 
 export function squeak(pitch = 1): void {
-  if (recorded('squeak', { pitch })) return;
-  tone(1300 * pitch, 'sawtooth', 0.06, 0.02, 0.18, 0, 1900 * pitch);
-  tone(1700 * pitch, 'sawtooth', 0.04, 0.02, 0.14, 0.12, 1200 * pitch);
+  recorded('squeak', { pitch });
 }
 
 export function purr(): void {
-  if (recorded('purr')) return;
-  for (let i = 0; i < 6; i++) tone(55 + (i % 2) * 6, 'sawtooth', 0.06, 0.04, 0.16, i * 0.16);
+  recorded('purr');
 }
 
 export function oil(): void {
-  if (recorded('oil')) return;
-  noise(0.2, 0.12, 1800, 0, 2, 'bandpass', 0.01, 600);
-  tone(700, 'sine', 0.08, 0.01, 0.15, 0.05, 350);
+  recorded('oil');
 }
 
 export function ratchet(n = 1): void {
-  if (recorded('ratchet', { repeat: n, spacing: 0.06, length: 0.055 })) return;
-  for (let i = 0; i < n; i++) {
-    noise(sharp(0.3), 0.018, 3500, i * 0.06, 8);
-    tone(1900, 'square', sharp(0.03), 0.001, 0.015, i * 0.06);
-  }
+  recorded('ratchet', { repeat: n, spacing: 0.06, length: 0.055 });
 }
 
 export function sproing(): void {
-  if (recorded('sproing')) return;
-  tone(220, 'sine', 0.35, 0.005, 0.5, 0, 880);
-  tone(330, 'triangle', 0.1, 0.005, 0.4, 0.02, 990);
+  recorded('sproing');
 }
 
 export function whoosh(): void {
-  if (recorded('whoosh')) return;
-  noise(0.35, 0.45, 600, 0, 1.2, 'bandpass', 0.08, 2400);
+  recorded('whoosh');
 }
 
 export function hiss(len = 0.6): void {
-  if (recorded('hiss', { length: len })) return;
-  noise(sharp(0.22), len, 5000, 0, 0.7, 'highpass', 0.05);
+  recorded('hiss', { length: len });
 }
 
 export function pfft(): void {
-  if (recorded('pfft')) return;
-  noise(0.3, 0.35, 2500, 0, 1, 'bandpass', 0.01, 800);
+  recorded('pfft');
 }
 
 export function drip(): void {
-  if (recorded('drip')) return;
-  tone(1200, 'sine', 0.15, 0.002, 0.08, 0, 2400);
+  recorded('drip');
 }
 
 export function splash(): void {
-  if (recorded('splash')) return;
-  noise(0.35, 0.3, 1500, 0, 0.8, 'lowpass', 0.005, 400);
+  recorded('splash');
 }
 
 export function zap(): void {
-  if (recorded('zap')) return;
-  noise(sharp(0.3), 0.08, 6000, 0, 2, 'highpass');
-  tone(90, 'sawtooth', sharp(0.12), 0.002, 0.12);
+  recorded('zap');
 }
 
 export function crackle(): void {
-  if (recorded('crackle')) return;
-  for (let i = 0; i < 5; i++) noise(sharp(0.12), 0.015, 4000 + Math.random() * 3000, i * (0.03 + Math.random() * 0.05), 6);
+  recorded('crackle');
 }
 
 export function hum(freq = 110, len = 0.8): void {
-  tone(freq, 'sine', 0.12, 0.08, len);
-  tone(freq * 2, 'sine', 0.05, 0.08, len);
+  recorded('instrument-hum', { pitch: freq / 220, length: len });
 }
 
 export function staticBurst(level = 1, len = 0.25): void {
-  if (recorded('staticBurst', { level, length: len })) return;
-  noise(0.18 * level, len, 3000, 0, 0.5, 'bandpass', 0.01);
+  recorded('staticBurst', { level, length: len });
 }
 
 export function chug(): void {
-  if (recorded('chug')) return;
-  noise(0.3, 0.09, 700, 0, 2);
-  noise(0.22, 0.09, 700, 0.18, 2);
+  recorded('chug');
 }
 
 export function whistle(freq = 880, len = 0.8): void {
-  tone(freq, 'sine', sharp(0.22), sharpAttack(0.04), len);
-  tone(freq * 1.01, 'sine', sharp(0.08), sharpAttack(0.04), len);
-  noise(sharp(0.06), len, freq * 2, 0, 8);
+  recorded('instrument-whistle', { pitch: freq / 880, length: len });
 }
 
+export function horn(): void { recorded('instrument-horn'); }
+
 export function pop(): void {
-  if (recorded('pop')) return;
-  tone(soft ? 300 : 600, 'sine', soft ? 0.2 : 0.4, 0.002, 0.12, 0, 120);
-  noise(sharp(0.25), 0.05, 2000, 0, 2);
+  recorded('pop');
 }
 
 export function marble(): void {
-  if (recorded('marble')) return;
-  for (let i = 0; i < 6; i++) tone(2000 + i * 120, 'sine', 0.03, 0.002, 0.03, i * 0.05);
+  recorded('marble');
 }
 
 export function punch(): void {
-  if (recorded('punch')) return;
-  noise(0.35, 0.035, 2200, 0, 3);
-  tone(300, 'square', 0.06, 0.001, 0.04);
+  recorded('punch');
 }
 
 export function cuckoo(n = 2): void {
-  if (recorded('cuckoo', { repeat: n, spacing: 0.55, length: 0.52 })) return;
-  for (let i = 0; i < n; i++) {
-    tone(784, 'sine', 0.3, 0.02, 0.18, i * 0.55);
-    tone(622, 'sine', 0.3, 0.02, 0.28, i * 0.55 + 0.22);
-  }
+  recorded('cuckoo', { repeat: n, spacing: 0.55, length: 0.52 });
 }
 
 export function flap(): void {
-  if (recorded('flap')) return;
-  for (let i = 0; i < 4; i++) noise(0.18, 0.06, 900, i * 0.09, 1.5, 'lowpass');
+  recorded('flap');
 }
 
 export function cheer(): void {
-  if (recorded('cheer')) return;
-  noise(0.2, 1.2, 1200, 0, 0.6, 'bandpass', 0.15);
-  [523, 659, 784].forEach((f, i) => tone(f, 'triangle', 0.05, 0.05, 0.6, 0.1 + i * 0.1));
+  recorded('cheer');
 }
 
 export function thunder(): void {
-  if (recorded('thunder')) return;
-  noise(soft ? 0.2 : 0.5, 2.2, 160, 0, 0.6, 'lowpass', 0.05, 60);
-  noise(soft ? 0.1 : 0.25, 0.3, 900, 0.05, 1, 'lowpass');
+  recorded('thunder');
 }
 
 export function giggle(): void {
-  if (recorded('giggle')) return;
-  for (let i = 0; i < 7; i++) tick(1.4 + (i % 2) * 0.2);
+  recorded('giggle');
 }
 
 export function yawn(): void {
-  if (recorded('yawn')) return;
-  tone(500, 'sine', 0.15, 0.2, 0.7, 0, 260);
+  recorded('yawn');
 }
 
 export function swish(): void {
-  if (recorded('swish')) return;
-  noise(0.15, 0.18, 1800, 0, 1, 'bandpass', 0.03, 3600);
+  recorded('swish');
 }
 
 export function coin(): void {
-  if (recorded('coin')) return;
-  tone(1568, 'square', sharp(0.08), 0.002, 0.08);
-  tone(2093, 'square', sharp(0.08), 0.002, 0.25, 0.07);
+  recorded('coin');
 }
 
 export function note(freq: number, kind: 'pluck' | 'chime' | 'pipe' | 'piano' = 'pluck', len = 0.6): void {
@@ -448,22 +374,7 @@ export function note(freq: number, kind: 'pluck' | 'chime' | 'pipe' | 'piano' = 
 /** Kip's voice: beeps, whirs and chimes; the voice chip changes the flavour. */
 export function beeps(text: string, chip = 'voice-classic', base = 1): void {
   const syll = Math.max(2, Math.min(7, text.replace(/[^aeiouy]/gi, '').length));
-  const kinds: Record<string, OscillatorType> = {
-    'voice-classic': 'sine',
-    'voice-chirpy': 'triangle',
-    'voice-musical': 'sine',
-    'voice-bubbly': 'sine',
-    'voice-retro': 'square',
-    'voice-musicbox': 'triangle',
-  };
-  const scale = [1, 1.125, 1.25, 1.5, 1.68, 2];
-  for (let i = 0; i < syll; i++) {
-    const f = 700 * base * scale[(i * 7 + text.length) % scale.length];
-    const t = i * 0.11;
-    if (chip === 'voice-bubbly') tone(f, 'sine', 0.13, 0.005, 0.09, t, f * 1.6);
-    else if (chip === 'voice-musicbox') note(f, 'chime', 0.25);
-    else tone(f, kinds[chip] ?? 'sine', chip === 'voice-retro' ? 0.05 : 0.14, 0.005, 0.08, t, chip === 'voice-chirpy' ? f * 1.4 : undefined);
-  }
+  recorded(robotCue(chip), { pitch: base, length: .4 + syll * .11 });
 }
 
 /** Short haptic thud on Android (ignored where unsupported). */

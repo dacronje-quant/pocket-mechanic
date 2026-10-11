@@ -3,6 +3,8 @@ import { LINES, storyById } from './story';
 import { allVoiceLines, uiLineId } from './voicelines';
 import { VOICES } from './voices';
 import manifest from '../../public/audio/manifest.json';
+import { COSMETICS } from './cosmetics';
+import { robotCue } from './soundCues';
 
 /** Every source file's text (scenes, rooms, …), to check the ids they speak. */
 const SRC = Object.entries(import.meta.glob('../**/*.ts', { query: '?raw', import: 'default', eager: true }) as Record<string, string>)
@@ -10,6 +12,12 @@ const SRC = Object.entries(import.meta.glob('../**/*.ts', { query: '?raw', impor
   .map(([, text]) => text);
 
 describe('voice lines', () => {
+  it('records all robot voice chips and every literal runtime effect', () => {
+    const recordings = manifest.sfx as Record<string, string[]>;
+    for (const chip of COSMETICS.filter(item => item.slot === 'voice')) expect(recordings[robotCue(chip.id)], chip.id).toHaveLength(1);
+    const effects = SRC.flatMap(text => [...text.matchAll(/recorded\('([^']+)'/g)].map(match => match[1]));
+    for (const effect of effects) expect(recordings[effect]?.length, effect).toBeGreaterThan(0);
+  });
   const lines = allVoiceLines(['Back to the shop', 'Next!']);
 
   it('have unique ids, words, and a known speaker', () => {

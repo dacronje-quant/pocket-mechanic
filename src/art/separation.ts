@@ -9,14 +9,18 @@ export function separateSprite(image: Phaser.GameObjects.Image): void {
   let frameKey = '';
   const update = () => {
     if (!image.scene || !edge.scene || !image.frame) return;
+    if (!image.visible) { edge.setVisible(false); return; }
     const f = image.frame, ratio = Math.min(1, 192 / Math.max(f.cutWidth, f.cutHeight));
     const w = Math.max(1, Math.round(f.cutWidth * ratio)), h = Math.max(1, Math.round(f.cutHeight * ratio)), pad = 8;
-    const key = `separation:v2:${image.texture.key}:${f.name}:${w}:${h}`;
+    const key = `separation:v3:${image.texture.key}:${f.name}:${w}:${h}`;
     if (key !== frameKey) {
       if (!scene.textures.exists(key)) {
         const mask = document.createElement('canvas'); mask.width = w; mask.height = h;
         const m = mask.getContext('2d')!;
-        m.drawImage(image.texture.getSourceImage() as CanvasImageSource, f.cutX, f.cutY, f.cutWidth, f.cutHeight, 0, 0, w, h);
+        // Cut figures are separate texture sources. Source zero is the entire
+        // atlas and would draw a neighbour's silhouette behind this character.
+        const source = f.source.image as CanvasImageSource;
+        m.drawImage(source, f.cutX, f.cutY, f.cutWidth, f.cutHeight, 0, 0, w, h);
         const canvas = document.createElement('canvas'); canvas.width = w + pad * 2; canvas.height = h + pad * 2;
         const c = canvas.getContext('2d')!;
         const tone = (colour: string) => { m.globalCompositeOperation = 'source-in'; m.fillStyle = colour; m.fillRect(0,0,w,h); };
@@ -25,11 +29,11 @@ export function separateSprite(image: Phaser.GameObjects.Image): void {
         for (let i=0;i<12;i++) { const a=i*Math.PI/6; c.drawImage(mask,pad+Math.cos(a)*4,pad+Math.sin(a)*4); }
         // Restore alpha before tinting, so repeated tones do not diminish the outline.
         m.globalCompositeOperation='source-over'; m.clearRect(0,0,w,h);
-        m.drawImage(image.texture.getSourceImage() as CanvasImageSource, f.cutX,f.cutY,f.cutWidth,f.cutHeight,0,0,w,h);
+        m.drawImage(source, f.cutX,f.cutY,f.cutWidth,f.cutHeight,0,0,w,h);
         tone('rgba(44,34,25,.9)');
         for (let i=0;i<12;i++) { const a=i*Math.PI/6; c.drawImage(mask,pad+Math.cos(a)*2.7,pad+Math.sin(a)*2.7); }
         c.globalCompositeOperation='destination-out';
-        c.drawImage(image.texture.getSourceImage() as CanvasImageSource,f.cutX,f.cutY,f.cutWidth,f.cutHeight,pad,pad,w,h);
+        c.drawImage(source,f.cutX,f.cutY,f.cutWidth,f.cutHeight,pad,pad,w,h);
         scene.textures.addCanvas(key,canvas);
       }
       edge.setTexture(key); frameKey = key;
@@ -47,7 +51,11 @@ export function separateSprite(image: Phaser.GameObjects.Image): void {
     for (let p=image.parentContainer;p&&!mask;p=p.parentContainer) mask=p.mask;
     if (mask) edge.setMask(mask); else edge.clearMask(false);
   };
-  const cleanup = () => { scene.events.off(Phaser.Scenes.Events.POST_UPDATE,update); if(edge.scene)edge.destroy(); };
+  const cleanup = () => {
+    scene.events.off(Phaser.Scenes.Events.POST_UPDATE,update);
+    scene.events.off(Phaser.Scenes.Events.SHUTDOWN,cleanup);
+    if(edge.scene)edge.destroy();
+  };
   scene.events.on(Phaser.Scenes.Events.POST_UPDATE,update);
   image.once(Phaser.GameObjects.Events.DESTROY,cleanup); scene.events.once(Phaser.Scenes.Events.SHUTDOWN,cleanup);
   update();
@@ -63,7 +71,7 @@ export function installSeparation(scene: Phaser.Scene): void {
         if (object instanceof Phaser.GameObjects.Container) walk(object.list);
         else if (object instanceof Phaser.GameObjects.Image) {
           const key = object.texture.key;
-          if (/^(gear-|art:(kip-dimensional|tess-dimensional|kip-modular|tess-modular|portrait-|item-|busy-gadgets|puzzle-props))/.test(key) && !object.getData('separation')) separateSprite(object);
+          if (/^(gear-|art:(kip-dimensional|tess-dimensional|kip-modular|tess-modular|portrait-|item-|busy-gadgets|puzzle-props))/.test(key) && !object.getData('separation') && !object.getData('noSeparation')) separateSprite(object);
         }
       }
     };

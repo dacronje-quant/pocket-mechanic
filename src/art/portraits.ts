@@ -137,6 +137,10 @@ export class Portrait extends Phaser.GameObjects.Container {
     this.kip?.setLook(look);
   }
 
+  setSleeping(on: boolean): void {
+    this.kip?.nap(on);
+  }
+
   setMood(m: Mood): void {
     if (m === this.mood) return;
     this.mood = m;

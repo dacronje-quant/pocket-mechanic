@@ -10,7 +10,6 @@ vi.mock('./sfx', () => Object.fromEntries([
   }],
 ]));
 import { playObjectSound } from './objectSounds';
-import { NOTE_FREQS } from '../mechanism/pins';
 const clock = { delayedCall: (ms: number, cue: () => void) => {
   const timer = setTimeout(cue, ms);
   return { remove: () => clearTimeout(timer) };
@@ -30,41 +29,20 @@ describe('repaired object performances', () => {
     expect(mock.stops).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
   });
-  it('cancels queued foley when the player leaves or restarts an object', () => {
-    const tea = playObjectSound('tea', clock);
-    expect(mock.cues).toEqual(['ratchet']);
-    tea.stop(); tea.stop();
-    vi.runAllTimers();
-    expect(mock.cues).toEqual(['ratchet']);
+  it('stays silent without a dedicated recording and releases its audio path', () => {
+    const sound = playObjectSound('tea', clock);
+    vi.runAllTimers(); sound.stop();
+    expect(sound.duration).toBe(0);
+    expect(mock.cues).toEqual([]);
+    expect(mock.note).not.toHaveBeenCalled();
     expect(mock.stops).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
   });
-  it('replays a fresh performance without resurrecting the previous delayed sounds', () => {
-    const old = playObjectSound('clock', clock);
-    vi.advanceTimersByTime(100); old.stop();
-    const replay = playObjectSound('train', clock);
-    vi.advanceTimersByTime(600);
-    expect(mock.cues).toContain('whistle');
-    expect(mock.cues).toContain('chug');
-    expect(mock.cues).not.toContain('cuckoo');
-    replay.stop();
-    expect(vi.getTimerCount()).toBe(0);
-  });
-  it('plays authored scale notes and preserves the music-box rests', () => {
-    const sound = playObjectSound('musicbox', clock);
-    vi.advanceTimersByTime(200);
-    expect(mock.note).toHaveBeenLastCalledWith(NOTE_FREQS[2], 'chime', 0.4);
-    vi.advanceTimersByTime(1000);
-    expect(mock.note).toHaveBeenCalledTimes(3);
-    expect(mock.note).toHaveBeenLastCalledWith(NOTE_FREQS[4], 'chime', 0.4);
-    sound.stop();
-  });
-  it('releases its audio path after the final note and tail', () => {
-    const sound = playObjectSound('orrery', clock);
-    vi.advanceTimersByTime(sound.duration * 1000 + 500);
+  it('cancels a recorded performance when leaving or replaying', () => {
+    mock.recording.mockReturnValue(5);
+    const sound = playObjectSound('train', clock);
+    sound.stop(); sound.stop(); vi.runAllTimers();
     expect(mock.stops).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
-    sound.stop();
-    expect(mock.stops).toHaveBeenCalledTimes(1);
   });
 });

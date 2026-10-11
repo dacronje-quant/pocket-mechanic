@@ -18,6 +18,7 @@ const load = async path => (await runnerImport(join(ROOT, path), { configFile: f
 const { allVoiceLines } = await load('src/content/voicelines.ts');
 const { VOICES } = await load('src/content/voices.ts');
 const { THEMES } = await load('src/audio/music.ts');
+const { ROBOT_CUES } = await load('src/content/soundCues.ts');
 const labels = new Set();
 function scan(dir) {
   for (const name of readdirSync(dir)) {
@@ -40,6 +41,10 @@ for (const line of lines) {
 }
 for (const id of Object.keys(THEMES)) if (!manifest.music[id]) failures.push(`Missing music: ${id}`);
 for (const sound of SOUNDS) if (manifest.sfx[sound.id]?.length !== (sound.variants || 1)) failures.push(`Missing effect variations: ${sound.id}`);
+// Audit the actual runtime paths as well as the generation plan. Dynamic
+// voice-chip IDs are checked explicitly; literal effects are discovered here.
+const runtimeCues = [...new Set([...ROBOT_CUES, ...[...readFileSync(join(ROOT, 'src/audio/sfx.ts'), 'utf8').matchAll(/recorded\('([^']+)'/g)].map(match => match[1]), 'toggleOn', 'toggleOff'])];
+for (const id of runtimeCues) if (!manifest.sfx[id]?.length) failures.push(`Unrecorded runtime cue: ${id}`);
 if (cast.characters.nana?.audition !== 'nana-a') failures.push('Nana A is not the selected production actor.');
 const files = [...new Set([...Object.values(manifest.voice), ...Object.values(manifest.music), ...Object.values(manifest.sfx).flat()])];
 const decoded = [];
@@ -64,6 +69,7 @@ const report = {
   recordedVoiceIds: Object.keys(manifest.voice).length, deviceSpeechIds,
   uniqueSpokenRecordings: new Set(lines.filter(line=>line.who!=='pudding').map(line=>manifest.voice[line.id]).filter(Boolean)).size,
   musicThemes: Object.keys(manifest.music).length, effectCues: Object.keys(manifest.sfx).length,
+  runtimeEffectCues: runtimeCues.length, recordedRobotChips: ROBOT_CUES.length,
   decodedFiles: decoded.length, bytes: decoded.reduce((sum,item)=>sum+item.bytes,0), failures, files: decoded,
 };
 writeFileSync(join(ROOT, 'public/audio/validation.json'), JSON.stringify(report, null, 2) + '\n');

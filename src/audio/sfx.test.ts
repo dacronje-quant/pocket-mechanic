@@ -14,12 +14,29 @@ const mock = vi.hoisted(() => {
   return { context, buffers: new Map<string, { duration: number }>(), files: new Map<string, string[]>(), load: vi.fn(async () => null) };
 });
 vi.mock('./engine', () => ({ ac: () => mock.context, bus: () => ({}), soundFiles: (id: string) => mock.files.get(id) ?? [], readyBuffer: (file: string) => mock.buffers.get(file) ?? null, loadBuffer: mock.load, unlockAudio: vi.fn(), isMuted: () => false }));
-import { clunk, hiss, ratchet, setSoft } from './sfx';
+import { beeps, clunk, hiss, horn, hum, ratchet, setSoft, whistle } from './sfx';
 
 beforeEach(() => {
   vi.clearAllMocks(); mock.files.clear(); mock.buffers.clear(); setSoft(false);
 });
 describe('recorded mechanical effects', () => {
+  it.each(['classic', 'chirpy', 'musical', 'bubbly', 'retro', 'musicbox'])('uses the recorded %s voice chip without an oscillator', flavour => {
+    const id = `robot-${flavour}`; mock.files.set(id, [id]); mock.buffers.set(id, { duration: 1.2 });
+    beeps('hello', `voice-${flavour}`);
+    expect(mock.context.createBufferSource.mock.results[0].value.buffer).toBe(mock.buffers.get(id));
+    expect(mock.context.createOscillator).not.toHaveBeenCalled();
+  });
+  it('uses recordings for horns, valve hum and mechanical whistles', () => {
+    for (const id of ['instrument-horn', 'instrument-hum', 'instrument-whistle']) { mock.files.set(id, [id]); mock.buffers.set(id, { duration: 1.2 }); }
+    horn(); hum(); whistle();
+    expect(mock.context.createBufferSource).toHaveBeenCalledTimes(3);
+    expect(mock.context.createOscillator).not.toHaveBeenCalled();
+  });
+  it('stays silent when the recording is missing', () => {
+    clunk();
+    expect(mock.context.createOscillator).not.toHaveBeenCalled();
+    expect(mock.context.createBufferSource).not.toHaveBeenCalled();
+  });
   it('cycles through the gear clicks instead of repeating one identical recording', () => {
     const files = ['gear-a', 'gear-b', 'gear-c'];
     mock.files.set('clunk', files);
@@ -45,11 +62,11 @@ describe('recorded mechanical effects', () => {
     expect(mock.context.createBiquadFilter.mock.results[0].value.frequency.value).toBe(2600);
     expect(mock.context.createGain.mock.results[0].value.gain.linearRampToValueAtTime).toHaveBeenCalledWith(0.35, 10.03);
   });
-  it('uses immediate synthesis for a cold recording without adding a late click', async () => {
+  it('stays silent for a cold recording without adding a late click', async () => {
     mock.files.set('clunk', ['cold-gear']);
     clunk();
     expect(mock.load).toHaveBeenCalledWith('cold-gear');
-    expect(mock.context.createOscillator).toHaveBeenCalled();
+    expect(mock.context.createOscillator).not.toHaveBeenCalled();
     const sources = mock.context.createBufferSource.mock.calls.length;
     await Promise.resolve();
     expect(mock.context.createBufferSource.mock.calls.length).toBe(sources);

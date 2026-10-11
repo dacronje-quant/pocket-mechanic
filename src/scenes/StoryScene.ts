@@ -7,14 +7,12 @@
  */
 import Phaser from 'phaser';
 import * as sfx from '../audio/sfx';
-import { playMelody } from '../audio/music';
 import { speak, stopVoice } from '../audio/voice';
 import { drawStage } from '../art/backgrounds';
 import { CM, CM_CSS, drawPatina } from '../art/copperMoss';
 import { MachineArt } from '../art/objects';
 import { badge, Portrait } from '../art/portraits';
 import { REPAIRS } from '../content/repairs';
-import { SONGS } from '../content/songs';
 import { storyById } from '../content/story';
 import type { CharId, NestDeco, StoryDef, StoryLine } from '../content/types';
 import { VOICES } from '../content/voices';
@@ -26,6 +24,7 @@ import { drawDeco } from '../rooms/SimpleRooms';
 import { FONT, roundButton, SERIF, showWords } from '../ui/widgets';
 import { HUD, MetaScene } from './MetaScene';
 import { go } from './router';
+import { storyHoldMs, storyMachineSpeaker, storyPeople } from './storyPresentation';
 
 export class StoryScene extends MetaScene {
   private story!: StoryDef;
@@ -33,6 +32,9 @@ export class StoryScene extends MetaScene {
   private cur = -1;
   private shownAt = 0;
   private finished = false;
+  private lineVersion = 0;
+  private lineTimer?: Phaser.Time.TimerEvent;
+  private progress!: Phaser.GameObjects.Graphics;
   private cast = new Map<CharId, Portrait>();
   private machine?: MachineArt;
   private subBg!: Phaser.GameObjects.Graphics;
@@ -54,6 +56,10 @@ export class StoryScene extends MetaScene {
     this.next = (data.next as Step) ?? { scene: 'shop' };
     const story = storyById(String(data.id));
     this.cur = -1;
+    this.lineVersion++;
+    this.lineTimer?.remove();
+    this.waveT = 0;
+    this.talking = false;
     this.finished = false;
     this.cast = new Map();
     this.machine = undefined;
@@ -63,6 +69,11 @@ export class StoryScene extends MetaScene {
       return;
     }
     this.story = story;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.lineVersion++;
+      this.lineTimer?.remove();
+      stopVoice();
+    });
     drawStage(this, story.bg).setDepth(0);
     this.musicFor(story);
 
@@ -75,12 +86,10 @@ export class StoryScene extends MetaScene {
     }
 
     // the cast, spread across the stage; Kip and Tess stand on the bench
-    const people = story.cast.filter((c) => c !== 'kip' && c !== 'tess');
-    const small = story.cast.filter((c) => c === 'kip' || c === 'tess');
-    const xs = spread(people.length, story.object ? [180, 420, 860, 1100] : [240, 520, 800, 1060]);
-    people.forEach((who, i) => {
-      const p = new Portrait(this, xs[i], 330, who, 0.95).setDepth(5).setAlpha(0);
-      this.tweens.add({ targets: p, alpha: 1, y: 320, duration: 400, delay: i * 120, ease: 'Quad.easeOut' });
+    const small = [...new Set(story.cast)].filter((c) => c === 'kip' || c === 'tess');
+    storyPeople(story).forEach(({ who, x, y, scale }, i) => {
+      const p = new Portrait(this, x, y + 10, who, scale).setDepth(5).setAlpha(0);
+      this.tweens.add({ targets: p, alpha: 1, y, duration: 400, delay: i * 120, ease: 'Quad.easeOut' });
       this.cast.set(who, p);
     });
     small.forEach((who, i) => {
@@ -90,9 +99,12 @@ export class StoryScene extends MetaScene {
       if (who === 'tess') p.setKipLook(profile().tessLook);
       this.cast.set(who, p);
     });
+    if (story.id === 'prologue') this.cast.get('kip')?.setSleeping(true);
+    if (story.id === 'tess-built') this.cast.get('tess')?.setSleeping(true);
 
     // subtitles (or a sound wave for reading-free play)
     this.subBg = this.add.graphics().setDepth(HUD - 5);
+    this.progress = this.add.graphics().setDepth(HUD - 4).setName('story:progress');
     this.wave = this.add.graphics().setDepth(HUD - 4);
     this.subName = this.add.text(250, 600, '', { fontFamily: SERIF, fontSize: '22px', color: CM_CSS.copperDark, fontStyle: 'bold' }).setDepth(HUD - 4);
     this.subText = this.add
@@ -110,6 +122,11 @@ export class StoryScene extends MetaScene {
     const seen = profile().seen.includes(story.id);
     if (seen) roundButton(this, 1224, 52, '⏭', () => this.finish(), { say: 'Skip' }).setDepth(HUD);
     roundButton(this, 1180, 640, '▶', () => this.advance(), { r: 34, fontSize: 30, color: 0x8ce99a, say: 'Next' }).setDepth(HUD);
+    roundButton(this, 90, 640, '↺', () => {
+      if (this.cur >= 0 && !this.finished) this.show(this.cur);
+    }, { r: 30, fontSize: 28, say: '' }).setDepth(HUD).setName('story:replay');
+    this.hot('advance', () => this.advance());
+    this.hot('replay', () => { if (this.cur >= 0 && !this.finished) this.show(this.cur); });
     this.input.on('pointerup', (_p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       if (!over.length) this.advance();
     });
@@ -130,26 +147,43 @@ export class StoryScene extends MetaScene {
     const lines = this.story.lines;
     if (i >= lines.length) return this.finish();
     this.cur = i;
+    const version = ++this.lineVersion;
+    this.lineTimer?.remove();
     this.shownAt = this.time.now;
     const line = lines[i];
+    // The awakening is a visible event, even with words and sound switched off.
+    if (line.id === 'prologue.4') this.cast.get('kip')?.setSleeping(false);
+    if (line.id === 'tb.2') this.cast.get('tess')?.setSleeping(false);
     for (const [who, p] of this.cast) {
       const speaking = who === line.who;
       p.talk(false);
-      this.tweens.add({ targets: p, alpha: speaking || !this.cast.has(line.who) ? 1 : 0.85, duration: 200 });
+      // Keep listeners solid against the painted stage; opacity made them
+      // look like ghost copies of the scenery rather than townsfolk.
+      this.tweens.add({ targets: p, alpha: 1, duration: 200 });
       if (speaking) {
         p.setMood(line.mood ?? 'happy');
         if (!VOICES[who]?.beeps) p.talk(true);
       }
     }
     this.subtitle(line);
+    const progress = this.progress;
+    progress.clear();
+    this.story.lines.forEach((_, k) => {
+      const x = 640 + (k - (this.story.lines.length - 1) / 2) * 18;
+      progress.fillStyle(k <= i ? CM.teal : CM.paperDark, 1).fillCircle(x, 566, k === i ? 5 : 3);
+    });
+    if (line.who === storyMachineSpeaker(this.story) && this.machine) {
+      this.machine.setWorking(true);
+    }
     this.effect(line);
     this.talking = true;
     void speak(line.who, line.text, line.id).then(() => {
-      if (this.cur !== i || this.finished) return;
+      if (version !== this.lineVersion || this.finished || !this.sys.isActive()) return;
       this.talking = false;
       this.cast.get(line.who)?.talk(false);
-      this.time.delayedCall(600, () => {
-        if (this.cur === i) this.show(i + 1);
+      const hold = storyHoldMs(line.text, showWords()) - (this.time.now - this.shownAt);
+      this.lineTimer = this.time.delayedCall(Math.max(600, hold), () => {
+        if (version === this.lineVersion && !this.finished) this.show(i + 1);
       });
     });
   }
@@ -209,8 +243,8 @@ export class StoryScene extends MetaScene {
         this.machine?.perform();
         break;
       case 'lullaby':
-        playMelody(SONGS.find((s) => s.id === 'song-lullaby')!.notes, 3, 'sine');
-        this.machine?.setWorking(true);
+        if (this.machine) this.machine.perform();
+        else sfx.recordedEffect('object-musicbox');
         break;
       case 'whistle':
         sfx.whistle();
@@ -224,8 +258,8 @@ export class StoryScene extends MetaScene {
         this.puffs.explode(12, 640, 420);
         break;
       case 'dance':
-        playMelody(SONGS.find((s) => s.id === 'song-boogie')!.notes, 4, 'square');
         for (const p of this.cast.values()) this.tweens.add({ targets: p, y: p.y - 18, angle: { from: -4, to: 4 }, duration: 240, yoyo: true, repeat: 5 });
+        this.machine?.perform();
         break;
       case 'stars':
         sfx.sparkle();
@@ -267,6 +301,8 @@ export class StoryScene extends MetaScene {
   private finish(): void {
     if (this.finished) return;
     this.finished = true;
+    this.lineVersion++;
+    this.lineTimer?.remove();
     stopVoice();
     const p = profile();
     if (!p.seen.includes(this.story.id)) p.seen.push(this.story.id);
@@ -290,12 +326,4 @@ export class StoryScene extends MetaScene {
       g.lineBetween(290 + i * 26, 638 - h / 2, 290 + i * 26, 638 + h / 2);
     }
   }
-}
-
-function spread(n: number, slots: number[]): number[] {
-  if (n <= 0) return [];
-  if (n === 1) return [slots[0]];
-  if (n === 2) return [slots[0], slots[slots.length - 1]];
-  if (n === 3) return [slots[0], slots[1], slots[slots.length - 1]];
-  return slots.slice(0, n);
 }

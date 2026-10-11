@@ -20,6 +20,7 @@ import { cardKey, runCards, type Card, type Move } from '../mechanism/cards';
 import { D, RoomBase, type HintTarget, type SnapTarget } from './RoomBase';
 import { FONT, roundButton } from '../ui/widgets';
 import { cardsSolved } from '../rules';
+import { settings } from '../core/save';
 
 /** Repeat cards: teal repeats one card, gold repeats two (or more), so they never look alike. */
 function repeatColor(span: number): number {
@@ -157,6 +158,7 @@ export class CardsRoom extends RoomBase<'cards'> {
   private bubbleG!: Phaser.GameObjects.Graphics;
   private spritesG!: Phaser.GameObjects.Graphics;
   private foldLabels = new Map<string, Phaser.GameObjects.Text>();
+  private scoreKey = '';
   private scoreG!: Phaser.GameObjects.Graphics;
   private stageX = 880;
   private stageY = 390;
@@ -201,6 +203,7 @@ export class CardsRoom extends RoomBase<'cards'> {
     this.row = 0;
     this.bertieArt = undefined;
     this.foldLabels = new Map();
+    this.scoreKey = '';
     this.marks = this.def.scenarios.map((s) => new Array(s.moves.length).fill(undefined));
     this.liveCheck = false;
     const tinker = this.style.id === 'tinker';
@@ -244,6 +247,11 @@ export class CardsRoom extends RoomBase<'cards'> {
 
   /** The dance to make, one row per kind of music, above the stage. */
   private drawScore(): void {
+    // The score changes at dance beats, edits and scenario boundaries. Idle
+    // frames reuse its drawing instead of re-emitting hundreds of commands.
+    const key = `${this.row}:${this.step}:${this.demoing}:${this.playing}:${this.fixed}:${this.state.copied}:${this.marks.map(row => row.join(',')).join(';')}:${this.def.scenarios.length > 1 ? Math.floor(this.t * 12) : 0}`;
+    if (key === this.scoreKey) return;
+    this.scoreKey = key;
     const g = this.scoreG;
     g.clear();
     const rows = this.def.scenarios;
@@ -599,7 +607,7 @@ export class CardsRoom extends RoomBase<'cards'> {
           this.step = -1;
           sfx.boing();
           this.kip.shrug();
-          this.cameras.main.shake(100, 0.003);
+          if (!settings().calm) this.cameras.main.shake(100, 0.003);
           return;
         }
         this.time.delayedCall(400, () => runScenario(k + 1));

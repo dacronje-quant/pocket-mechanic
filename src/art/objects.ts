@@ -21,6 +21,7 @@ export class MachineArt extends Phaser.GameObjects.Container {
   private performing = 0;
   private painted?: Phaser.GameObjects.Image;
   private sound?: ObjectSound;
+  private dirty = true;
 
   constructor(scene: Phaser.Scene, x: number, y: number, id: string, scale = 1) {
     super(scene, x, y);
@@ -44,11 +45,12 @@ export class MachineArt extends Phaser.GameObjects.Container {
       const image = scene.add.image(0, 0, key, atlasFrame(scene, key, index, 4, 4, true)).setOrigin(.5, 1).setName(`machine:${id}`);
       const span = [360, 300, 340, 270, 300, 350, 340, 400][index];
       image.setScale(span / Math.max(image.width, image.height));
-      this.painted = image; this.addAt(image, 0); fallback.setVisible(false);
+      this.painted = image; this.addAt(image, 0); fallback.setVisible(false); this.dirty = true;
     });
   }
 
   setWorking(on: boolean): this {
+    this.dirty ||= this.working !== on;
     this.working = on;
     return this;
   }
@@ -74,10 +76,12 @@ export class MachineArt extends Phaser.GameObjects.Container {
   }
 
   preUpdate(_time: number, dt: number): void {
+    if (!this.working && this.performing <= 0 && !this.dirty) return;
     const d = dt / 1000;
     if (this.working) this.t += d;
     if (this.performing > 0) this.performing -= d;
     this.drawLive();
+    this.dirty = false;
   }
 
   private drawStatic(): void {

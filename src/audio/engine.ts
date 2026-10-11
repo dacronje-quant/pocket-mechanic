@@ -101,7 +101,7 @@ export async function loadManifest(): Promise<void> {
       }).catch(() => undefined);
     }
   } catch {
-    /* no generated audio: device speech and synthesized music are used instead */
+    /* no generated audio: recorded audio stays silent */
   }
 }
 
@@ -114,7 +114,9 @@ export function soundFiles(id: string): string[] {
 }
 
 async function preloadEffects(): Promise<void> {
-  const files = [...new Set(Object.values(manifest.sfx).flat())];
+  // Characters can reply on the very first screen; warm their small voice
+  // chips before the longer object performances.
+  const files = [...new Set(Object.values(manifest.sfx).flat())].sort((a, b) => Number(b.startsWith('sfx/robot-')) - Number(a.startsWith('sfx/robot-')));
   let next = 0;
   await Promise.all(Array.from({ length: 4 }, async () => {
     while (next < files.length) await loadBuffer(files[next++]);
@@ -153,8 +155,10 @@ export function loadBuffer(url: string): Promise<AudioBuffer | null> {
     const c = ac();
     if (!c) return Promise.resolve(null);
     p = (async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
       try {
-        const res = await fetch(`./audio/${url}`);
+        const res = await fetch(`./audio/${url}`, { signal: controller.signal });
         if (!res.ok) return null;
         const data = await res.arrayBuffer();
         // Older Safari only has the callback form of decodeAudioData.
@@ -171,9 +175,14 @@ export function loadBuffer(url: string): Promise<AudioBuffer | null> {
         return buffer;
       } catch {
         return null;
+      } finally {
+        clearTimeout(timeout);
       }
     })();
     buffers.set(url, p);
+    // A failed fetch is recoverable. Keeping its resolved null promise here
+    // made one interrupted download silence that recording until a reload.
+    void p.then(buffer => { if (!buffer && buffers.get(url) === p) buffers.delete(url); });
   }
   return p;
 }

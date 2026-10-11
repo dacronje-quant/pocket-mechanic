@@ -43,7 +43,28 @@ export function roomStep(p: Profile, roomId: string): Step {
 /** Start (or continue) a Great Repair from the shop. */
 export function startRepair(p: Profile, repairId: number): Step {
   const r = repairById(repairId);
+  const bigFix = r.rooms[r.rooms.length - 1];
+  // Closing the app during the celebration must not ask for the Big Fix twice.
+  if (!repairDone(p, repairId) && p.rooms[bigFix]?.fixed) return afterRoom(p, { roomId: bigFix, mode: 'story' });
   return withStory(p, r.doorbell, roomStep(p, nextRoomOf(p, r)));
+}
+
+/** Recover missed Return scenes and chapter beats from the existing save.
+ * No new save format or extra rewards are required. */
+export function resumeStory(p: Profile): Step | null {
+  for (const repair of p.repairs) {
+    const r = repairById(repair);
+    if (!r) continue;
+    if (!p.seen.includes(r.ret)) return { scene: 'story', id: r.ret, next: { scene: 'rewards', repair, next: afterReturn(p, repair) } };
+    for (const id of r.after ?? []) {
+      if (!p.seen.includes(id)) return afterReturn(p, repair);
+    }
+  }
+  if ([4, 5, 6].every(id => repairDone(p, id)) && !p.seen.includes('bell-silent')) {
+    return { scene: 'story', id: 'bell-silent', next: HOME };
+  }
+  if (repairDone(p, 8) && !p.flags.includes('festival')) return { scene: 'festival', next: HOME };
+  return null;
 }
 
 /** What happens after the Return of a repair (story beats, the festival). */

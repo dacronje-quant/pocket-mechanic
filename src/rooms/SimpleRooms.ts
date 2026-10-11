@@ -221,7 +221,7 @@ export class BusyRoom extends RoomBase<'busy'> {
         sfx.ratchet(3);
         break;
       case 'horn':
-        sfx.tone(330, 'square', 0.1, 0.01, 0.25);
+        sfx.horn();
         break;
       case 'crank':
         sfx.whirr();

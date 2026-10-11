@@ -7,6 +7,8 @@ import { roomVoice } from '../content/roomVoice';
  * Each room kind subclasses this and draws its own mechanism.
  */
 import Phaser from 'phaser';
+import { nearestSocket } from './snap';
+import { workSurface } from '../art/puzzleFinish';
 import * as sfx from '../audio/sfx';
 import { playMusic, setMusicProgress } from '../audio/music';
 import { setLevels } from '../audio/engine';
@@ -143,6 +145,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
   private ghostVisible = false;
   private pathPulse = 0;
   private activeRoomHint = false;
+  private menuOpen = false;
 
   // ───────────────────────────── for the room kinds ─────────────────────────────
 
@@ -205,6 +208,8 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     this.peekBtn = undefined;
     this.dark = undefined;
     this.tess = undefined;
+    this.menuOpen = false;
+    this.time.paused = false;
   }
 
   create(): void {
@@ -214,13 +219,13 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
     ensureBasics(this);
     setLevels({ muted: s.muted, music: s.music, sfx: s.sfx, voice: s.voice });
     sfx.setSoft(s.soft);
-    setVoiceChip(profile().look.voice);
+    setVoiceChip(profile().look.voice, profile().tessLook.voice);
     const pal = PALETTES[this.def.theme];
 
     drawRoomBackdrop(this, this.def.theme, FLOOR_Y).setDepth(D.bg);
     repairMounts(this);
     // Quiet only the working area; the painted scenery remains visible around it.
-    this.add.graphics().setDepth(D.back).fillStyle(CM.paper, .22).fillRoundedRect(192, 192, 896, 348, 18).setName('mechanism:quiet-backing');
+    workSurface(this.add.graphics().setDepth(D.back).setName('mechanism:quiet-backing'), s.contrast);
     if (this.def.theme === 'clock' || this.def.theme === 'shop' || this.def.theme === 'tower') sunbeams(this, pal.light, 0.045).setDepth(D.back);
     if (!s.calm) {
       this.add
@@ -421,21 +426,13 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
   }
 
   private nearestTarget(spec: DragSpec, x: number, y: number): SnapTarget | null {
-    let best: SnapTarget | null = null;
-    let bd = this.snapRadius();
-    for (const t of spec.targets()) {
-      const d = Math.hypot(t.x - x, t.y - y);
-      if (d <= bd) {
-        bd = d;
-        best = t;
-      }
-    }
-    return best;
+    return nearestSocket(spec.targets(), x, y, this.snapRadius(), spec.accepts);
   }
 
   private setupInput(): void {
     this.input.dragDistanceThreshold = 6;
-    this.input.addPointer(2);
+    // The game already has three touch pointers. Adding more on every room
+    // visit grows the global pointer array throughout the entire campaign.
     this.input.on('pointerdown', (p: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]) => {
       sfx.unlockAudio();
       const anyDown = this.input.manager.pointers.some((q) => q.isDown && q.id !== p.id);
@@ -941,8 +938,15 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
   }
 
   private pauseMenu(): void {
+    if (this.menuOpen) return;
+    this.menuOpen = true;
+    this.time.paused = true;
     const items: Phaser.GameObjects.GameObject[] = [];
-    const close = () => items.forEach((o) => o.destroy());
+    const close = () => {
+      items.forEach((o) => o.destroy());
+      this.menuOpen = false;
+      this.time.paused = false;
+    };
     items.push(blocker(this, D.banner + 10, 0.6, close));
     items.push(card(this, 640, 360, 640, 420).setDepth(D.banner + 10));
     const add = <T extends Phaser.GameObjects.GameObject>(o: T): T => {
@@ -1142,6 +1146,7 @@ export abstract class RoomBase<K extends RoomKind = RoomKind> extends Phaser.Sce
   }
 
   update(_time: number, deltaMs: number): void {
+    if (this.menuOpen) return;
     const dt = Math.min(deltaMs, 50) / 1000;
     this.elapsed += this.fixed ? 0 : dt;
     this.updateHints(dt);

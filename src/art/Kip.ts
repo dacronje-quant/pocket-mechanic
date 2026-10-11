@@ -38,6 +38,7 @@ export class Kip extends Phaser.GameObjects.Container {
   private keySpeed = 0.6;
   private t = 0;
   private busy = false;
+  private sleeping = false;
   private pupilDx = 0;
   private look: KipLook;
   private trailTimer = 0;
@@ -605,6 +606,7 @@ export class Kip extends Phaser.GameObjects.Container {
 
   blink(): void {
     if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
+    if (this.sleeping) return;
     if (this.dimensional) { this.pose = 1; this.poseUntil = this.t + 0.18; return; }
     const lids = this.lids;
     let step = 0;
@@ -714,6 +716,7 @@ export class Kip extends Phaser.GameObjects.Container {
   /** Tick-Tock Nap: sit and snooze. */
   nap(on: boolean): void {
     if (!this.scene) return; // destroyed (e.g. a late timer or tween callback)
+    this.sleeping = on;
     this.busy = on;
     this.pose = on ? 6 : 0; this.poseUntil = on ? Number.POSITIVE_INFINITY : 0;
     this.scene.tweens.add({ targets: this.torso, y: on ? -20 : -30, angle: on ? -8 : 0, duration: 400 });

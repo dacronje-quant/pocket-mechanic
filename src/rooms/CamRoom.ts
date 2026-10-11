@@ -136,7 +136,7 @@ export class CamRoom extends RoomBase<'cam'> {
           c.removeAll(true);
           const img = this.add.image(0, 0, key, frame).setOrigin(0.5, 1);
           img.setScale(pose.height / img.height);
-          if (isGhost) img.setTintFill(0xf4ebd5);
+          if (isGhost) img.setTintFill(CM.tealDark).setData('noSeparation', true);
           c.add(img);
         }
         fig.painted = true;
@@ -185,8 +185,10 @@ export class CamRoom extends RoomBase<'cam'> {
         g.fillEllipse(0, -130, 34, 18);
         g.fillStyle(col(0xf4f1ea), 1);
         g.fillEllipse(0, -30, 92, 60);
+        g.lineStyle(2, col(CM.copperDark), .8).strokeEllipse(0, -30, 92, 60);
+        g.fillStyle(col(CM.paperDark), .6).fillEllipse(4, -21, 68, 23);
         g.fillRect(-46, -40, 92, 12);
-        g.fillStyle(col(0x5b7fa3), 1);
+        g.fillStyle(col(CM.teal), 1);
         g.fillRect(-44, -34, 88, 8);
         g.fillStyle(col(0xffffff), 1);
         for (const [cx, cy] of [[-24, -58], [-4, -62], [16, -58], [-14, -72], [6, -74]]) g.fillRect(cx, cy, 16, 14);
@@ -377,8 +379,15 @@ export class CamRoom extends RoomBase<'cam'> {
 
       // the ghost dance beside it: the same figure, pale, doing what it should
       const gBase = SHAFT_Y - R_FLAT - 8 - ROD - fig.gh * R_BUMP - 8;
-      fg.lineStyle(2, 0xf4ebd5, 0.5);
+      fg.lineStyle(2, CM.tealDark, 0.7);
       fg.strokeRoundedRect(x + GHOST_DX - 34, gBase, 68, 10, 5);
+      if (!match) {
+        // A little looping arrow identifies this as the demonstration, not
+        // another physical follower that should receive a cam.
+        const gx = x + GHOST_DX, gy = SHAFT_Y - 18;
+        fg.lineStyle(2, CM.tealDark, .75).strokeCircle(gx, gy, 10);
+        fg.fillStyle(CM.tealDark, .9).fillTriangle(gx + 6, gy - 9, gx + 15, gy - 8, gx + 10, gy - 1);
+      }
       this.pose(fig, fig.ghost, x + GHOST_DX, gBase, fig.gh, dt, true);
       fig.ghost.setVisible(!match);
 

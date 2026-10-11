@@ -2,7 +2,7 @@
  * Every line the game can speak, with a stable id: the catalogue that
  * scripts/generate-elevenlabs.mjs turns into voice files. Scenes speak the
  * same ids, so a generated file is used whenever the build has one (and the
- * device's own speech reads the line otherwise).
+ * missing recordings stay silent without substituting a device voice).
  */
 import { ATTIC_OBJECTS, atticRooms } from './attic';
 import { effective } from '../rules';

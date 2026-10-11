@@ -31,7 +31,7 @@ import {
 } from '../art/shop';
 import { REPAIRS } from '../content/repairs';
 import type { RepairDef } from '../content/types';
-import { atticStep, startRepair, type Step } from '../core/journey';
+import { atticStep, resumeStory, startRepair, type Step } from '../core/journey';
 import { areaOpen, nextRepairs, nookLevel, repairDone, repairStarted, roomFixed, setFlag, tessUnlocked, visited, type Area } from '../core/progress';
 import { persist, profile } from '../core/save';
 import { closingDue, markClosed, reopen, shopClosed, windDownActive } from '../core/session';
@@ -81,6 +81,11 @@ export class ShopScene extends MetaScene {
     });
     this.music('shop', Math.min(1, p.repairs.length / 8 + 0.25));
     if (shopClosed()) return this.closed();
+    const resume = resumeStory(p);
+    if (resume && !windDownActive()) {
+      this.time.delayedCall(10, () => go(this, resume, true));
+      return;
+    }
 
     this.door();
     this.jobBoard();

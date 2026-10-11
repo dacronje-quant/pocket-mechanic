@@ -74,8 +74,8 @@ export class AccessoryRig {
     this.look={...look};this.back.removeAll(true);this.front.removeAll(true);
     const s=this.scene,p=attachmentPose(0,this.variant);
     this.key=part(s,this.back,look.key,p.key.x,p.key.y,33,39);
-    this.stalk=part(s,this.back,this.variant==='tess'?'antenna-tess':'antenna-kip',p.antenna.x,-38,9,13,true);
-    this.topper=part(s,this.front,this.variant==='tess'&&look.bulb==='bulb-classic'?'periscope':look.bulb,p.antenna.x,-49,18,19,true);
+    this.stalk=part(s,this.back,this.variant==='tess'?'antenna-tess':'antenna-kip',p.antenna.x,p.antenna.y,9,13,true);
+    this.topper=part(s,this.front,this.variant==='tess'&&look.bulb==='bulb-classic'?'periscope':look.bulb,p.antenna.x,p.antenna.y-11,18,19,true);
     const right=look.feet==='feet-springs'?'shoe-teal':look.feet==='feet-wheels'?'shoe-wheel-right':look.feet==='feet-clogs'?'shoe-clog-right':'shoe-rocket-right';
     this.leftFoot=part(s,this.front,look.feet,p.leftFoot.x,p.leftFoot.y,22,17,true);
     this.rightFoot=part(s,this.front,right,p.rightFoot.x,p.rightFoot.y,22,17,true);
@@ -104,9 +104,9 @@ export class AccessoryRig {
     if(this.pupils&&!blink)for(const x of [-9.1,9.1]){
       const dx=x+pupilDx;this.pupils.fillStyle(0x365c5f).fillCircle(dx,0,4.5).fillStyle(0x15232a).fillCircle(dx,-.2,3.3).fillStyle(0xfff7dd).fillCircle(dx-1.3,-2,1.5).fillStyle(0xffffff,.45).fillCircle(dx+1.5,1.5,.6);
     }
-    this.topper?.setAngle(this.look?.bulb==='topper-propeller'?Math.sin(time*7)*12:Math.sin(time*2)*2);
+    this.stalk?.setPosition(p.antenna.x,p.antenna.y);
+    this.topper?.setPosition(p.antenna.x,p.antenna.y-11).setAngle(this.look?.bulb==='topper-propeller'?Math.sin(time*7)*12:0);
     this.hat?.setPosition(p.hat.x,p.hat.y).setAngle(walking?Math.sin(time*9)*1.5:0);
     this.plate?.setPosition(p.faceX,5);
-    this.stalk?.setAngle(Math.sin(time*2)*1.2);
   }
 }

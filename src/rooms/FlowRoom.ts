@@ -323,8 +323,7 @@ export class FlowRoom extends RoomBase<'flow'> {
       return;
     }
     if (runs.some((r) => r.end === 'crash')) {
-      sfx.tone(880, 'square', 0.08, 0.01, 0.1);
-      sfx.tone(880, 'square', 0.08, 0.01, 0.1, 0.18);
+      sfx.chirp();
     } else sfx.boing();
     this.kip.shrug();
   }
